@@ -54,9 +54,9 @@ export function Navbar() {
                    Post a Job
                 </Button>
               </Link>
-              <Link href="/candidates/new" passHref>
+              <Link href="/auth" passHref>
                 <Button variant="outline">
-                    Join Us
+                    Sign In / Demo
                 </Button>
               </Link>
           </div>

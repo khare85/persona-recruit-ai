@@ -18,8 +18,8 @@ import mime from 'mime';
 
 // Mock data - in a real app, this would come from an API
 const MOCK_INTERVIEW_CONTEXT_DATA = {
-  job1: {
-    candidate1: {
+  "1": { // Changed from job1
+    "1": { // Changed from candidate1
       jobTitle: "Senior Software Engineer (SAP Basis)",
       candidateName: "John Doe",
       jobDescription: "Seeking a Senior Software Engineer with expertise in SAP Basis administration, performance tuning, and cloud integration. Responsibilities include managing complex SAP landscapes, leading system upgrades, and ensuring high availability. Strong problem-solving skills and a proactive approach are essential.",
@@ -38,8 +38,8 @@ const MOCK_INTERVIEW_CONTEXT_DATA = {
       `,
     }
   },
-  job2: { // New job ID for Khan
-    khan: { // Candidate ID "khan"
+  "2": { // Changed from job2
+    "2": { // Changed from khan, assuming numeric ID for consistency
       jobTitle: "Cloud Security Architect",
       candidateName: "Dr. Khan Noonien Singh",
       jobDescription: "Seeking an experienced Cloud Security Architect to design and implement robust security solutions for our multi-cloud environment (AWS, Azure, GCP). Responsibilities include threat modeling, vulnerability management, and ensuring compliance with industry standards. Must have deep knowledge of cloud-native security services and best practices.",
@@ -59,7 +59,7 @@ const MOCK_INTERVIEW_CONTEXT_DATA = {
   }
 };
 
-type CandidateContext = typeof MOCK_INTERVIEW_CONTEXT_DATA.job1.candidate1;
+type CandidateContext = (typeof MOCK_INTERVIEW_CONTEXT_DATA)["1"]["1"]; // Adjusted for new structure
 
 const LiveInterviewPage: NextPage = () => {
   const router = useRouter();
@@ -80,7 +80,7 @@ const LiveInterviewPage: NextPage = () => {
   const [isAiSpeaking, setIsAiSpeaking] = useState(false); 
   const [isUserSpeaking, setIsUserSpeaking] = useState(false); 
   
-  const [conversationLog, setConversationLog] = useState<Array<{ speaker: 'ai' | 'user', text?: string, timestamp: Date }>>([]);
+  const [conversationLog, setConversationLog] = useState<Array<{ speaker: 'ai' | 'user', text?: string, audioUrl?: string, timestamp: Date }>>([]);
   const [currentAiText, setCurrentAiText] = useState<string | null>(null);
 
   const [hasDevicePermissions, setHasDevicePermissions] = useState<boolean | null>(null);
@@ -94,6 +94,7 @@ const LiveInterviewPage: NextPage = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const responseQueueRef = useRef<LiveServerMessage[]>([]);
   const processingQueueRef = useRef<boolean>(false);
+  const aiAudioQueueRef = useRef<HTMLAudioElement[]>([]);
   
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -102,15 +103,15 @@ const LiveInterviewPage: NextPage = () => {
     const fetchContext = async () => {
       setIsLoadingContext(true);
       await new Promise(resolve => setTimeout(resolve, 700)); 
-      // More robust way to access nested mock data
+      
       const jobData = MOCK_INTERVIEW_CONTEXT_DATA[jobId as keyof typeof MOCK_INTERVIEW_CONTEXT_DATA];
       const contextData = jobData ? jobData[candidateId as keyof typeof jobData] : null;
 
       if (contextData) {
-        setInterviewContext(contextData as CandidateContext); // Cast as CandidateContext
+        setInterviewContext(contextData as CandidateContext); 
       } else {
         toast({ variant: "destructive", title: "Error", description: `Interview context not found for Job ID: ${jobId}, Candidate ID: ${candidateId}.`});
-        router.push('/'); 
+        router.push('/candidates/my-interviews'); // Redirect to a more relevant page
       }
       setIsLoadingContext(false);
     };
@@ -126,15 +127,17 @@ const LiveInterviewPage: NextPage = () => {
         if (videoRef.current) videoRef.current.srcObject = stream;
         
         recordedVideoBlobs.current = [];
-        const videoOptions = { mimeType: 'video/webm;codecs=vp9,opus' };
-        const videoRecorder = MediaRecorder.isTypeSupported(videoOptions.mimeType)
-          ? new MediaRecorder(stream, videoOptions)
-          : new MediaRecorder(stream); // Fallback if specific codecs aren't supported
+        let videoOptions = { mimeType: 'video/webm;codecs=vp9,opus' };
+        if (!MediaRecorder.isTypeSupported(videoOptions.mimeType)) {
+            videoOptions = { mimeType: 'video/webm' }; // Fallback
+        }
+
+        const videoRecorder = new MediaRecorder(stream, videoOptions);
         
         videoRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) recordedVideoBlobs.current.push(event.data);
         };
-        videoRecorder.start(1000); 
+        videoRecorder.start(1000); // Record in 1-second chunks
         return true;
       } catch (err) {
         console.error("Error accessing media devices:", err);
@@ -152,60 +155,71 @@ const LiveInterviewPage: NextPage = () => {
     }
   }, []);
 
+  const playNextAiAudio = useCallback(() => {
+    if (aiAudioQueueRef.current.length > 0 && !isAiSpeaking) {
+        const audioEl = aiAudioQueueRef.current[0]; // Get the first audio element
+        setIsAiSpeaking(true);
+        audioEl.play().catch(e => {
+            console.error("Error playing AI audio from queue:", e);
+            setIsAiSpeaking(false);
+            aiAudioQueueRef.current.shift(); // Remove problematic audio
+            playNextAiAudio(); // Try next
+        });
+        audioEl.onended = () => {
+            setIsAiSpeaking(false);
+            aiAudioQueueRef.current.shift(); // Remove played audio
+            playNextAiAudio(); // Play next if any
+        };
+    } else if (aiAudioQueueRef.current.length === 0 && !isAiSpeaking) {
+        // If queue is empty and AI is not speaking, it's user's turn
+        startUserAudioRecording();
+    }
+  }, [isAiSpeaking]); // Removed startUserAudioRecording from dependency
+
+
   const processResponseQueue = useCallback(async () => {
     if (processingQueueRef.current || responseQueueRef.current.length === 0) return;
     processingQueueRef.current = true;
 
     const message = responseQueueRef.current.shift();
     if (message && interviewContext) {
+      let turnText = "";
       if (message.serverContent?.modelTurn?.parts) {
         for (const part of message.serverContent.modelTurn.parts) {
           if (part.text) {
-            setCurrentAiText(prev => (prev || "") + part.text);
+            turnText += part.text + " ";
           }
           if (part.inlineData?.data && audioContextRef.current) {
-            setIsAiSpeaking(true);
             try {
               const audioData = part.inlineData.data;
-              // The audio data from Gemini is already in the correct format (e.g., Opus in WebM or as specified)
-              // We need to create an AudioBufferSourceNode and play it.
-              // Assuming the data is base64 encoded raw audio or a container format the browser can decode.
-              // For direct PCM or if specific decoding is needed, this part might get more complex.
-              // Gemini usually sends audio that AudioContext can handle directly after base64 decoding.
-              const audioBuffer = Buffer.from(audioData, 'base64');
-              const decodedAudio = await audioContextRef.current.decodeAudioData(audioBuffer.buffer.slice(audioBuffer.byteOffset, audioBuffer.byteOffset + audioBuffer.byteLength));
-              const source = audioContextRef.current.createBufferSource();
-              source.buffer = decodedAudio;
-              source.connect(audioContextRef.current.destination);
-              source.start();
-              source.onended = () => {
-                // Check if this was the last audio part of the current AI turn
-                 const stillProcessingAudio = responseQueueRef.current.some(m => m.serverContent?.modelTurn?.parts?.some(p => p.inlineData?.data)) ||
-                                          message.serverContent?.modelTurn?.parts?.slice(message.serverContent.modelTurn.parts.indexOf(part) + 1).some(p => p.inlineData?.data);
-
-                if (!stillProcessingAudio) {
-                    setIsAiSpeaking(false);
-                }
-              };
+              const audioBlob = new Blob([Buffer.from(audioData, 'base64')], { type: part.inlineData.mimeType });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              const audioEl = new Audio(audioUrl);
+              aiAudioQueueRef.current.push(audioEl);
             } catch (e) {
-              console.error("Error playing AI audio:", e);
-              setIsAiSpeaking(false);
+              console.error("Error preparing AI audio:", e);
             }
           }
         }
       }
+      
+      if (turnText.trim()) {
+        setCurrentAiText(turnText.trim());
+        setConversationLog(prev => [...prev, { speaker: 'ai', text: turnText.trim(), timestamp: new Date() }]);
+      }
+
       if (message.serverContent?.turnComplete) {
-        setConversationLog(prev => [...prev, { speaker: 'ai', text: currentAiText || undefined, timestamp: new Date() }]);
-        setCurrentAiText(null); 
-        setIsAiSpeaking(false); 
-        startUserAudioRecording(); // Now automatically start user recording
+        setCurrentAiText(null); // Clear current AI text bubble when turn is fully complete
+        // playNextAiAudio will handle transitioning to user speaking or next AI audio
       }
     }
     processingQueueRef.current = false;
+    playNextAiAudio(); // Check if AI should speak or if it's user's turn
     if (responseQueueRef.current.length > 0) {
       processResponseQueue(); 
     }
-  }, [currentAiText, interviewContext]); // Added startUserAudioRecording here
+  }, [interviewContext, playNextAiAudio]);
+
 
   useEffect(() => {
     if (responseQueueRef.current.length > 0 && !processingQueueRef.current) {
@@ -223,7 +237,7 @@ const LiveInterviewPage: NextPage = () => {
 
     const ai = new GoogleGenAI({ apiKey });
     const modelConfig = {
-      responseModalities: [Modality.AUDIO, Modality.TEXT_TRANSCRIPT],
+      responseModalities: [Modality.AUDIO, Modality.TEXT_TRANSCRIPT], // Request both
       mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
       speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' }}}, 
       contextWindowCompression: { triggerTokens: '25600', slidingWindow: { targetTokens: '12800' }},
@@ -238,8 +252,7 @@ const LiveInterviewPage: NextPage = () => {
             console.debug('Gemini Live Session Opened');
             toast({title: "AI Interviewer Connected", description: "Alex is ready to start."});
              if(genAiSessionRef.current?.sendClientContent) {
-                 // Send an initial empty content to trigger the AI's first response (greeting)
-                genAiSessionRef.current.sendClientContent({ turns: [ { text: "" } ] });
+                genAiSessionRef.current.sendClientContent({ turns: [ { text: "Hello" } ] }); // Initial greeting
              } else {
                 console.error("sendClientContent not available on session during onopen");
              }
@@ -288,12 +301,12 @@ const LiveInterviewPage: NextPage = () => {
     userAudioChunksRef.current = [];
     try {
       const streamToRecord = new MediaStream(userVideoStreamRef.current.getAudioTracks());
-      mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType: 'audio/webm;codecs=opus' });
+      mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType: 'audio/webm;codecs=opus' }); // Opus is good for speech
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) userAudioChunksRef.current.push(event.data);
       };
       mediaRecorderRef.current.onstop = async () => {
-        // setIsUserSpeaking(false); // This will be set when AI starts speaking or manually stopped
+        setIsUserSpeaking(false); 
         if (userAudioChunksRef.current.length > 0 && genAiSessionRef.current) {
           const audioBlob = new Blob(userAudioChunksRef.current, { type: 'audio/webm;codecs=opus' });
           const reader = new FileReader();
@@ -301,11 +314,10 @@ const LiveInterviewPage: NextPage = () => {
           reader.onloadend = () => {
             const base64AudioData = reader.result?.toString().split(',')[1];
             if (base64AudioData) {
-              const userTextForLog = `[User Audio - ${new Date().toLocaleTimeString()}]`; // Placeholder for log
-              setConversationLog(prev => [...prev, { speaker: 'user', text: userTextForLog, timestamp: new Date() }]);
-              
+              // Log only after successful send or when text transcript is available
               const clientContent : Content = { audio: { data: base64AudioData, mimeType: 'audio/webm;codecs=opus' } };
               genAiSessionRef.current?.sendClientContent({ turns: [clientContent]});
+              // User text will be logged when AI's response comes back with transcript if model provides it
             }
           };
         }
@@ -323,17 +335,22 @@ const LiveInterviewPage: NextPage = () => {
   
   const stopUserAudioRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stop(); // onstop will handle sending data
     }
-    setIsUserSpeaking(false);
+    // setIsUserSpeaking will be set in onstop or by AI starting to speak
   }, []);
 
 
   const finishInterview = async (reason?: string) => {
     setIsInterviewActive(false);
-    if (isUserSpeaking) stopUserAudioRecording(); // Stop user recording if active
+    if (isUserSpeaking) stopUserAudioRecording(); 
     setIsUserSpeaking(false);
     setIsAiSpeaking(false);
+    aiAudioQueueRef.current.forEach(audioEl => {
+        audioEl.pause();
+        if (audioEl.src.startsWith('blob:')) URL.revokeObjectURL(audioEl.src);
+    });
+    aiAudioQueueRef.current = [];
     
     genAiSessionRef.current?.close();
     genAiSessionRef.current = null;
@@ -352,7 +369,6 @@ const LiveInterviewPage: NextPage = () => {
         const videoBlob = new Blob(recordedVideoBlobs.current, { type: 'video/webm' });
         console.log("Final video blob for upload:", videoBlob);
         // In a real app, you would upload this videoBlob along with `conversationLog`
-        // For demo, we might convert videoBlob to data URI for other flows if needed
     } else {
         console.log("No video data recorded.");
     }
@@ -365,6 +381,7 @@ const LiveInterviewPage: NextPage = () => {
   };
   
   useEffect(() => {
+    // Cleanup on unmount
     return () => { 
       genAiSessionRef.current?.close();
       if (userVideoStreamRef.current) {
@@ -373,6 +390,9 @@ const LiveInterviewPage: NextPage = () => {
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         audioContextRef.current.close();
       }
+       aiAudioQueueRef.current.forEach(audioEl => {
+        if (audioEl.src.startsWith('blob:')) URL.revokeObjectURL(audioEl.src);
+      });
     };
   }, []);
 
@@ -386,11 +406,12 @@ const LiveInterviewPage: NextPage = () => {
   }
 
   if (!interviewContext) {
+    // Error toast is shown in useEffect, this is a fallback or if navigation fails
     return (
       <Container className="text-center py-20">
         <AlertTriangle className="mx-auto h-16 w-16 text-destructive mb-4" />
         <h1 className="text-3xl font-bold text-destructive">Interview Details Not Found</h1>
-        <Button variant="outline" className="mt-6" onClick={() => router.push('/')}>Back to Homepage</Button>
+        <Button variant="outline" className="mt-6" onClick={() => router.push('/candidates/my-interviews')}>Back to My Interviews</Button>
       </Container>
     );
   }
@@ -404,7 +425,7 @@ const LiveInterviewPage: NextPage = () => {
     );
   }
   
-  const videoAreaClass = isInterviewActive && (isAiSpeaking || currentAiText) ? "md:col-span-2" : "md:col-span-3";
+  const videoAreaClass = isInterviewActive && currentAiText ? "md:col-span-2" : "md:col-span-3";
 
   return (
     <Container className="max-w-5xl mx-auto py-8">
@@ -463,8 +484,8 @@ const LiveInterviewPage: NextPage = () => {
           </CardHeader>
 
           <CardContent className="pt-6 space-y-6">
-            <div className={`grid grid-cols-1 ${isInterviewActive && (isAiSpeaking || currentAiText) ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-4 items-start`}>
-              <div className={`aspect-video bg-muted rounded-lg overflow-hidden relative shadow-md ${isInterviewActive && (isAiSpeaking || currentAiText) ? 'md:col-span-2' : 'col-span-1 md:max-w-3xl mx-auto'} transition-all duration-300 ease-in-out`}>
+            <div className={`grid grid-cols-1 ${isInterviewActive && currentAiText ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-4 items-start`}>
+              <div className={`aspect-video bg-muted rounded-lg overflow-hidden relative shadow-md ${isInterviewActive && currentAiText ? 'md:col-span-2' : 'col-span-1 md:max-w-3xl mx-auto'} transition-all duration-300 ease-in-out`}>
                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                 {hasDevicePermissions === false && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white p-4">
@@ -485,7 +506,7 @@ const LiveInterviewPage: NextPage = () => {
                  )}
               </div>
 
-              {isInterviewActive && (isAiSpeaking || currentAiText) && (
+              {isInterviewActive && currentAiText && (
                 <div className="md:col-span-1 p-4 bg-primary/10 rounded-lg shadow-md h-full flex flex-col justify-center animate-fadeIn min-h-[150px]">
                   <div className="flex items-center mb-2">
                     <Volume2 className={`h-6 w-6 text-primary mr-2 ${isAiSpeaking ? 'animate-pulse' : ''}`} />
@@ -556,6 +577,7 @@ const LiveInterviewPage: NextPage = () => {
             {conversationLog.map((entry, index) => (
               <div key={index} className={`p-1 rounded ${entry.speaker === 'ai' ? 'bg-blue-50' : 'bg-green-50'}`}>
                 <strong>{entry.speaker.toUpperCase()} ({entry.timestamp.toLocaleTimeString()}):</strong> {entry.text || "[AUDIO ONLY]"}
+                {entry.audioUrl && <audio controls src={entry.audioUrl} className="w-full mt-1"/>}
               </div>
             ))}
           </CardContent>
@@ -566,5 +588,6 @@ const LiveInterviewPage: NextPage = () => {
 };
 
 export default LiveInterviewPage;
+    
 
     

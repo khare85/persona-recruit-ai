@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Container } from '@/components/shared/Container';
-import { Brain, Briefcase, CalendarDays, FileText, Loader2, Mail, MapPin, User, UsersRound, XSquare, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Brain, Briefcase, CalendarDays, FileText, Loader2, Mail, MapPin, User, UsersRound, XSquare, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { candidateJobMatcher, CandidateJobMatcherInput, CandidateJobMatcherOutput } from '@/ai/flows/candidate-job-matcher';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -23,18 +23,27 @@ const MOCK_JOB_LISTINGS_DATA = {
     id: '1',
     title: 'Senior Frontend Engineer',
     company: 'Tech Solutions Inc.',
-    companyDescription: 'Tech Solutions Inc. is a leading innovator in cloud-based software...',
+    companyDescription: 'Tech Solutions Inc. is a leading innovator in cloud-based software, committed to delivering cutting-edge solutions that empower businesses globally. We foster a collaborative and inclusive work environment where creativity and growth are encouraged. Our core values include innovation, customer obsession, and teamwork.',
     fullDescriptionForAI: `
       Job Title: Senior Frontend Engineer
       Company: Tech Solutions Inc.
       Location: Remote
-      // ... (rest of the job description from job details page)
+      Job Type: Full-time
+      Salary: $120,000 - $150,000 per year
+      About Tech Solutions Inc.:
+      Tech Solutions Inc. is a leading innovator in cloud-based software...
+      Role Overview:
+      We are seeking a talented and passionate Senior Frontend Engineer...
+      Key Responsibilities:
+      - Develop and maintain user-facing features using React.js, Next.js, and TypeScript.
+      - Build reusable components and front-end libraries...
       Qualifications:
       - 5+ years of professional experience in frontend development...
       - Expert proficiency in JavaScript, HTML5, CSS3, React.js, Next.js.
       - Solid experience with TypeScript.
+      Benefits:
+      - Competitive salary and stock options...
     `,
-    // Add more fields if needed by the AI matcher or UI
   },
   '2': {
     id: '2',
@@ -43,14 +52,44 @@ const MOCK_JOB_LISTINGS_DATA = {
     companyDescription: 'FutureAI Corp. is at the forefront of AI innovation...',
     fullDescriptionForAI: `
         Job Title: AI/ML Product Manager
-        // ... (full job description)
+        Company: FutureAI Corp.
+        Location: New York, NY
+        Job Type: Full-time
+        Salary: $140,000 - $170,000
+        About FutureAI Corp.:
+        FutureAI Corp. is dedicated to advancing artificial intelligence...
+        Role Overview:
+        Lead the product strategy for our cutting-edge AI platform...
+        Key Responsibilities:
+        - Define and own the product roadmap for AI/ML features.
+        - Work closely with engineering, design, and research teams...
+        Qualifications:
+        - 5+ years of product management experience, with at least 2 years in AI/ML.
+        - Strong understanding of machine learning concepts and lifecycle.
+        - Proven ability to launch successful products.
+        Benefits:
+        - Highly competitive salary and equity.
+        - Opportunity to shape the future of AI...
     `,
   }
 };
 
 const MOCK_APPLICANTS_DATA = [
   {
-    id: 'cand1',
+    id: 'cand1', // Corresponds to Alice Wonderland if using candidate ID '1'
+    jobId: '1',
+    fullName: 'Alice Wonderland',
+    avatarUrl: 'https://placehold.co/100x100.png?a=1',
+    currentTitle: 'Senior Software Engineer',
+    applicationDate: '2024-08-03',
+    status: 'AI Matched',
+    profileSummaryForAI: `Alice Wonderland - Senior Software Engineer. 8+ years experience in web applications. Expertise in React, Next.js, TypeScript, Node.js, Python, AWS, Docker, Kubernetes, GraphQL. Led projects, mentored developers. Seeking remote roles.`,
+    skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 'AWS'],
+    source: 'AI Talent Search',
+    referredBy: null,
+  },
+  {
+    id: 'cand2',
     jobId: '1',
     fullName: 'Bob The Builder',
     avatarUrl: 'https://placehold.co/100x100.png?a=2',
@@ -59,9 +98,11 @@ const MOCK_APPLICANTS_DATA = [
     status: 'New',
     profileSummaryForAI: `Bob The Builder - Software Engineer. 3 years experience with React, Vue.js, and some Node.js. Interested in frontend roles. Good team player. Basic understanding of TypeScript. Completed several freelance projects.`,
     skills: ['React', 'Vue.js', 'JavaScript', 'HTML', 'CSS'],
+    source: 'Company Job Board',
+    referredBy: null,
   },
   {
-    id: 'cand2',
+    id: 'cand3',
     jobId: '1',
     fullName: 'Charlie Chaplin',
     avatarUrl: 'https://placehold.co/100x100.png?a=3',
@@ -70,9 +111,11 @@ const MOCK_APPLICANTS_DATA = [
     status: 'Under Review',
     profileSummaryForAI: `Charlie Chaplin - Senior Developer. 7 years of full-stack experience with strong expertise in Next.js, TypeScript, GraphQL, and Python. Led small teams on several projects. AWS certified. Excellent problem-solver.`,
     skills: ['Next.js', 'TypeScript', 'GraphQL', 'Python', 'AWS', 'Team Lead'],
+    source: 'LinkedIn',
+    referredBy: 'Diana P. (Recruiter)',
   },
   {
-    id: 'cand3',
+    id: 'cand4',
     jobId: '1',
     fullName: 'Diana Prince',
     avatarUrl: 'https://placehold.co/100x100.png?a=4',
@@ -81,15 +124,19 @@ const MOCK_APPLICANTS_DATA = [
     status: 'Interview Scheduled',
     profileSummaryForAI: `Diana Prince - Frontend Developer. 4 years experience focused on UI/UX driven development. Proficient in React, Next.js, and Figma. Strong eye for detail and user experience. Some experience with TypeScript.`,
     skills: ['React', 'Next.js', 'UI/UX', 'Figma', 'JavaScript'],
+    source: 'Referred',
+    referredBy: 'Bruce W. (Employee)',
   },
 ];
 
 // --- End Mock Data ---
 
-interface Applicant extends Omit<typeof MOCK_APPLICANTS_DATA[0], 'jobId' | 'profileSummaryForAI'> {
+interface Applicant extends Omit<(typeof MOCK_APPLICANTS_DATA)[0], 'jobId' | 'profileSummaryForAI'> {
   aiMatch?: CandidateJobMatcherOutput;
   isMatching?: boolean; // To show loader for individual AI match
   profileSummaryForAI: string; // Ensure this is always present
+  source: string;
+  referredBy: string | null;
 }
 
 interface JobInfo {
@@ -110,7 +157,7 @@ async function getJobAndApplicants(jobId: string): Promise<{ job: JobInfo | null
 
   const jobApplicants = MOCK_APPLICANTS_DATA
     .filter(app => app.jobId === jobId)
-    .map(({ jobId, ...rest }) => ({ ...rest, isMatching: true } as Applicant)); // Set initial isMatching to true
+    .map(({ jobId, ...rest }) => ({ ...rest, isMatching: true } as Applicant)); 
 
   return { job, applicants: jobApplicants };
 }
@@ -138,26 +185,30 @@ export default function JobApplicantsPage() {
             return;
           }
           setJob(fetchedJob);
-          setApplicants(fetchedApplicants); // Set applicants with isMatching: true
+          // Set initial applicants state with isMatching true to show loaders
+          setApplicants(fetchedApplicants.map(app => ({ ...app, isMatching: true })));
           setIsLoading(false);
 
           // Now, perform AI matching for each applicant
-          const applicantsWithMatches: Applicant[] = await Promise.all(
-            fetchedApplicants.map(async (applicant) => {
-              try {
-                const aiMatch = await candidateJobMatcher({
-                  candidateProfile: applicant.profileSummaryForAI, // Use the AI-specific summary
-                  jobDescription: fetchedJob.fullDescriptionForAI,
-                  companyInformation: fetchedJob.companyDescription,
-                });
-                return { ...applicant, aiMatch, isMatching: false };
-              } catch (e) {
-                console.error(`Error matching candidate ${applicant.id}:`, e);
-                return { ...applicant, aiMatch: undefined, isMatching: false }; // Handle individual errors
-              }
-            })
-          );
-          setApplicants(applicantsWithMatches);
+          const applicantsWithMatchesPromises = fetchedApplicants.map(async (applicant) => {
+            try {
+              const aiMatch = await candidateJobMatcher({
+                candidateProfile: applicant.profileSummaryForAI, 
+                jobDescription: fetchedJob.fullDescriptionForAI,
+                companyInformation: fetchedJob.companyDescription,
+              });
+              return { ...applicant, aiMatch, isMatching: false };
+            } catch (e) {
+              console.error(`Error matching candidate ${applicant.id}:`, e);
+              // Update this specific applicant's state to stop showing loader and indicate error
+              setApplicants(prev => prev.map(a => a.id === applicant.id ? { ...a, aiMatch: undefined, isMatching: false } : a));
+              return { ...applicant, aiMatch: undefined, isMatching: false }; // Return with isMatching false
+            }
+          });
+          
+          const resolvedApplicants = await Promise.all(applicantsWithMatchesPromises);
+          setApplicants(resolvedApplicants);
+
         })
         .catch(err => {
           console.error("Failed to fetch job and applicants:", err);
@@ -190,7 +241,7 @@ export default function JobApplicantsPage() {
     );
   }
   
-  if (!job) { // Should be caught by error state, but as a fallback
+  if (!job) { 
      return (
       <Container className="text-center py-20">
         <XSquare className="mx-auto h-16 w-16 text-destructive mb-4" />
@@ -250,9 +301,13 @@ export default function JobApplicantsPage() {
                     </div>
                   </div>
                 </div>
-                <Badge variant={applicant.status === 'New' ? 'default' : applicant.status === 'Interview Scheduled' ? 'outline' : 'secondary'} className="whitespace-nowrap self-start sm:self-center">
-                  {applicant.status}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                    <Badge variant={applicant.status === 'New' ? 'default' : applicant.status === 'Interview Scheduled' ? 'outline' : 'secondary'} className="whitespace-nowrap self-start sm:self-center">
+                    {applicant.status}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground">Source: {applicant.source}</p>
+                    {applicant.referredBy && <p className="text-xs text-muted-foreground">Referred by: {applicant.referredBy}</p>}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 pt-0">
@@ -262,8 +317,8 @@ export default function JobApplicantsPage() {
                   <Brain className="h-4 w-4 mr-2 text-primary" /> AI Match Analysis
                 </h4>
                 {applicant.isMatching ? (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating AI insights...
+                  <div className="flex items-center text-sm text-muted-foreground py-4">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2 text-primary" /> Analyzing fit...
                   </div>
                 ) : applicant.aiMatch ? (
                   <div className="space-y-2">
@@ -307,7 +362,6 @@ export default function JobApplicantsPage() {
               <Button size="sm">
                  <Mail className="mr-2 h-4 w-4" /> Contact Candidate
               </Button>
-              {/* Placeholder for actions like 'Schedule Interview', 'Reject', etc. */}
             </CardFooter>
           </Card>
         ))}

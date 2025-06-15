@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/shared/Container';
-import { Gift, Users, Share2, DollarSign, CheckCircle } from 'lucide-react';
+import { Gift, Users, Share2, DollarSign, CheckCircle, TrendingUp, UserCheck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -43,24 +43,24 @@ export default function ReferralsPage() {
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">2</div>
               <div>
-                <h4 className="font-semibold">They Sign Up</h4>
-                <p className="text-sm text-muted-foreground">Your referrals create an account or post their first job.</p>
+                <h4 className="font-semibold">They Sign Up & Engage</h4>
+                <p className="text-sm text-muted-foreground">Your referred candidates complete profiles or companies post jobs.</p>
               </div>
             </div>
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">3</div>
               <div>
-                <h4 className="font-semibold">You Get Rewarded</h4>
-                <p className="text-sm text-muted-foreground">Earn cash or platform credits for successful referrals.</p>
+                <h4 className="font-semibold">Success & Rewards!</h4>
+                <p className="text-sm text-muted-foreground">Earn cash or platform credits when your referred candidate is hired or a referred company makes a successful hire.</p>
               </div>
             </div>
           </CardContent>
            <CardFooter>
-            <p className="text-xs text-muted-foreground">Terms and conditions apply. Rewards vary based on referral type.</p>
+            <p className="text-xs text-muted-foreground">Terms and conditions apply. Rewards are typically paid out upon successful placement or first hire through the platform.</p>
           </CardFooter>
         </Card>
 
-        {/* Your Referral Link Card */}
+        {/* Your Referral Hub Card */}
         <Card className="shadow-lg bg-gradient-to-br from-primary/10 to-accent/10 flex flex-col">
           <CardHeader>
             <CardTitle className="text-2xl font-headline flex items-center">
@@ -81,14 +81,27 @@ export default function ReferralsPage() {
                 </Button>
               </div>
             </div>
+            
             <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="text-center p-4 border rounded-lg bg-background">
-                <p className="text-3xl font-bold text-primary">12</p>
-                <p className="text-sm text-muted-foreground">Total Referrals</p>
+              <div className="text-center p-3 border rounded-lg bg-background/70 shadow-sm">
+                <Users className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-2xl font-bold text-primary">12</p>
+                <p className="text-xs text-muted-foreground">Total Referrals</p>
               </div>
-              <div className="text-center p-4 border rounded-lg bg-background">
-                <p className="text-3xl font-bold text-primary">$250</p>
-                <p className="text-sm text-muted-foreground">Rewards Earned</p>
+              <div className="text-center p-3 border rounded-lg bg-background/70 shadow-sm">
+                <UserCheck className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-2xl font-bold text-primary">3</p>
+                <p className="text-xs text-muted-foreground">Successful Hires</p>
+              </div>
+              <div className="text-center p-3 border rounded-lg bg-background/70 shadow-sm">
+                <Gift className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-2xl font-bold text-primary">$150</p>
+                <p className="text-xs text-muted-foreground">Pending Rewards</p>
+              </div>
+              <div className="text-center p-3 border rounded-lg bg-background/70 shadow-sm">
+                <DollarSign className="mx-auto h-6 w-6 text-muted-foreground mb-1" />
+                <p className="text-2xl font-bold text-green-600">$250</p>
+                <p className="text-xs text-muted-foreground">Total Earned</p>
               </div>
             </div>
           </CardContent>
@@ -99,7 +112,7 @@ export default function ReferralsPage() {
       </div>
 
       {/* Rewards Section */}
-      <section className="mt-16 py-12 bg-muted/30 rounded-lg">
+      <section className="mt-16 py-12 bg-muted/40 rounded-lg">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-headline font-semibold text-foreground">
@@ -117,7 +130,7 @@ export default function ReferralsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary mb-1">$50 Reward</p>
-                <p className="text-sm text-muted-foreground">When they successfully complete their profile and get shortlisted for a job.</p>
+                <p className="text-sm text-muted-foreground">When they successfully complete their profile and are hired for a job through the platform.</p>
               </CardContent>
             </Card>
             <Card className="text-center">

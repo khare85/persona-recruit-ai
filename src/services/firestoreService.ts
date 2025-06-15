@@ -21,19 +21,12 @@ import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 if (!admin.apps.length) {
   try {
     console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK...');
-    // Initialize Firebase Admin SDK.
-    // If GOOGLE_APPLICATION_CREDENTIALS is set, it will be used automatically.
-    // Otherwise, you might need to pass credential explicitly:
-    // admin.initializeApp({
-    //   credential: admin.credential.cert(require('/path/to/your/serviceAccountKey.json'))
-    // });
-    // For App Hosting and similar environments, applicationDefault usually works if secrets are set up.
     admin.initializeApp({
        credential: admin.credential.applicationDefault(),
     });
     console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
   } catch (error) {
-    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS (or direct cert path) is set correctly and the service account has appropriate permissions. Details:', error);
+    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly and the service account has appropriate permissions. Details:', error);
   }
 }
 
@@ -43,6 +36,7 @@ try {
   console.log('[FirestoreService] Firestore DB instance acquired.');
 } catch (error) {
   console.error('[FirestoreService] Failed to acquire Firestore DB instance. Admin SDK might not be initialized. Details:', error);
+  // Optionally, you could throw an error here or have a fallback mechanism if db is critical at module load.
 }
 // --- End Firebase Admin SDK Setup ---
 
@@ -63,10 +57,11 @@ export interface CandidateWithEmbeddingFirestore {
   phone?: string;
   linkedinProfile?: string;
   portfolioUrl?: string;
-  experienceSummary?: string;   // Shorter summary for display/quick review
+  experienceSummary?: string;   // Shorter summary for display/quick review, potentially manually entered
+  aiGeneratedSummary?: string; // New field for AI-generated summary
   avatarUrl?: string;
   videoIntroUrl?: string;
-  availability?: string; // e.g., "Immediate", "2 weeks notice" - New Field
+  availability?: string; 
   lastUpdatedAt: Timestamp;
 }
 
@@ -89,15 +84,21 @@ export interface JobWithEmbeddingFirestore {
 
 
 /**
- * Saves/Updates a candidate's profile along with their resume embedding to Firestore.
+ * Saves/Updates a candidate's profile along with their resume embedding and AI summary to Firestore.
  * @param candidateId The unique ID of the candidate.
- * @param data The candidate data including the embedding.
+ * @param data The candidate data including the embedding and AI summary.
  */
 export async function saveCandidateWithEmbedding(
   candidateId: string,
-  data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills'> & { extractedResumeText: string; resumeEmbedding: number[], skills: string[], availability?: string }
+  data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills' | 'aiGeneratedSummary'> & { 
+    extractedResumeText: string; 
+    resumeEmbedding: number[]; 
+    skills: string[]; 
+    aiGeneratedSummary?: string; // Make AI summary optional here as well
+    availability?: string;
+  }
 ): Promise<{ success: boolean; message: string; candidateId?: string }> {
-  console.log(`[FirestoreService] Attempting to save/update candidate ${candidateId} with embedding.`);
+  console.log(`[FirestoreService] Attempting to save/update candidate ${candidateId} with embedding and AI summary.`);
 
   if (!db) {
     const errorMsg = "[FirestoreService] Firestore DB not available. Firebase Admin SDK might not have initialized correctly.";
@@ -113,12 +114,13 @@ export async function saveCandidateWithEmbedding(
       extractedResumeText: data.extractedResumeText,
       resumeEmbedding: data.resumeEmbedding,
       skills: data.skills,
-      availability: data.availability, // Save availability if provided
+      aiGeneratedSummary: data.aiGeneratedSummary, // Save the AI summary
+      availability: data.availability, 
       lastUpdatedAt: admin.firestore.Timestamp.now(),
     };
     await candidateRef.set(saveData, { merge: true });
     console.log(`[FirestoreService] Successfully saved/updated candidate ${candidateId} in Firestore.`);
-    return { success: true, message: 'Candidate profile and embedding saved to Firestore.', candidateId };
+    return { success: true, message: 'Candidate profile, embedding, and AI summary saved to Firestore.', candidateId };
   } catch (error) {
     console.error(`[FirestoreService] Error saving candidate ${candidateId} to Firestore:`, error);
     return { success: false, message: `Error saving candidate to Firestore: ${error instanceof Error ? error.message : String(error)}` };
@@ -155,7 +157,7 @@ export async function searchCandidatesByEmbedding(
   }
   try {
     const snapshot = await db.collection(CANDIDATES_COLLECTION)
-      .findNearest('resumeEmbedding', admin.firestore.FieldValue.vector(queryEmbedding) as FieldValue, { // Cast to FieldValue
+      .findNearest('resumeEmbedding', admin.firestore.FieldValue.vector(queryEmbedding) as FieldValue, {
         limit: topN,
         distanceMeasure: 'COSINE'
       })
@@ -173,11 +175,12 @@ export async function searchCandidatesByEmbedding(
         fullName: data.fullName,
         currentTitle: data.currentTitle,
         skills: data.skills,
-        experienceSummary: data.experienceSummary,
+        experienceSummary: data.experienceSummary, // Keep this for now
+        aiGeneratedSummary: data.aiGeneratedSummary, // Add AI summary
         avatarUrl: data.avatarUrl,
         availability: data.availability,
         // @ts-ignore Firestore's `doc.distance` is not strongly typed yet in Node SDK, but should exist.
-        distance: doc.distance,
+        distance: doc.distance, 
       });
     });
     console.log(`[FirestoreService] Found ${results.length} candidates via vector search.`);
@@ -255,7 +258,7 @@ export async function searchJobsByEmbedding(
   }
   try {
     const snapshot = await db.collection(JOBS_COLLECTION)
-      .findNearest('jobEmbedding', admin.firestore.FieldValue.vector(queryEmbedding) as FieldValue, { // Cast to FieldValue
+      .findNearest('jobEmbedding', admin.firestore.FieldValue.vector(queryEmbedding) as FieldValue, { 
         limit: topN,
         distanceMeasure: 'COSINE'
       })

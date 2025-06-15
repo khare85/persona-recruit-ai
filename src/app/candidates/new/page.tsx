@@ -15,8 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
 import { processResumeWithDocAI, ProcessResumeDocAIInput } from '@/ai/flows/process-resume-document-ai-flow';
 import { generateTextEmbedding, GenerateTextEmbeddingInput } from '@/ai/flows/generate-text-embedding-flow';
+import { generateResumeSummary, GenerateResumeSummaryInput } from '@/ai/flows/generate-resume-summary-flow'; // New import
 import { saveCandidateWithEmbedding } from '@/services/firestoreService';
-import { UploadCloud, UserPlus, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, PartyPopper, Brain } from 'lucide-react';
+import { UploadCloud, UserPlus, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, PartyPopper, Brain, Edit3 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -45,6 +46,7 @@ export default function NewCandidatePage() {
   const [extractedTextFromResume, setExtractedTextFromResume] = useState<string | null>(null);
   const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
   const [generatedEmbedding, setGeneratedEmbedding] = useState<number[] | null>(null);
+  const [aiGeneratedSummary, setAiGeneratedSummary] = useState<string | null>(null); // New state
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [videoIntroFileName, setVideoIntroFileName] = useState<string | null>(null);
@@ -94,6 +96,7 @@ export default function NewCandidatePage() {
       setExtractedSkills([]);
       setExtractedTextFromResume(null);
       setGeneratedEmbedding(null);
+      setAiGeneratedSummary(null); // Reset AI summary
 
       try {
         const resumeFileBase64 = await fileToBase64(file);
@@ -102,27 +105,36 @@ export default function NewCandidatePage() {
           mimeType: file.type
         };
 
-        toast({ title: "Processing Resume...", description: "Using Document AI to extract text. This may take a moment." });
+        toast({ title: "Processing Resume...", description: "Using Document AI to extract text." });
         const docAIResult = await processResumeWithDocAI(docAIInput);
 
         if (!docAIResult.extractedText) {
           throw new Error("Document AI did not return extracted text.");
         }
         setExtractedTextFromResume(docAIResult.extractedText);
-        toast({ title: "Document AI Success", description: "Resume text extracted. Now processing for skills and embedding." });
+        toast({ title: "Resume Text Extracted", description: "Now processing for skills, summary, and embedding." });
 
+        // Generate Skills
         const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
         const skillResult = await extractSkillsFromResume(skillInput);
         setExtractedSkills(skillResult.skills);
         toast({ title: "Skills Extracted", description: "Skills identified from the resume.", action: <CheckCircle className="text-green-500" /> });
         
+        // Generate Summary
+        toast({ title: "Generating AI Summary...", description: "Crafting a professional summary for the profile." });
+        const summaryInput: GenerateResumeSummaryInput = { resumeText: docAIResult.extractedText };
+        const summaryResult = await generateResumeSummary(summaryInput);
+        setAiGeneratedSummary(summaryResult.summary);
+        toast({ title: "AI Summary Generated", description: "Professional summary created.", action: <Edit3 className="text-blue-500" /> });
+
+        // Generate Embedding
         const embeddingInput: GenerateTextEmbeddingInput = { text: docAIResult.extractedText };
         const embeddingResult = await generateTextEmbedding(embeddingInput);
         setGeneratedEmbedding(embeddingResult.embedding);
         toast({ title: "Embedding Generated", description: `Text embedding created using ${embeddingResult.modelUsed}.`, action: <Brain className="text-purple-500" /> });
 
       } catch (error) {
-        console.error("Error processing resume, extracting skills, or generating embedding:", error);
+        console.error("Error processing resume or generating AI data:", error);
         let errorMessage = "An unexpected error occurred during resume processing.";
         if (error instanceof Error) {
             errorMessage = error.message;
@@ -136,6 +148,7 @@ export default function NewCandidatePage() {
         setExtractedTextFromResume(null);
         setGeneratedEmbedding(null);
         setExtractedSkills([]);
+        setAiGeneratedSummary(null);
         form.setValue('resume', undefined as any, { shouldValidate: true });
     }
   };
@@ -180,7 +193,7 @@ export default function NewCandidatePage() {
         return;
     }
 
-    const candidateId = `cand_${Date.now().toString()}`; 
+    const candidateId = `cand_${Date.now().toString()}_${Math.random().toString(36).substring(2,7)}`; 
     const firestoreData = {
         fullName: data.fullName,
         email: data.email,
@@ -188,17 +201,16 @@ export default function NewCandidatePage() {
         extractedResumeText: extractedTextFromResume,
         resumeEmbedding: generatedEmbedding,
         skills: extractedSkills,
+        aiGeneratedSummary: aiGeneratedSummary || data.experienceSummary, // Use AI summary if available, else fallback to manual
         phone: data.phone,
         linkedinProfile: data.linkedinProfile,
         portfolioUrl: data.portfolioUrl,
-        experienceSummary: data.experienceSummary,
+        experienceSummary: data.experienceSummary, // Keep manually entered summary
         // avatarUrl and videoIntroUrl would be URLs after uploading files to storage (not implemented here)
     };
 
     try {
-      console.log("Candidate data for submission:", data);
-      console.log("Extracted Resume Text:", extractedTextFromResume.substring(0,100) + "...");
-      console.log("Generated Embedding vector length:", generatedEmbedding.length);
+      console.log("Candidate data for submission:", firestoreData);
       
       toast({ title: "Saving Candidate Data...", description: "Preparing data for storage." });
       const saveResult = await saveCandidateWithEmbedding(candidateId, firestoreData);
@@ -213,6 +225,7 @@ export default function NewCandidatePage() {
         setExtractedSkills([]);
         setExtractedTextFromResume(null);
         setGeneratedEmbedding(null);
+        setAiGeneratedSummary(null);
         setResumeFileName(null);
         setProfilePicPreview(null);
         setVideoIntroFileName(null);
@@ -232,7 +245,13 @@ export default function NewCandidatePage() {
     let fieldsToValidate: (keyof CandidateFormValues)[] = [];
     if (currentStep === 1) fieldsToValidate = ['fullName', 'email', 'currentTitle'];
     if (currentStep === 2) fieldsToValidate = ['experienceSummary'];
-    if (currentStep === 3) fieldsToValidate = ['resume'];
+    if (currentStep === 3) {
+        fieldsToValidate = ['resume'];
+        if (!extractedTextFromResume || !generatedEmbedding || !aiGeneratedSummary) {
+            toast({ variant: "destructive", title: "AI Processing Required", description: "Please ensure resume has been uploaded and all AI processes (text, skills, summary, embedding) are complete."});
+            return;
+        }
+    }
     if (currentStep === 4) fieldsToValidate = ['profilePicture', 'videoIntroduction'];
 
     const isValid = await form.trigger(fieldsToValidate);
@@ -345,10 +364,11 @@ export default function NewCandidatePage() {
                     name="experienceSummary"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Experience Summary / Bio</FormLabel>
+                        <FormLabel>Experience Summary / Bio (Manual Entry)</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Briefly describe your experience and career goals..." className="min-h-[120px]" {...field} />
+                          <Textarea placeholder="Briefly describe your experience and career goals... The AI will also generate a summary from your resume." className="min-h-[120px]" {...field} />
                         </FormControl>
+                        <FormDescription>This can complement the AI-generated summary or be used if you prefer manual input.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -361,7 +381,7 @@ export default function NewCandidatePage() {
                   <FormField
                     control={form.control}
                     name="resume"
-                    render={() => ( // Field object not directly used for file input display
+                    render={() => ( 
                       <FormItem>
                         <FormLabel>Resume (PDF, DOC, DOCX, TXT)</FormLabel>
                         <FormControl>
@@ -378,17 +398,25 @@ export default function NewCandidatePage() {
                           ref={resumeFileRef}
                           onChange={(e) => handleResumeUpload(e.target.files ? e.target.files[0] : null)}
                         />
-                         <FormDescription>Document AI will extract text, then skills and embeddings will be generated.</FormDescription>
+                         <FormDescription>Document AI will extract text, then skills, summary and embeddings will be generated.</FormDescription>
                         {isProcessingAi && (
                           <div className="flex items-center text-sm text-muted-foreground mt-2">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> AI processing resume, please wait...
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> AI processing resume, please wait... This includes text extraction, skill identification, summary generation, and embedding.
                           </div>
                         )}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
+                  
+                  {aiGeneratedSummary && (
+                    <FormItem>
+                      <FormLabel>AI Generated Professional Summary</FormLabel>
+                      <div className="p-3 border rounded-md bg-muted/50">
+                        <p className="text-sm prose prose-sm max-w-none dark:prose-invert">{aiGeneratedSummary}</p>
+                      </div>
+                    </FormItem>
+                  )}
                   {extractedSkills.length > 0 && (
                     <FormItem>
                       <FormLabel>AI Extracted Skills</FormLabel>
@@ -425,7 +453,7 @@ export default function NewCandidatePage() {
                     <FormField
                         control={form.control}
                         name="profilePicture"
-                        render={() => ( // Field object not directly used
+                        render={() => (
                           <FormItem className="w-full max-w-sm">
                             <FormLabel htmlFor="profilePicture-upload" className="sr-only">Profile Picture</FormLabel>
                             <FormControl>
@@ -450,7 +478,7 @@ export default function NewCandidatePage() {
                   <FormField
                     control={form.control}
                     name="videoIntroduction"
-                    render={() => ( // Field object not directly used
+                    render={() => ( 
                       <FormItem>
                         <FormLabel>10-Second Video Introduction (MP4, MOV, WebM)</FormLabel>
                         <FormControl>

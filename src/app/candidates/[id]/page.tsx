@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb, Search, Gift } from 'lucide-react';
+import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb, Search, Gift, Edit } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -21,6 +21,7 @@ const MOCK_CANDIDATE = {
   linkedinProfile: 'https://linkedin.com/in/alicewonderland',
   portfolioUrl: 'https://alicew.dev',
   experienceSummary: "Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Seeking a challenging remote role where I can contribute to meaningful projects and continue to grow professionally.",
+  aiGeneratedSummary: "Alice Wonderland is a seasoned Senior Software Engineer with over eight years of expertise in crafting advanced web applications. She excels in project leadership, developer mentorship, and agile collaboration, driven by a passion for user-centric design and innovative technology solutions. Alice is currently seeking a remote position that offers impactful work and opportunities for professional development.", // Added AI summary
   skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 'AWS', 'Docker', 'Kubernetes', 'GraphQL', 'System Design', 'Agile Methodologies'],
   experience: [
     {
@@ -56,23 +57,23 @@ const MOCK_CANDIDATE = {
   ],
   videoIntroUrl: 'https://placehold.co/320x180.mp4', 
   resumeUrl: '#',
-  referredBy: 'Bob The Builder (Employee ID: EMP456)', // Added referredBy field
+  referredBy: 'Bob The Builder (Employee ID: EMP456)',
 };
 
 interface EnrichedCandidate extends Omit<typeof MOCK_CANDIDATE, 'skills'> {
-  skills: string[]; // Ensure skills is always string array
+  skills: string[];
+  aiGeneratedSummary?: string | null; // Added this field
   jobRecommendations: JobRecommendationSemanticOutput | null;
-  referredBy?: string | null; // Make referredBy optional
+  referredBy?: string | null;
 }
 
 
 async function getCandidateDetails(id: string): Promise<EnrichedCandidate | null> {
-  // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 50));
   if (id === MOCK_CANDIDATE.id) {
     let recommendations: JobRecommendationSemanticOutput | null = null;
     try {
-      const candidateProfileForAI = `${MOCK_CANDIDATE.currentTitle}. ${MOCK_CANDIDATE.experienceSummary}. Skills: ${MOCK_CANDIDATE.skills.join(', ')}`;
+      const candidateProfileForAI = `${MOCK_CANDIDATE.currentTitle}. ${MOCK_CANDIDATE.aiGeneratedSummary || MOCK_CANDIDATE.experienceSummary}. Skills: ${MOCK_CANDIDATE.skills.join(', ')}`;
       
       recommendations = await jobRecommendationSemantic({
         candidateProfileText: candidateProfileForAI,
@@ -80,12 +81,12 @@ async function getCandidateDetails(id: string): Promise<EnrichedCandidate | null
       });
     } catch (error) {
       console.error("Error fetching job recommendations:", error);
-      // Keep recommendations as null, UI will handle it
     }
 
     return { 
       ...MOCK_CANDIDATE,
-      skills: MOCK_CANDIDATE.skills || [], // Ensure skills is an array
+      skills: MOCK_CANDIDATE.skills || [],
+      aiGeneratedSummary: MOCK_CANDIDATE.aiGeneratedSummary || null,
       jobRecommendations: recommendations,
       referredBy: MOCK_CANDIDATE.referredBy || null,
     };
@@ -109,11 +110,12 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
       </Container>
     );
   }
+  
+  const displaySummary = candidate.aiGeneratedSummary || candidate.experienceSummary;
 
   return (
     <Container className="max-w-5xl mx-auto">
       <Card className="shadow-xl overflow-hidden">
-        {/* Profile Header */}
         <div className="bg-gradient-to-r from-primary/80 to-accent/80 p-8 relative">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background shadow-lg">
@@ -160,7 +162,6 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
 
         <CardContent className="p-6 md:p-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Left Sidebar / Contact Info */}
             <div className="md:col-span-1 space-y-6">
               <Card>
                 <CardHeader><CardTitle className="text-lg">Contact Information</CardTitle></CardHeader>
@@ -188,14 +189,20 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
                   </Button>
                 </CardContent>
               </Card>
-
             </div>
 
-            {/* Main Content Area */}
             <div className="md:col-span-2 space-y-8">
               <Card>
-                <CardHeader><CardTitle className="text-xl">Summary</CardTitle></CardHeader>
-                <CardContent><p className="text-foreground/80 leading-relaxed">{candidate.experienceSummary}</p></CardContent>
+                <CardHeader>
+                    <CardTitle className="text-xl flex items-center">
+                        {candidate.aiGeneratedSummary ? <Edit className="h-5 w-5 mr-2 text-blue-500" /> : null}
+                        Professional Summary
+                    </CardTitle>
+                     {candidate.aiGeneratedSummary && (
+                        <CardDescription className="text-xs italic text-blue-600">This summary was generated by AI based on the resume.</CardDescription>
+                    )}
+                </CardHeader>
+                <CardContent><p className="text-foreground/80 leading-relaxed prose prose-sm max-w-none dark:prose-invert">{displaySummary}</p></CardContent>
               </Card>
 
               {candidate.jobRecommendations && candidate.jobRecommendations.recommendedJobs.length > 0 && (

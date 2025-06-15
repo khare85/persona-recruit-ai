@@ -140,19 +140,23 @@ async function getJobDetails(id: string): Promise<JobDetails | null> {
   if (id === MOCK_JOB_DETAILS.id) {
     let aiMatchResult: CandidateJobMatcherOutput | null = null;
     try {
-        aiMatchResult = await candidateJobMatcher({ 
-            candidateProfile: MOCK_CANDIDATE_PROFILE_FOR_JOB_VIEW, 
+        aiMatchResult = await candidateJobMatcher({
+            candidateProfile: MOCK_CANDIDATE_PROFILE_FOR_JOB_VIEW,
             jobDescription: MOCK_JOB_DETAILS.fullDescriptionForAI,
             companyInformation: MOCK_JOB_DETAILS.companyDescription
         });
     } catch (error) {
-        console.error("AI Matching Error:", error);
+        console.error("AI Matching Error in getJobDetails:", error);
+        if (error instanceof Error && error.stack) {
+            console.error("Stack trace for AI Matching Error in getJobDetails:", error.stack);
+        }
+        // aiMatchResult remains null, which is handled by the UI
     }
-    
+
     const { fullDescriptionForAI, ...restOfJobDetails } = MOCK_JOB_DETAILS;
 
-    return { 
-        ...restOfJobDetails, 
+    return {
+        ...restOfJobDetails,
         aiMatch: aiMatchResult,
         displayDescription: fullDescriptionForAI,
         numberOfApplicants: MOCK_JOB_DETAILS.numberOfApplicants // Pass through the number of applicants
@@ -224,7 +228,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                {/* Number of Applicants display */}
               <div className="pt-2 mt-2 border-t">
                 <span className={`flex items-center text-sm font-medium ${hasApplicants ? 'text-primary' : 'text-muted-foreground'}`}>
-                  <UsersRound className="h-4 w-4 mr-1.5" /> 
+                  <UsersRound className="h-4 w-4 mr-1.5" />
                   {hasApplicants ? `${job.numberOfApplicants} Applicant(s)` : 'No Applicants Yet'}
                 </span>
               </div>
@@ -233,7 +237,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               <div className="prose prose-sm max-w-none text-foreground/90 dark:prose-invert">
                 <h2 className="text-xl font-semibold mb-3 text-foreground">About {job.company}</h2>
                 <p className="mb-6">{job.companyDescription}</p>
-                
+
                 <h2 className="text-xl font-semibold mb-3 text-foreground">Job Description</h2>
                 <p className="mb-6">We are seeking a talented and passionate {job.title} to join our dynamic team. You will be responsible for designing, developing, and maintaining high-quality software solutions.</p>
 
@@ -311,7 +315,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               </CardFooter>
             </Card>
           )}
-          
+
           <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="text-lg">Share this Job</CardTitle>

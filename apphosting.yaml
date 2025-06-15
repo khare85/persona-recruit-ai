@@ -2,6 +2,25 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # CPU allocation per instance (0.5, 1, 2, 4, 8)
+  cpu: 1
+  
+  # Memory allocation in MiB (128-32768)
+  memoryMiB: 512
+  
+  # Maximum concurrent requests per instance (1-1000)
+  concurrency: 100
+  
+  # Minimum instances to keep warm (0-1000)
+  minInstances: 0
+  
+  # Maximum instances to automatically spin up (1-1000)
+  maxInstances: 10
+
+# Environment variables configuration
+env:
+  # Node.js environment
+  NODE_ENV: production
+  
+  # Next.js configuration
+  NEXT_TELEMETRY_DISABLED: "1"

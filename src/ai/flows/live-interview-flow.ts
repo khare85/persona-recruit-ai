@@ -15,7 +15,7 @@ const ConversationTurnSchema = z.object({
   text: z.string(),
 });
 
-export const LiveInterviewInputSchema = z.object({
+const LiveInterviewInputSchema = z.object({
   jobTitle: z.string().describe("The job title the candidate is interviewing for."),
   jobDescription: z.string().describe("The detailed job description."),
   candidateName: z.string().describe("The candidate's name."),
@@ -25,7 +25,7 @@ export const LiveInterviewInputSchema = z.object({
 });
 export type LiveInterviewInput = z.infer<typeof LiveInterviewInputSchema>;
 
-export const LiveInterviewOutputSchema = z.object({
+const LiveInterviewOutputSchema = z.object({
   aiResponse: z.string().describe("The AI interviewer's response or next question."),
   isInterviewOver: z.boolean().describe("True if the AI has decided to conclude the interview."),
   reasonForEnding: z.string().optional().describe("If the interview is over, a brief reason or concluding remark."),

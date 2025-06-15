@@ -2,30 +2,34 @@
 'use server';
 /**
  * @fileOverview Service for interacting with Firestore, specifically for candidate and job data with embeddings.
- * This is a placeholder service. Actual Firestore client SDK calls need to be implemented.
  */
 
 import admin from 'firebase-admin';
-import type { Timestamp } from 'firebase-admin/firestore'; // Import Timestamp type
+import type { Timestamp } from 'firebase-admin/firestore';
 
-// --- Firebase Admin SDK Setup (Illustrative - USER ACTION REQUIRED) ---
-// 1. Ensure you have your service account key JSON file.
-// 2. Set GOOGLE_APPLICATION_CREDENTIALS environment variable to the path of this file
-//    OR provide credentials directly if not using Application Default Credentials (ADC).
-//    For App Hosting, configure this as a secret.
-//
-// Example:
-// if (!admin.apps.length) {
-//   // If using a service account file:
-//   // const serviceAccount = require('/path/to/your/serviceAccountKey.json'); // Update path
-//   // admin.initializeApp({
-//   //   credential: admin.credential.cert(serviceAccount)
-//   // });
-//   //
-//   // Or if using ADC (e.g., on Cloud Run, Cloud Functions, App Hosting with ADC configured):
-//   admin.initializeApp();
-// }
-// const db = admin.firestore();
+// --- Firebase Admin SDK Setup ---
+// Ensure your GOOGLE_APPLICATION_CREDENTIALS environment variable is set to the path of your service account key JSON file.
+// For App Hosting, this is typically handled by setting secrets.
+if (!admin.apps.length) {
+  try {
+    // admin.initializeApp(); // This will use GOOGLE_APPLICATION_CREDENTIALS by default if set.
+    // OR, if you prefer to explicitly load from a path (less common for App Hosting):
+    // const serviceAccount = require('/path/to/your/serviceAccountKey.json'); // Update this path if used
+    // admin.initializeApp({
+    //   credential: admin.credential.cert(serviceAccount)
+    // });
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(), // Recommended for environments where GOOGLE_APPLICATION_CREDENTIALS is set
+    });
+    console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
+  } catch (error) {
+    console.error('[FirestoreService] Error initializing Firebase Admin SDK:', error);
+    // Depending on your error handling strategy, you might want to throw this error
+    // or handle it in a way that prevents the app from starting if Firebase is critical.
+  }
+}
+
+const db = admin.firestore();
 // --- End Firebase Admin SDK Setup ---
 
 const CANDIDATES_COLLECTION = 'candidates_with_embeddings';
@@ -40,18 +44,16 @@ export interface CandidateWithEmbeddingFirestore {
   fullName: string;
   email: string;
   currentTitle: string;
-  extractedResumeText: string; // The clean text from Document AI
-  resumeEmbedding: number[];   // The numerical embedding vector
+  extractedResumeText: string;
+  resumeEmbedding: number[];
   skills: string[];
-  // Add any other relevant fields you want to store and search on:
-  // e.g., experienceSummary, linkedinProfile, portfolioUrl, etc.
   phone?: string;
   linkedinProfile?: string;
   portfolioUrl?: string;
   experienceSummary?: string;
-  avatarUrl?: string; // URL to the stored avatar image
-  videoIntroUrl?: string; // URL to the stored video intro
-  lastUpdatedAt: Timestamp; // Firestore Timestamp for server-side timestamping
+  avatarUrl?: string;
+  videoIntroUrl?: string;
+  lastUpdatedAt: Timestamp;
 }
 
 /**
@@ -61,15 +63,14 @@ export interface JobWithEmbeddingFirestore {
   jobId: string;
   title: string;
   companyName: string;
-  fullJobDescriptionText: string; // The comprehensive text used for embedding
-  jobEmbedding: number[];         // The numerical embedding vector
+  fullJobDescriptionText: string;
+  jobEmbedding: number[];
   location?: string;
-  jobLevel?: string; // Renamed from jobType for consistency
+  jobLevel?: string;
   department?: string;
-  responsibilitiesSummary?: string; // A brief list/summary
-  qualificationsSummary?: string; // A brief list/summary
-  // Add any other relevant filterable/searchable fields
-  lastUpdatedAt: Timestamp; // Firestore Timestamp
+  responsibilitiesSummary?: string;
+  qualificationsSummary?: string;
+  lastUpdatedAt: Timestamp;
 }
 
 
@@ -82,38 +83,30 @@ export async function saveCandidateWithEmbedding(
   candidateId: string,
   data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills'> & { extractedResumeText: string; resumeEmbedding: number[], skills: string[] }
 ): Promise<{ success: boolean; message: string; candidateId?: string }> {
-  console.log(`[FirestoreService] Intending to save/update candidate ${candidateId} with embedding.`);
+  console.log(`[FirestoreService] Saving/updating candidate ${candidateId} with embedding.`);
   
-  // --- ACTUAL FIRESTORE LOGIC (USER ACTION: Uncomment and implement when SDK is initialized) ---
-  /*
-  if (!admin.apps.length) {
-    console.error("[FirestoreService] Firebase Admin SDK not initialized. Call admin.initializeApp().");
-    return { success: false, message: "Firebase Admin SDK not initialized." };
+  if (!admin.apps.length || !db) {
+    console.error("[FirestoreService] Firebase Admin SDK not initialized or Firestore DB unavailable.");
+    return { success: false, message: "Firebase Admin SDK not initialized or Firestore DB unavailable." };
   }
-  const db = admin.firestore();
+
   try {
     const candidateRef = db.collection(CANDIDATES_COLLECTION).doc(candidateId);
     const saveData: CandidateWithEmbeddingFirestore = {
-      ...data, // Spread the incoming data first
-      candidateId, // Ensure candidateId is part of the document
+      ...data,
+      candidateId,
       extractedResumeText: data.extractedResumeText,
       resumeEmbedding: data.resumeEmbedding,
       skills: data.skills,
-      lastUpdatedAt: admin.firestore.Timestamp.now(), // Use server timestamp
+      lastUpdatedAt: admin.firestore.Timestamp.now(),
     };
-    await candidateRef.set(saveData, { merge: true }); // Use merge:true to update if exists
+    await candidateRef.set(saveData, { merge: true });
     console.log(`[FirestoreService] Successfully saved/updated candidate ${candidateId} in Firestore.`);
-    return { success: true, message: 'Candidate profile and embedding processed for Firestore.', candidateId };
+    return { success: true, message: 'Candidate profile and embedding saved to Firestore.', candidateId };
   } catch (error) {
     console.error(`[FirestoreService] Error saving candidate ${candidateId} to Firestore:`, error);
     return { success: false, message: `Error saving candidate to Firestore: ${error instanceof Error ? error.message : String(error)}` };
   }
-  */
-  // --- END ACTUAL FIRESTORE LOGIC ---
-
-  // Mock success for placeholder
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return { success: true, message: 'Placeholder: Candidate data and embedding would be saved to Firestore here.', candidateId };
 }
 
 /**
@@ -127,58 +120,55 @@ export async function searchCandidatesByEmbedding(
   queryEmbedding: number[],
   topN: number = 5
 ): Promise<Partial<CandidateWithEmbeddingFirestore>[]> {
-  console.log(`[FirestoreService] Placeholder: Searching for ${topN} candidates with query embedding (length: ${queryEmbedding.length}).`);
+  console.log(`[FirestoreService] Searching for ${topN} candidates with query embedding (length: ${queryEmbedding.length}).`);
   
-  // --- ACTUAL FIRESTORE VECTOR SEARCH LOGIC (USER ACTION: Implement when index is ready) ---
-  /*
-  if (!admin.apps.length) {
-    console.error("[FirestoreService] Firebase Admin SDK not initialized.");
+  if (!admin.apps.length || !db) {
+    console.error("[FirestoreService] Firebase Admin SDK not initialized or Firestore DB unavailable for search.");
     return [];
   }
-  const db = admin.firestore();
   try {
-    // Ensure 'resumeEmbedding' is the field name you used for your vector index in Firestore.
-    // The exact API for findNearest might vary slightly based on SDK updates or specific configurations.
-    const snapshot = await db.collection(CANDIDATES_COLLECTION)
-      .findNearest('resumeEmbedding', admin.firestore.FieldValue.vector(queryEmbedding), {
-        limit: topN,
-        distanceMeasure: 'COSINE' // Or 'EUCLIDEAN', 'DOT_PRODUCT' based on your index
-      })
-      .get();
-  
-    if (snapshot.empty) {
-      return [];
-    }
-    const results: Partial<CandidateWithEmbeddingFirestore>[] = [];
-    snapshot.forEach(doc => {
-      // Construct the partial data you want to return from the search
-      const data = doc.data() as CandidateWithEmbeddingFirestore;
-      results.push({ 
-        candidateId: doc.id, 
-        fullName: data.fullName,
-        currentTitle: data.currentTitle,
-        skills: data.skills
-        // Add other fields you want to display in search results
-      });
-    });
-    console.log(`[FirestoreService] Found ${results.length} candidates via vector search.`);
-    return results;
-  } catch (error) {
-    console.error('[FirestoreService] Error during vector search:', error);
-    return []; // Return empty on error or handle appropriately
-  }
-  */
-  // --- END ACTUAL FIRESTORE VECTOR SEARCH LOGIC ---
+    // This is placeholder logic. Actual vector search requires an index and specific query syntax.
+    // Example (conceptual, assuming 'resumeEmbedding' is indexed for vector search):
+    // const snapshot = await db.collection(CANDIDATES_COLLECTION)
+    //   .findNearest('resumeEmbedding', admin.firestore.FieldValue.vector(queryEmbedding), {
+    //     limit: topN,
+    //     distanceMeasure: 'COSINE' // Or 'EUCLIDEAN', 'DOT_PRODUCT'
+    //   })
+    //   .get();
+    //
+    // if (snapshot.empty) {
+    //   return [];
+    // }
+    // const results: Partial<CandidateWithEmbeddingFirestore>[] = [];
+    // snapshot.forEach(doc => {
+    //   const data = doc.data() as CandidateWithEmbeddingFirestore;
+    //   results.push({ 
+    //     candidateId: doc.id, 
+    //     fullName: data.fullName,
+    //     currentTitle: data.currentTitle,
+    //     skills: data.skills,
+    //     // extractedResumeText: data.extractedResumeText, // Optionally return for context
+    //     // resumeEmbedding: data.resumeEmbedding, // Usually not returned in search results
+    //   });
+    // });
+    // console.log(`[FirestoreService] Found ${results.length} candidates via vector search (conceptual).`);
+    // return results;
 
-  // Mock results for placeholder
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const mockResults: Partial<CandidateWithEmbeddingFirestore>[] = Array.from({ length: Math.min(topN, 2) }).map((_, i) => ({
-    candidateId: `mock-cand-${i+1}`,
-    fullName: `Mock Candidate ${i+1}`,
-    currentTitle: 'Mock Title',
-    skills: ['Mock Skill'],
-  }));
-  return mockResults;
+    // Since vector search setup is a separate step, returning mock data for now.
+    await new Promise(resolve => setTimeout(resolve, 300));
+    console.warn("[FirestoreService] searchCandidatesByEmbedding is using mock data. Implement actual vector search.");
+    const mockResults: Partial<CandidateWithEmbeddingFirestore>[] = Array.from({ length: Math.min(topN, 2) }).map((_, i) => ({
+        candidateId: `mock-cand-${i+1}`,
+        fullName: `Mock Candidate ${i+1}`,
+        currentTitle: 'Mock Title',
+        skills: ['Mock Skill A', 'Mock Skill B'],
+    }));
+    return mockResults;
+
+  } catch (error) {
+    console.error('[FirestoreService] Error during candidate vector search:', error);
+    return [];
+  }
 }
 
 
@@ -191,37 +181,29 @@ export async function saveJobWithEmbedding(
   jobId: string,
   data: Omit<JobWithEmbeddingFirestore, 'jobId' | 'lastUpdatedAt' | 'jobEmbedding' | 'fullJobDescriptionText'> & { fullJobDescriptionText: string; jobEmbedding: number[] }
 ): Promise<{ success: boolean; message: string; jobId?: string }> {
-  console.log(`[FirestoreService] Intending to save/update job ${jobId} with embedding.`);
+  console.log(`[FirestoreService] Saving/updating job ${jobId} with embedding.`);
   
-  // --- ACTUAL FIRESTORE LOGIC (USER ACTION: Uncomment and implement when SDK is initialized) ---
-  /*
-  if (!admin.apps.length) {
-    console.error("[FirestoreService] Firebase Admin SDK not initialized. Call admin.initializeApp().");
-    return { success: false, message: "Firebase Admin SDK not initialized." };
+  if (!admin.apps.length || !db) {
+    console.error("[FirestoreService] Firebase Admin SDK not initialized or Firestore DB unavailable.");
+    return { success: false, message: "Firebase Admin SDK not initialized or Firestore DB unavailable." };
   }
-  const db = admin.firestore();
+
   try {
     const jobRef = db.collection(JOBS_COLLECTION).doc(jobId);
     const saveData: JobWithEmbeddingFirestore = {
-      ...data, // Spread incoming data first
-      jobId,    // Ensure jobId is part of the document
+      ...data,
+      jobId,
       fullJobDescriptionText: data.fullJobDescriptionText,
       jobEmbedding: data.jobEmbedding,
-      lastUpdatedAt: admin.firestore.Timestamp.now(), // Use server timestamp
+      lastUpdatedAt: admin.firestore.Timestamp.now(),
     };
-    await jobRef.set(saveData, { merge: true }); // Use merge:true to update if exists
+    await jobRef.set(saveData, { merge: true });
     console.log(`[FirestoreService] Successfully saved/updated job ${jobId} in Firestore.`);
-    return { success: true, message: 'Job details and embedding processed for Firestore.', jobId };
+    return { success: true, message: 'Job details and embedding saved to Firestore.', jobId };
   } catch (error) {
     console.error(`[FirestoreService] Error saving job ${jobId} to Firestore:`, error);
     return { success: false, message: `Error saving job to Firestore: ${error instanceof Error ? error.message : String(error)}` };
   }
-  */
-  // --- END ACTUAL FIRESTORE LOGIC ---
-
-  // Mock success for placeholder
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return { success: true, message: 'Placeholder: Job data and embedding would be saved to Firestore here.', jobId };
 }
 
 /**
@@ -234,53 +216,51 @@ export async function searchJobsByEmbedding(
   queryEmbedding: number[],
   topN: number = 5
 ): Promise<Partial<JobWithEmbeddingFirestore>[]> {
-  console.log(`[FirestoreService] Placeholder: Searching for ${topN} jobs with query embedding (length: ${queryEmbedding.length}).`);
+  console.log(`[FirestoreService] Searching for ${topN} jobs with query embedding (length: ${queryEmbedding.length}).`);
   
-  // --- ACTUAL FIRESTORE VECTOR SEARCH LOGIC (USER ACTION: Implement when index is ready) ---
-  /*
-  if (!admin.apps.length) {
-    console.error("[FirestoreService] Firebase Admin SDK not initialized.");
+  if (!admin.apps.length || !db) {
+    console.error("[FirestoreService] Firebase Admin SDK not initialized or Firestore DB unavailable for search.");
     return [];
   }
-  const db = admin.firestore();
   try {
-    // Ensure 'jobEmbedding' is your indexed vector field
-    const snapshot = await db.collection(JOBS_COLLECTION)
-      .findNearest('jobEmbedding', admin.firestore.FieldValue.vector(queryEmbedding), {
-        limit: topN,
-        distanceMeasure: 'COSINE' 
-      })
-      .get();
-  
-    if (snapshot.empty) {
-      return [];
-    }
-    const results: Partial<JobWithEmbeddingFirestore>[] = [];
-    snapshot.forEach(doc => {
-      const data = doc.data() as JobWithEmbeddingFirestore;
-      results.push({ 
-          jobId: doc.id, 
-          title: data.title,
-          companyName: data.companyName,
-          location: data.location,
-          // Add other fields for display
-        });
-    });
-    console.log(`[FirestoreService] Found ${results.length} jobs via vector search.`);
-    return results;
+    // This is placeholder logic. Actual vector search requires an index and specific query syntax.
+    // Example (conceptual, assuming 'jobEmbedding' is indexed for vector search):
+    // const snapshot = await db.collection(JOBS_COLLECTION)
+    //   .findNearest('jobEmbedding', admin.firestore.FieldValue.vector(queryEmbedding), {
+    //     limit: topN,
+    //     distanceMeasure: 'COSINE'
+    //   })
+    //   .get();
+    //
+    // if (snapshot.empty) {
+    //   return [];
+    // }
+    // const results: Partial<JobWithEmbeddingFirestore>[] = [];
+    // snapshot.forEach(doc => {
+    //   const data = doc.data() as JobWithEmbeddingFirestore;
+    //   results.push({ 
+    //       jobId: doc.id, 
+    //       title: data.title,
+    //       companyName: data.companyName,
+    //       location: data.location,
+    //     });
+    // });
+    // console.log(`[FirestoreService] Found ${results.length} jobs via vector search (conceptual).`);
+    // return results;
+    
+    // Since vector search setup is a separate step, returning mock data for now.
+    await new Promise(resolve => setTimeout(resolve, 300));
+    console.warn("[FirestoreService] searchJobsByEmbedding is using mock data. Implement actual vector search.");
+    const mockResults: Partial<JobWithEmbeddingFirestore>[] = Array.from({ length: Math.min(topN, 2) }).map((_, i) => ({
+      jobId: `mock-job-${i+1}`,
+      title: `Mock Job Title ${i+1}`,
+      companyName: 'Mock Company Inc.',
+      location: 'Remote',
+    }));
+    return mockResults;
+
   } catch (error) {
     console.error('[FirestoreService] Error during job vector search:', error);
     return []; 
   }
-  */
-  // --- END ACTUAL FIRESTORE VECTOR SEARCH LOGIC ---
-
-  // Mock results for placeholder
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const mockResults: Partial<JobWithEmbeddingFirestore>[] = Array.from({ length: Math.min(topN, 2) }).map((_, i) => ({
-    jobId: `mock-job-${i+1}`,
-    title: `Mock Job Title ${i+1}`,
-    companyName: 'Mock Company',
-  }));
-  return mockResults;
 }

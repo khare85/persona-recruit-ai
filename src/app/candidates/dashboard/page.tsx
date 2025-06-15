@@ -8,23 +8,22 @@ import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { getMockDashboardMetrics, getMockJobs } from '@/services/mockDataService';
 
 const mockCandidateDashboardData = {
-  candidateId: "CAND-ALICE-001",
-  fullName: "Alice Wonderland",
-  applicationsApplied: 5,
-  upcomingInterviews: 2,
-  offersReceived: 1,
-  aiRecommendedJobs: 3,
-  referredBy: "Bob The Builder (via Referral Program)",
-  availability: "Available in 7 days",
+  candidateId: "CAND-SARAH-001",
+  fullName: "Sarah Johnson",
+  ...getMockDashboardMetrics().candidate,
+  referredBy: "David Kim (Software Engineer at TechCorp)",
+  availability: "Available in 2 weeks",
 };
 
-const mockRecommendedJobs = [
-    { id: "jobRec1", title: "Lead Frontend Developer", company: "Innovate Solutions" , jobIdForLink: "1"},
-    { id: "jobRec2", title: "UI/UX Specialist (React)", company: "Creative Minds Inc.", jobIdForLink: "3" },
-    { id: "jobRec3", title: "Full-Stack Engineer (Remote)", company: "Global Tech Co.", jobIdForLink: "2" },
-];
+const mockRecommendedJobs = getMockJobs().slice(0, 3).map(job => ({
+  id: job.id,
+  title: job.title,
+  company: job.companyName,
+  jobIdForLink: job.id
+}));
 
 export default function CandidateDashboardPage() {
   return (

@@ -6,18 +6,16 @@ import { Container } from '@/components/shared/Container';
 import { Building, Users, Briefcase, TrendingUp, DollarSign, Calendar, Search, Settings, PlusCircle, ExternalLink, Activity, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { getMockDashboardMetrics } from '@/services/mockDataService';
 
 const mockCompanyData = {
   companyName: "TechCorp Inc.",
-  totalEmployees: 247,
-  activeJobs: 12,
-  candidatesInPipeline: 89,
-  monthlyBudget: 45000,
-  avgTimeToHire: 18,
+  ...getMockDashboardMetrics().company,
   departments: [
-    { name: "Engineering", openPositions: 8, budget: 25000 },
-    { name: "Marketing", openPositions: 2, budget: 8000 },
-    { name: "Sales", openPositions: 2, budget: 12000 }
+    { name: "Engineering", openPositions: 12, budget: 45000 },
+    { name: "Marketing", openPositions: 3, budget: 15000 },
+    { name: "Sales", openPositions: 3, budget: 18000 },
+    { name: "Product", openPositions: 2, budget: 12000 }
   ]
 };
 

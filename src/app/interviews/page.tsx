@@ -5,15 +5,17 @@ import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { generateVideoInterviewAnalysisReport, VideoInterviewAnalysisReportInput, VideoInterviewAnalysisReportOutput } from '@/ai/flows/video-interview-analysis';
-import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye } from 'lucide-react';
+import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye, BarChart3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const interviewAnalysisSchema = z.object({
@@ -268,6 +270,90 @@ export default function InterviewAnalysisPage() {
             </Tabs>
           </div>
         )}
+      </Card>
+
+      {/* Recent Interview Analyses */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <BarChart3 className="mr-2 h-6 w-6 text-primary" />
+            Recent Interview Analyses
+          </CardTitle>
+          <CardDescription>
+            View detailed AI-powered interview analysis reports
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border border-border hover:border-primary/50 transition-colors cursor-pointer">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">Sarah Johnson</CardTitle>
+                    <CardDescription>Senior Frontend Developer</CardDescription>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">87/100</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Recommendation:</span>
+                    <span className="font-medium text-green-600">Strongly Recommended</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Date:</span>
+                    <span>June 14, 2024</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Duration:</span>
+                    <span>45 minutes</span>
+                  </div>
+                </div>
+                <Link href="/interviews/analysis/1">
+                  <Button className="w-full mt-4" variant="outline">
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Full Analysis
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border hover:border-primary/50 transition-colors cursor-pointer">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">Marcus Chen</CardTitle>
+                    <CardDescription>DevOps Engineer</CardDescription>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">91/100</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Recommendation:</span>
+                    <span className="font-medium text-green-600">Strongly Recommended</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Date:</span>
+                    <span>June 13, 2024</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Duration:</span>
+                    <span>50 minutes</span>
+                  </div>
+                </div>
+                <Link href="/interviews/analysis/2">
+                  <Button className="w-full mt-4" variant="outline">
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Full Analysis
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
       </Card>
     </Container>
   );

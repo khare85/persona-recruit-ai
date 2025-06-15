@@ -7,50 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Users, PlusCircle, Search, Briefcase, Star } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
+import { getMockCandidates } from '@/services/mockDataService';
 
-// Mock data for candidate listings
-const candidateListings = [
-  {
-    id: '1',
-    name: 'Alice Wonderland',
-    avatarUrl: 'https://placehold.co/100x100.png?a=1', // Added query param for unique image
-    title: 'Senior Software Engineer',
-    topSkills: ['React', 'Node.js', 'AWS', 'Python'],
-    experience: '8 years',
-    availability: 'Immediate',
-    matchScore: 92, // Example match score
-  },
-  {
-    id: '2',
-    name: 'Bob The Builder',
-    avatarUrl: 'https://placehold.co/100x100.png?a=2',
-    title: 'Product Manager',
-    topSkills: ['Agile', 'Roadmapping', 'User Research', 'JIRA'],
-    experience: '5 years',
-    availability: '2 weeks notice',
-    matchScore: 88,
-  },
-  {
-    id: '3',
-    name: 'Charlie Chaplin',
-    avatarUrl: 'https://placehold.co/100x100.png?a=3',
-    title: 'UX/UI Designer',
-    topSkills: ['Figma', 'User Testing', 'Prototyping', 'Mobile Design'],
-    experience: '6 years',
-    availability: 'Immediate',
-    matchScore: 95,
-  },
-  {
-    id: '4',
-    name: 'Diana Prince',
-    avatarUrl: 'https://placehold.co/100x100.png?a=4',
-    title: 'DevOps Engineer',
-    topSkills: ['Kubernetes', 'Docker', 'CI/CD', 'Terraform'],
-    experience: '7 years',
-    availability: '1 month notice',
-    matchScore: 85,
-  },
-];
+// Get mock candidates data
+const candidateListings = getMockCandidates().map(candidate => ({
+  id: candidate.id,
+  name: candidate.fullName,
+  avatarUrl: candidate.profilePictureUrl,
+  title: candidate.currentTitle,
+  topSkills: candidate.skills.slice(0, 4),
+  experience: `${candidate.experience} years`,
+  availability: candidate.availability,
+  matchScore: candidate.aiMatchScore || 85,
+  location: candidate.location
+}));
 
 export default function CandidatesPage() {
   return (

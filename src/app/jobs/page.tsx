@@ -7,54 +7,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Briefcase, MapPin, Search, PlusCircle } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import { Badge } from '@/components/ui/badge';
+import { getMockJobs } from '@/services/mockDataService';
 
-// Mock data for job listings
-const jobListings = [
-  {
-    id: '1',
-    title: 'Senior Frontend Engineer',
-    company: 'Tech Solutions Inc.',
-    location: 'Remote',
-    type: 'Full-time',
-    postedDate: '2024-07-28',
-    description: 'Join our innovative team to build next-generation web applications using React and Next.js.',
-    skills: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],
-    salary: '$120,000 - $150,000',
-  },
-  {
-    id: '2',
-    title: 'AI/ML Product Manager',
-    company: 'FutureAI Corp.',
-    location: 'New York, NY',
-    type: 'Full-time',
-    postedDate: '2024-07-25',
-    description: 'Lead the product strategy for our cutting-edge AI platform, driving innovation and market growth.',
-    skills: ['Product Management', 'AI/ML', 'Agile', 'Roadmap Planning'],
-    salary: '$140,000 - $170,000',
-  },
-  {
-    id: '3',
-    title: 'UX/UI Designer',
-    company: 'Creative Designs Co.',
-    location: 'San Francisco, CA',
-    type: 'Contract',
-    postedDate: '2024-07-22',
-    description: 'Design intuitive and visually appealing user interfaces for web and mobile applications.',
-    skills: ['UX Design', 'UI Design', 'Figma', 'Prototyping'],
-    salary: '$70 - $90 / hour',
-  },
-   {
-    id: '4',
-    title: 'Data Scientist',
-    company: 'Innovatech',
-    location: 'Austin, TX',
-    type: 'Full-time',
-    postedDate: '2024-07-20',
-    description: 'Analyze large datasets to extract meaningful insights and build predictive models.',
-    skills: ['Python', 'Machine Learning', 'Statistics', 'SQL'],
-    salary: '$110,000 - $140,000',
-  },
-];
+// Get mock jobs data
+const jobListings = getMockJobs().map(job => ({
+  id: job.id,
+  title: job.title,
+  company: job.companyName,
+  location: job.location,
+  type: job.jobType,
+  postedDate: job.postedDate,
+  description: job.description,
+  skills: job.requirements.slice(0, 4),
+  salary: job.salaryRange,
+  applicants: job.applicationCount
+}));
 
 export default function JobsPage() {
   return (

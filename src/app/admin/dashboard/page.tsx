@@ -7,19 +7,17 @@ import { ShieldCheck, Users, Building, Server, Activity, DollarSign, BarChart3, 
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
+import { getMockDashboardMetrics } from '@/services/mockDataService';
 
 const mockAdminData = {
-  totalUsers: 1247,
-  totalCompanies: 89,
-  activeJobs: 156,
-  systemHealth: 98.7,
-  monthlyRevenue: 47800,
-  supportTickets: 23,
+  ...getMockDashboardMetrics().admin,
   recentActivity: [
-    { type: "user", message: "New user registration: john@example.com", time: "2 minutes ago" },
-    { type: "company", message: "TechCorp upgraded to Pro plan", time: "15 minutes ago" },
-    { type: "system", message: "Database backup completed", time: "1 hour ago" },
-    { type: "support", message: "Support ticket #1247 resolved", time: "2 hours ago" }
+    { type: "user", message: "New user registration: sarah.johnson@email.com", time: "2 minutes ago" },
+    { type: "company", message: "CloudScale Solutions upgraded to Enterprise plan", time: "15 minutes ago" },
+    { type: "system", message: "AI model training completed successfully", time: "1 hour ago" },
+    { type: "support", message: "Support ticket #2847 resolved", time: "2 hours ago" },
+    { type: "user", message: "Marcus Chen completed video interview", time: "3 hours ago" },
+    { type: "company", message: "DesignFirst Studio posted 3 new jobs", time: "4 hours ago" }
   ]
 };
 

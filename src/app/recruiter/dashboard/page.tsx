@@ -6,18 +6,17 @@ import { Container } from '@/components/shared/Container';
 import { Briefcase, Users, Calendar, Award, TrendingUp, Search, Activity, PlusCircle, Eye, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { getMockDashboardMetrics, getMockJobs } from '@/services/mockDataService';
 
 const mockRecruiterData = {
-  name: "Sarah Johnson",
-  activeJobs: 8,
-  candidatesViewed: 47,
-  interviewsScheduled: 12,
-  hires: 3,
-  recentJobs: [
-    { id: "1", title: "Senior React Developer", applicants: 23, views: 156 },
-    { id: "2", title: "DevOps Engineer", applicants: 18, views: 98 },
-    { id: "3", title: "Product Manager", applicants: 31, views: 203 }
-  ]
+  name: "Jennifer Walsh",
+  ...getMockDashboardMetrics().recruiter,
+  recentJobs: getMockJobs().slice(0, 3).map(job => ({
+    id: job.id,
+    title: job.title,
+    applicants: job.applicationCount,
+    views: Math.floor(job.applicationCount * 4.2) // Realistic view-to-application ratio
+  }))
 };
 
 export default function RecruiterDashboardPage() {

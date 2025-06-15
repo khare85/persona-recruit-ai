@@ -44,19 +44,19 @@ export default function ReferralsPage() {
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">2</div>
               <div>
                 <h4 className="font-semibold">They Sign Up & Engage</h4>
-                <p className="text-sm text-muted-foreground">Your referred candidates complete profiles or companies post jobs on Persona Recruit AI.</p>
+                <p className="text-sm text-muted-foreground">Your referred candidates complete profiles or companies post jobs and actively use Persona Recruit AI.</p>
               </div>
             </div>
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">3</div>
               <div>
                 <h4 className="font-semibold">Success & Rewards!</h4>
-                <p className="text-sm text-muted-foreground">Earn cash or platform credits when your referred candidate is hired or a referred company makes a successful hire through Persona Recruit AI.</p>
+                <p className="text-sm text-muted-foreground">Earn cash or platform credits when your referred candidate is hired for a job through Persona Recruit AI, or a referred company makes a successful hire using the platform.</p>
               </div>
             </div>
           </CardContent>
            <CardFooter>
-            <p className="text-xs text-muted-foreground">Terms and conditions apply. Rewards are typically paid out upon successful placement or first hire through the platform.</p>
+            <p className="text-xs text-muted-foreground">Terms and conditions apply. Rewards are typically paid out upon verified successful placement or first hire through the platform by a referred entity.</p>
           </CardFooter>
         </Card>
 
@@ -130,7 +130,7 @@ export default function ReferralsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-primary mb-1">$50 Reward</p>
-                <p className="text-sm text-muted-foreground">When they successfully complete their profile and are hired for a job through the platform.</p>
+                <p className="text-sm text-muted-foreground">When they are successfully hired for a job through the Persona Recruit AI platform.</p>
               </CardContent>
             </Card>
             <Card className="text-center">

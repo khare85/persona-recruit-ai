@@ -264,7 +264,6 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
             <CardContent className="space-y-3">
               <Button size="lg" className="w-full"> <ThumbsUp className="mr-2"/> Apply Now</Button>
               {/* Conditional "View Applicants" button for recruiters/company users */}
-              {/* For demo, we'll show it if there are applicants. In real app, this would be role-based. */}
               {hasApplicants ? (
                 <Link href={`/jobs/${job.id}/applicants`} passHref className="block">
                   <Button variant="secondary" className="w-full">
@@ -312,9 +311,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               </CardFooter>
             </Card>
           )}
-           {/* Removed the "else" for AI Match as it might not always be present for all jobs */}
-
-
+          
           <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="text-lg">Share this Job</CardTitle>

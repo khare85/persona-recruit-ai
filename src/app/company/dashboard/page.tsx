@@ -107,7 +107,7 @@ export default function CompanyDashboardPage() {
                     Connect with Top Independent Recruiters
                 </CardTitle>
                 <CardDescription>
-                    AI Talent Stream can suggest high-performing independent recruiters who specialize in roles you're hiring for. Invite them to help fill your vacancies and expand your reach.
+                    Persona Recruit AI can suggest high-performing independent recruiters who specialize in roles you're hiring for. Invite them to help fill your vacancies and expand your reach.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -143,3 +143,4 @@ export default function CompanyDashboardPage() {
     </Container>
   );
 }
+

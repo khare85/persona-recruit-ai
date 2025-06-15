@@ -16,7 +16,7 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, UserCircle, Menu, Zap, FileText, Settings, UserCog, CalendarClock, FileUp, Award, BarChart3, MailQuestion, DollarSign, PlusCircle } from 'lucide-react';
+import { Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, UserCircle, Menu, Zap, FileText, Settings, UserCog, CalendarClock, FolderOpen, PlusCircle, SearchCode, DollarSign, ExternalLink } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -30,33 +30,31 @@ const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
   { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Assuming '1' is the demo candidate ID
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
-  { href: '/candidates/my-documents', label: 'My Documents', icon: FileText },
+  { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
   { href: '/candidates/settings', label: 'Settings', icon: Settings },
 ];
 
 const recruiterNavItems = [
   { href: '/recruiter/dashboard', label: 'Recruiter Hub', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Manage Jobs', icon: Briefcase }, // Links to all jobs, conceptually they'd filter/manage theirs
+  { href: '/jobs', label: 'Manage Jobs', icon: Briefcase }, 
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/candidates', label: 'Browse Candidates', icon: Users }, // For sourcing
-  { href: '/interviews', label: 'Interview AI Reports', icon: Video }, // Analyze submitted interviews
+  { href: '/candidates', label: 'Browse Candidates', icon: Users }, 
+  { href: '/interviews', label: 'Interview AI Reports', icon: Video }, 
   { href: '/recruiter/dashboard', label: 'Earnings & Payouts', icon: DollarSign }, // Placeholder section on dashboard
-  // { href: '/recruiter/settings', label: 'Settings', icon: Settings }, // Future setting page
 ];
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
   { href: '/jobs', label: 'Manage Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: Zap },
-  { href: '/company/portal', label: 'Company Job Board', icon: Building },
+  { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
+  { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings },
 ];
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  // Add more admin specific links here if needed
 ];
 
 
@@ -64,7 +62,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
 
-  let currentNavItems = defaultNavItems; // Default
+  let currentNavItems = defaultNavItems; 
   let currentPersona = "Persona Recruit AI";
 
   if (pathname.startsWith('/candidates/dashboard') || pathname.startsWith('/candidates/my-') || pathname.startsWith('/candidates/settings') || pathname === '/candidates/1') {
@@ -80,9 +78,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     currentNavItems = adminNavItems;
     currentPersona = "Admin Panel";
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') || pathname === '/candidates' || pathname.startsWith('/candidates/') && !pathname.startsWith('/candidates/dashboard') && !pathname.startsWith('/candidates/my-') && !pathname.startsWith('/candidates/settings') || pathname === '/referrals' || pathname === '/interviews' || pathname.startsWith('/live-interview')) {
-    // For generic app pages not under a specific persona dashboard, use default and allow broader persona name
-     currentPersona = "Persona Recruit AI"; // Or keep it generic
-     // defaultNavItems already assigned
+     currentPersona = "Persona Recruit AI"; 
   }
 
 
@@ -91,7 +87,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen bg-background">
         <Sidebar collapsible={isMobile ? "offcanvas" : "icon"} side="left" className="border-r">
           <SidebarHeader className="p-2">
-            <Link href="/" className={cn( // Link to home if not in a specific persona, else to persona dashboard
+            <Link href="/" className={cn( 
               "flex items-center gap-2.5 p-2 rounded-md transition-colors",
               "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}>

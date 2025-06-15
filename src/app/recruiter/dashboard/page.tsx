@@ -78,7 +78,7 @@ export default function RecruiterDashboardPage() {
             </CardTitle>
             <CardDescription>
               Track commissions from successful placements and referral bonuses.
-              <span className="block text-xs mt-1 italic"> (Primarily for independent recruiters or specific programs)</span>
+              <span className="block text-xs mt-1 italic"> (Primarily for independent recruiters or specific programs. Feature may be enabled/disabled by platform admin.)</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

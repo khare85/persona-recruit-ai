@@ -301,8 +301,8 @@ export default function JobApplicantsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                    <Badge variant={applicant.status === 'New' ? 'default' : applicant.status === 'Interview Scheduled' ? 'outline' : 'secondary'} className="whitespace-nowrap self-start sm:self-center">
+                <div className="flex flex-col items-start sm:items-end gap-1 w-full sm:w-auto">
+                    <Badge variant={applicant.status === 'New' ? 'default' : applicant.status === 'Interview Scheduled' ? 'outline' : 'secondary'} className="whitespace-nowrap self-start sm:self-end">
                     {applicant.status}
                     </Badge>
                     <p className="text-xs text-muted-foreground">Source: {applicant.source}</p>

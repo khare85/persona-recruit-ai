@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb, Search } from 'lucide-react';
+import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb, Search, Gift } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -55,12 +55,14 @@ const MOCK_CANDIDATE = {
     { name: 'Certified Kubernetes Administrator (CKA)', issuer: 'Cloud Native Computing Foundation', date: '2022' },
   ],
   videoIntroUrl: 'https://placehold.co/320x180.mp4', 
-  resumeUrl: '#', 
+  resumeUrl: '#',
+  referredBy: 'Bob The Builder (Employee ID: EMP456)', // Added referredBy field
 };
 
 interface EnrichedCandidate extends Omit<typeof MOCK_CANDIDATE, 'skills'> {
   skills: string[]; // Ensure skills is always string array
   jobRecommendations: JobRecommendationOutput | null;
+  referredBy?: string | null; // Make referredBy optional
 }
 
 
@@ -86,7 +88,8 @@ async function getCandidateDetails(id: string): Promise<EnrichedCandidate | null
     return { 
       ...MOCK_CANDIDATE,
       skills: MOCK_CANDIDATE.skills || [], // Ensure skills is an array
-      jobRecommendations: recommendations 
+      jobRecommendations: recommendations,
+      referredBy: MOCK_CANDIDATE.referredBy || null,
     };
   }
   return null;
@@ -127,6 +130,11 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
               <div className="flex items-center justify-center md:justify-start text-sm opacity-80 mt-1">
                 <MapPin className="h-4 w-4 mr-1.5" /> {candidate.location}
               </div>
+               {candidate.referredBy && (
+                <div className="flex items-center justify-center md:justify-start text-xs opacity-80 mt-2 bg-black/20 p-1.5 rounded-md max-w-xs mx-auto md:mx-0">
+                    <Gift className="h-3.5 w-3.5 mr-1.5 text-amber-300" /> Referred by: {candidate.referredBy}
+                </div>
+               )}
               <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
                 {candidate.linkedinProfile && (
                   <Button variant="ghost" size="sm" asChild className="text-primary-foreground hover:bg-white/20">

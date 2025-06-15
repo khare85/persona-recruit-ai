@@ -13,7 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter, // Added SidebarFooter
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +35,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog },
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Points to mock candidate Alice
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -52,7 +52,7 @@ const recruiterNavItems = [
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
+  { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, // Conceptually filtered
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
@@ -62,7 +62,7 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, // Conceptual anchor links
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound },
   { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
   { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
@@ -77,9 +77,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap;
+  let CurrentPersonaIcon: React.ElementType = Zap; // Uppercase C, this is correct
   let currentDashboardHome = "/jobs";
 
+  // Determine Persona and Navigation based on path
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
@@ -93,7 +94,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; // This was Briefcase, changed for consistency
+    CurrentPersonaIcon = LayoutDashboard;
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -109,14 +110,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     currentNavItems = [];
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = "/"; // Or appropriate fallback
+    currentDashboardHome = "/";
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') ||
              pathname === '/candidates' || pathname.startsWith('/candidates/new') ||
              pathname === '/referrals' || pathname === '/interviews') {
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
      CurrentPersonaIcon = Zap;
-     currentDashboardHome = "/jobs"; // Default landing for general app sections
+     currentDashboardHome = "/jobs";
   }
 
 
@@ -129,7 +130,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link href={currentDashboardHome} className={cn(
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
               )}>
-                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
+                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" /> {/* Ensure this is PascalCase */}
                 <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
                   {currentPersona}
                 </span>
@@ -179,7 +180,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarTrigger>
             )}
             <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
-              <CurrentPersonaIcon className="h-6 w-6 text-primary" /> {/* Corrected: Uppercase C */}
+              <CurrentPersonaIcon className="h-6 w-6 text-primary" /> {/* Ensure this is PascalCase */}
               <span className="font-semibold text-md text-foreground truncate">
                 {currentPersona}
               </span>

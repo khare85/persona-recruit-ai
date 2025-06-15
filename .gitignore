@@ -1,45 +1,45 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Local environment variables
+# Exclude all .env files and their variants by default,
+# except for .env.example if you choose to commit it.
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# testing
-/coverage
+# Next.js
+.next/
+out/
+next-env.d.ts
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Node
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+package-lock.json
+yarn.lock
 
-# vercel
-.vercel
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-.genkit/*
-.env*
+# Build output
+dist/
+build/
 
-# firebase
-firebase-debug.log
-firestore-debug.log
+# Test Output
+coverage/

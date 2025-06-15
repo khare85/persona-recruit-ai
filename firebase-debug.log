@@ -1,0 +1,47 @@
+[debug] [2025-06-15T19:53:30.119Z] ----------------------------------------------------------------------
+[debug] [2025-06-15T19:53:30.122Z] Command:       /nix/store/rbdrkcs5kkwpalxcd7c6bnm33lk2955n-nodejs-20.19.0/bin/node /home/user/.global_modules/bin/firebase init
+[debug] [2025-06-15T19:53:30.123Z] CLI Version:   14.7.0
+[debug] [2025-06-15T19:53:30.123Z] Platform:      linux
+[debug] [2025-06-15T19:53:30.123Z] Node Version:  v20.19.0
+[debug] [2025-06-15T19:53:30.124Z] Time:          Sun Jun 15 2025 19:53:30 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-06-15T19:53:30.124Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-06-15T19:53:30.591Z] Field "/apphosting" in "firebase.json" is possibly invalid: must be object
+[debug] [2025-06-15T19:53:30.591Z] Object "/apphosting/0" in "firebase.json" is missing required property: {"missingProperty":"backendId"}
+[debug] [2025-06-15T19:53:30.592Z] Field "/apphosting" in "firebase.json" is possibly invalid: must match a schema in anyOf
+[debug] [2025-06-15T19:53:30.595Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-06-15T19:53:30.596Z] > authorizing via signed-in user (brighttiercloud@gmail.com)
+[debug] [2025-06-15T19:53:30.597Z] Field "/apphosting" in "firebase.json" is possibly invalid: must be object
+[debug] [2025-06-15T19:53:30.597Z] Object "/apphosting/0" in "firebase.json" is missing required property: {"missingProperty":"backendId"}
+[debug] [2025-06-15T19:53:30.597Z] Field "/apphosting" in "firebase.json" is possibly invalid: must match a schema in anyOf
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/user/studio
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-06-15T19:53:47.034Z] Using project from CLI flag: persona-recruit-ai
+[debug] [2025-06-15T19:53:47.036Z] Checked if tokens are valid: true, expires at: 1750020494367
+[debug] [2025-06-15T19:53:47.036Z] Checked if tokens are valid: true, expires at: 1750020494367
+[debug] [2025-06-15T19:53:47.041Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/persona-recruit-ai [none]
+[debug] [2025-06-15T19:53:47.377Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/persona-recruit-ai 200
+[debug] [2025-06-15T19:53:47.378Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/persona-recruit-ai {"projectId":"persona-recruit-ai","projectNumber":"272257542005","displayName":"persona-recruit-ai","name":"projects/persona-recruit-ai","resources":{"hostingSite":"persona-recruit-ai"},"state":"ACTIVE","etag":"1_eaab77c6-2bbf-4770-b747-954bba6274d3"}
+[info] i  Using project persona-recruit-ai (persona-recruit-ai) 
+[info] 
+=== Genkit Setup

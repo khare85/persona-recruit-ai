@@ -1,43 +1,23 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
-
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
-  # CPU allocation per instance (0.5, 1, 2, 4, 8)
-  cpu: 1
-  
-  # Memory allocation in MiB (128-32768)
-  memoryMiB: 512
-  
-  # Maximum concurrent requests per instance (1-1000)
-  concurrency: 100
-  
-  # Minimum instances to keep warm (0-1000)
   minInstances: 0
-  
-  # Maximum instances to automatically spin up (1-1000)
-  maxInstances: 10
+  # maxInstances: 100
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
 
-# Environment variables configuration
-env:
-  # Node.js environment
-  NODE_ENV: production
-  
-  # Next.js configuration
-  NEXT_TELEMETRY_DISABLED: "1"
-  
-  # Document AI configuration
-  GCLOUD_PROJECT_ID: "persona-recruit-ai"
-  DOCAI_LOCATION: "us"
-  DOCAI_PROCESSOR_ID: "ba9227b7beec6d38"
-  
-  # Firebase Storage configuration
-  FIREBASE_STORAGE_BUCKET: "persona-recruit-ai.firebasestorage.app"
-  
-  # Firebase Web App configuration (client-side)
-  NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyBSkLKzUQinb6BOgIYanrKvQFkqpiNihok"
-  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "persona-recruit-ai.firebaseapp.com"
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID: "persona-recruit-ai"
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "persona-recruit-ai.firebasestorage.app"
-  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "272257542005"
-  NEXT_PUBLIC_FIREBASE_APP_ID: "1:272257542005:web:55f534699ea57baaa7953c"
-  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-N5QWSWPMTL"
+# Environment variables and secrets.
+# env:
+  # Configure environment variables.
+  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  # - variable: MESSAGE
+  #   value: Hello world!
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
+
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  # - variable: MY_SECRET
+  #   secret: mySecretRef

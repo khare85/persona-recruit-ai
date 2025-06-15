@@ -120,7 +120,9 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
             </div>
           </div>
           <div className="absolute top-4 right-4">
+            <Link href={`/candidates/${candidate.id}/edit`} passHref>
              <Button variant="secondary" size="sm"><Edit3 className="h-4 w-4 mr-2" /> Edit Profile</Button>
+            </Link>
           </div>
         </div>
 

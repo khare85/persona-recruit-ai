@@ -63,9 +63,15 @@ const generateJobDescriptionFlow = ai.defineFlow(
     inputSchema: GenerateJobDescriptionInputSchema,
     outputSchema: GenerateJobDescriptionOutputSchema,
   },
-  async input => {
+  async (input): Promise<GenerateJobDescriptionOutput> => {
     const {output} = await prompt(input);
-    return output!;
+
+    if (!output) {
+        console.error(`[generateJobDescriptionFlow] - Prompt did not return an output for input:`, input);
+        throw new Error('AI prompt failed to return expected job description output.');
+    }
+    return output;
   }
 );
 
+    

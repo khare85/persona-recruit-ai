@@ -58,9 +58,15 @@ const jobRecommendationEngineFlow = ai.defineFlow(
     inputSchema: JobRecommendationInputSchema,
     outputSchema: JobRecommendationOutputSchema,
   },
-  async input => {
+  async (input): Promise<JobRecommendationOutput> => {
     const {output} = await prompt(input);
-    return output!;
+    
+    if (!output) {
+        console.error(`[jobRecommendationEngineFlow] - Prompt did not return an output for input:`, input);
+        throw new Error('AI prompt failed to return expected job recommendation output.');
+    }
+    return output;
   }
 );
 
+    

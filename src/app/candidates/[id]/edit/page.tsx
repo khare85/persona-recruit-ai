@@ -3,7 +3,7 @@
 
 import { useState, useRef, type ChangeEvent, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -14,15 +14,16 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
-import { UploadCloud, UserCog, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, Save } from 'lucide-react';
+import { UploadCloud, UserCog, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const MAX_STEPS = 4;
 
 // Mock candidate data - in a real app, this would come from a database or API
-const MOCK_CANDIDATE = {
+const MOCK_CANDIDATE_DB_DATA = {
   id: '1',
   fullName: 'Alice Wonderland',
   email: 'alice.w@example.com',
@@ -46,10 +47,9 @@ const candidateFormSchema = z.object({
   linkedinProfile: z.string().url("Invalid LinkedIn URL (e.g., https://linkedin.com/in/yourprofile)").optional().or(z.literal('')),
   portfolioUrl: z.string().url("Invalid portfolio URL").optional().or(z.literal('')),
   experienceSummary: z.string().min(50, "Summary must be at least 50 characters.").max(1000, "Summary cannot exceed 1000 characters."),
-  // Files are optional for update, they might not change them
-  resume: z.custom<File>((val) => val instanceof File, "Resume file is required.").optional(),
-  profilePicture: z.custom<File>((val) => val instanceof File, "Profile picture is required.").optional(),
-  videoIntroduction: z.custom<File>((val) => val instanceof File, "10-second video intro is required.").optional(),
+  resume: z.custom<File>((val) => val instanceof File).optional(),
+  profilePicture: z.custom<File>((val) => val instanceof File).optional(),
+  videoIntroduction: z.custom<File>((val) => val instanceof File).optional(),
 });
 
 type CandidateFormValues = z.infer<typeof candidateFormSchema>;
@@ -60,13 +60,14 @@ export default function EditCandidatePage() {
   const candidateId = params.id as string;
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // For form submission
+  const [isDataLoading, setIsDataLoading] = useState(true); // For initial data load
   const [isParsingResume, setIsParsingResume] = useState(false);
-  const [extractedSkills, setExtractedSkills] = useState<string[]>(MOCK_CANDIDATE.id === candidateId ? MOCK_CANDIDATE.skills : []);
+  const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
-  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(MOCK_CANDIDATE.id === candidateId ? MOCK_CANDIDATE.avatarUrl : null);
+  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [videoIntroFileName, setVideoIntroFileName] = useState<string | null>(null);
-
+  const [candidateNotFound, setCandidateNotFound] = useState(false);
 
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const profilePicRef = useRef<HTMLInputElement>(null);
@@ -76,53 +77,59 @@ export default function EditCandidatePage() {
 
   const form = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateFormSchema),
-    defaultValues: async () => {
-        // In a real app, fetch candidate data here based on candidateId
-        if (candidateId === MOCK_CANDIDATE.id) {
-            return {
-                fullName: MOCK_CANDIDATE.fullName,
-                email: MOCK_CANDIDATE.email,
-                phone: MOCK_CANDIDATE.phone,
-                currentTitle: MOCK_CANDIDATE.currentTitle,
-                linkedinProfile: MOCK_CANDIDATE.linkedinProfile,
-                portfolioUrl: MOCK_CANDIDATE.portfolioUrl,
-                experienceSummary: MOCK_CANDIDATE.experienceSummary,
-            };
-        }
-        // Fallback for non-existent mock ID or if data fetch fails
-        return {
-            fullName: '',
-            email: '',
-            phone: '',
-            currentTitle: '',
-            linkedinProfile: '',
-            portfolioUrl: '',
-            experienceSummary: '',
-        };
+    defaultValues: { // Keep defaultValues minimal or empty initially
+        fullName: '',
+        email: '',
+        phone: '',
+        currentTitle: '',
+        linkedinProfile: '',
+        portfolioUrl: '',
+        experienceSummary: '',
+        // File fields are initially undefined
     },
     mode: "onChange",
   });
   
-  // Effect to load candidate data if not using async defaultValues (some React Hook Form versions have issues with it)
   useEffect(() => {
-    if (candidateId === MOCK_CANDIDATE.id) {
-      form.reset({
-        fullName: MOCK_CANDIDATE.fullName,
-        email: MOCK_CANDIDATE.email,
-        phone: MOCK_CANDIDATE.phone,
-        currentTitle: MOCK_CANDIDATE.currentTitle,
-        linkedinProfile: MOCK_CANDIDATE.linkedinProfile,
-        portfolioUrl: MOCK_CANDIDATE.portfolioUrl,
-        experienceSummary: MOCK_CANDIDATE.experienceSummary,
-      });
-      setProfilePicPreview(MOCK_CANDIDATE.avatarUrl);
-      setExtractedSkills(MOCK_CANDIDATE.skills);
-    } else {
-        // Handle candidate not found - redirect or show error
-        toast({ variant: "destructive", title: "Error", description: "Candidate data not found."});
-        router.push('/candidates');
-    }
-  }, [candidateId, form, router, toast]);
+    setIsDataLoading(true);
+    setCandidateNotFound(false);
+    // Simulate fetching candidate data
+    // In a real app, this would be an API call: await fetchCandidate(candidateId)
+    new Promise<typeof MOCK_CANDIDATE_DB_DATA | null>(resolve => {
+        setTimeout(() => {
+            if (candidateId === MOCK_CANDIDATE_DB_DATA.id) {
+                resolve(MOCK_CANDIDATE_DB_DATA);
+            } else {
+                resolve(null);
+            }
+        }, 500);
+    }).then(data => {
+        if (data) {
+            form.reset({
+                fullName: data.fullName,
+                email: data.email,
+                phone: data.phone,
+                currentTitle: data.currentTitle,
+                linkedinProfile: data.linkedinProfile,
+                portfolioUrl: data.portfolioUrl,
+                experienceSummary: data.experienceSummary,
+                // Files are not part of form.reset initially unless you have their File objects
+            });
+            setProfilePicPreview(data.avatarUrl);
+            setExtractedSkills(data.skills);
+        } else {
+            setCandidateNotFound(true);
+            toast({ variant: "destructive", title: "Error", description: "Candidate data not found."});
+            // Optionally redirect: router.push('/candidates');
+        }
+    }).catch(error => {
+        console.error("Failed to load candidate data:", error);
+        setCandidateNotFound(true);
+        toast({ variant: "destructive", title: "Loading Error", description: "Could not load candidate data."});
+    }).finally(() => {
+        setIsDataLoading(false);
+    });
+  }, [candidateId, form, toast, router]);
 
 
   const handleResumeUpload = async (file: File | null) => {
@@ -130,7 +137,6 @@ export default function EditCandidatePage() {
       setResumeFileName(file.name);
       form.setValue('resume', file, { shouldValidate: true });
       setIsParsingResume(true);
-      // setExtractedSkills([]); // Don't clear old skills immediately unless a new parse is successful
       try {
         const reader = new FileReader();
         reader.readAsText(file);
@@ -169,9 +175,9 @@ export default function EditCandidatePage() {
       };
       reader.readAsDataURL(file);
     } else {
-        // If clearing, revert to original or placeholder if needed. For now, just clear.
-        // setProfilePicPreview(MOCK_CANDIDATE.avatarUrl); // Or a default placeholder
         form.setValue('profilePicture', undefined, { shouldValidate: true });
+        // Optionally reset preview to original avatar if available
+        // setProfilePicPreview(MOCK_CANDIDATE_DB_DATA.id === candidateId ? MOCK_CANDIDATE_DB_DATA.avatarUrl : null);
     }
   };
   
@@ -203,7 +209,6 @@ export default function EditCandidatePage() {
       description: `${data.fullName}'s profile has been successfully updated.`,
       action: <Save className="text-primary" />,
     });
-    // No reset, stay on page or redirect to profile view
     setIsLoading(false);
     router.push(`/candidates/${candidateId}`);
   }
@@ -212,13 +217,11 @@ export default function EditCandidatePage() {
     let fieldsToValidate: (keyof CandidateFormValues)[] = [];
     if (currentStep === 1) fieldsToValidate = ['fullName', 'email', 'currentTitle'];
     if (currentStep === 2) fieldsToValidate = ['experienceSummary'];
-    // Files are optional for update, so don't strictly validate them on "Next" unless present
-    if (currentStep === 3 && form.getValues("resume")) fieldsToValidate = ['resume'];
-    if (currentStep === 4) {
+    if (currentStep === 3 && form.getValues("resume")) fieldsToValidate = ['resume']; // Validate only if new resume is added
+    if (currentStep === 4) { // Validate only if new files are added
       if (form.getValues("profilePicture")) fieldsToValidate.push('profilePicture');
       if (form.getValues("videoIntroduction")) fieldsToValidate.push('videoIntroduction');
     }
-
 
     const isValid = fieldsToValidate.length > 0 ? await form.trigger(fieldsToValidate) : true;
 
@@ -235,15 +238,32 @@ export default function EditCandidatePage() {
     }
   };
   
-  if (!form.formState.isDirty && !MOCK_CANDIDATE.id) { // Handles case where defaultValues didn't load yet or ID mismatch
+  if (isDataLoading) {
       return (
-        <Container className="flex justify-center items-center min-h-[50vh]">
+        <Container className="flex flex-col justify-center items-center min-h-[70vh]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="ml-4 text-lg text-muted-foreground">Loading candidate data...</p>
+            <p className="ml-4 text-lg text-muted-foreground mt-4">Loading candidate data...</p>
         </Container>
-      )
+      );
   }
 
+  if (candidateNotFound) {
+      return (
+        <Container className="flex flex-col justify-center items-center min-h-[70vh]">
+            <Alert variant="destructive" className="max-w-md">
+                <AlertTriangle className="h-5 w-5" />
+                <AlertTitle>Candidate Not Found</AlertTitle>
+                <AlertDescription>
+                The candidate profile you are trying to edit does not exist or could not be loaded.
+                Please check the ID or go back to the candidates list.
+                </AlertDescription>
+            </Alert>
+            <Button variant="outline" onClick={() => router.push('/candidates')} className="mt-6">
+                Go to Candidates List
+            </Button>
+        </Container>
+      );
+  }
 
   return (
     <Container>
@@ -251,15 +271,14 @@ export default function EditCandidatePage() {
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Edit Candidate Profile</CardTitle>
           <CardDescription>
-            Update your profile details below.
+            Update profile details for <span className="font-semibold text-primary">{form.getValues("fullName") || "candidate"}</span>.
             Step {currentStep} of {MAX_STEPS}.
           </CardDescription>
            <Progress value={(currentStep / MAX_STEPS) * 100} className="w-full mt-2 h-2" />
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-8">
-              {/* Step 1: Personal & Contact Information */}
+            <CardContent className="space-y-8 min-h-[300px]"> {/* Added min-height for consistent form size */}
               {currentStep === 1 && (
                 <section className="space-y-6 animate-fadeIn">
                   <FormField
@@ -311,7 +330,6 @@ export default function EditCandidatePage() {
                 </section>
               )}
 
-              {/* Step 2: Professional Details */}
               {currentStep === 2 && (
                 <section className="space-y-6 animate-fadeIn">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -354,7 +372,6 @@ export default function EditCandidatePage() {
                 </section>
               )}
 
-              {/* Step 3: Resume & Skills */}
               {currentStep === 3 && (
                 <section className="space-y-6 animate-fadeIn">
                   <FormField
@@ -377,7 +394,7 @@ export default function EditCandidatePage() {
                           ref={resumeFileRef}
                           onChange={(e) => handleResumeUpload(e.target.files ? e.target.files[0] : null)} 
                         />
-                        <FormDescription>Leave blank to keep current resume. Uploading a new one will replace it.</FormDescription>
+                        <FormDescription>Leave blank to keep current resume. Uploading a new one will replace it and re-parse skills.</FormDescription>
                         {isParsingResume && (
                           <div className="flex items-center text-sm text-muted-foreground mt-2">
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Parsing resume, please wait...
@@ -397,14 +414,13 @@ export default function EditCandidatePage() {
                             <Badge key={index} variant="secondary">{skill}</Badge>
                           ))}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">These skills are based on the latest resume provided.</p>
+                        <p className="text-xs text-muted-foreground mt-2">These skills are based on the current resume on file or the one just uploaded.</p>
                       </div>
                     </FormItem>
                   )}
                 </section>
               )}
 
-              {/* Step 4: Visuals */}
               {currentStep === 4 && (
                 <section className="space-y-6 animate-fadeIn">
                   <div className="flex flex-col items-center space-y-4">
@@ -422,7 +438,7 @@ export default function EditCandidatePage() {
                             <FormLabel htmlFor="profilePicture-upload" className="sr-only">Profile Picture</FormLabel>
                             <FormControl>
                               <Button type="button" variant="outline" onClick={() => profilePicRef.current?.click()} className="w-full">
-                                  <UploadCloud className="mr-2 h-4 w-4" /> {form.getValues("profilePicture") ? "Change" : "Upload New"} Profile Picture
+                                  <UploadCloud className="mr-2 h-4 w-4" /> {form.getValues("profilePicture")?.name ? `New: ${form.getValues("profilePicture")!.name}` : "Upload New Profile Picture"}
                               </Button>
                             </FormControl>
                             <Input 
@@ -469,10 +485,9 @@ export default function EditCandidatePage() {
                   />
                 </section>
               )}
-
             </CardContent>
-            <CardFooter className="flex justify-between pt-6">
-              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 1 || isLoading}>
+            <CardFooter className="flex justify-between pt-6 border-t">
+              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 1 || isLoading || isParsingResume}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
@@ -494,3 +509,5 @@ export default function EditCandidatePage() {
     </Container>
   );
 }
+
+    

@@ -92,16 +92,23 @@ const videoInterviewAnalysisReportFlow = ai.defineFlow(
     inputSchema: VideoInterviewAnalysisReportInputSchema,
     outputSchema: VideoInterviewAnalysisReportOutputSchema,
   },
-  async input => {
+  async (input): Promise<VideoInterviewAnalysisReportOutput> => {
     const {output} = await prompt(input);
+
+    if (!output) {
+        console.error(`[videoInterviewAnalysisReportFlow] - Prompt did not return an output for input (video URI length: ${input.videoDataUri.length}, JD length: ${input.jobDescription.length}).`);
+        throw new Error('AI prompt failed to return expected video interview analysis report.');
+    }
+    
     // Ensure competency scores are within 1-5, clamp if necessary
-    if (output && output.competencyScores) {
+    if (output.competencyScores) {
         output.competencyScores.forEach(comp => {
             if (comp.score < 1) comp.score = 1;
             if (comp.score > 5) comp.score = 5;
         });
     }
-    return output!;
+    return output;
   }
 );
 
+    

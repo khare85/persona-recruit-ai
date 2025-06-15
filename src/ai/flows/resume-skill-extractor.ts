@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -35,7 +36,7 @@ const prompt = ai.definePrompt({
 
   Resume Text: {{{resumeText}}}
 
-  Skills:`, // Use Handlebars here to access the resumeText
+  Skills:`, 
 });
 
 const extractSkillsFromResumeFlow = ai.defineFlow(
@@ -44,8 +45,19 @@ const extractSkillsFromResumeFlow = ai.defineFlow(
     inputSchema: ExtractSkillsFromResumeInputSchema,
     outputSchema: ExtractSkillsFromResumeOutputSchema,
   },
-  async input => {
+  async (input): Promise<ExtractSkillsFromResumeOutput> => {
     const {output} = await prompt(input);
-    return output!;
+
+    if (!output) {
+        console.error(`[extractSkillsFromResumeFlow] - Prompt did not return an output for input (resume text length: ${input.resumeText.length}).`);
+        // For skill extraction, returning an empty array of skills might be a graceful failure if schema allows
+        // However, to be consistent with other flows, we'll throw an error if the output structure isn't met.
+        // If the schema required skills to be non-empty, this would be more critical.
+        // If skills can be empty, we could return { skills: [] } but the AI should ideally return that structure.
+        throw new Error('AI prompt failed to return expected skills output.');
+    }
+    return output;
   }
 );
+
+    

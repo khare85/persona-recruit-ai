@@ -98,20 +98,27 @@ const aiTalentSearchFlow = ai.defineFlow(
     inputSchema: AiTalentSearchInputSchema,
     outputSchema: AiTalentSearchOutputSchema,
   },
-  async (input) => {
+  async (input): Promise<AiTalentSearchOutput> => {
     // In a real application, this is where you would query your vector database
     // and then potentially use an LLM to refine/summarize/justify results.
     // For now, the LLM will generate mock candidates based on the prompt.
     
     const {output} = await prompt(input);
 
+    if (!output) {
+        console.error(`[aiTalentSearchFlow] - Prompt did not return an output for input:`, input);
+        throw new Error('AI prompt failed to return expected talent search output.');
+    }
+
     // Ensure scores are clamped (LLMs can sometimes go slightly out of bounds)
-    if (output && output.matchedCandidates) {
+    if (output.matchedCandidates) {
         output.matchedCandidates.forEach(candidate => {
             if (candidate.matchScore < 0) candidate.matchScore = 0;
             if (candidate.matchScore > 1) candidate.matchScore = 1;
         });
     }
-    return output!;
+    return output;
   }
 );
+
+    

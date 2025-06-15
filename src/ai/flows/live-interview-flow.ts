@@ -88,11 +88,9 @@ const liveInterviewFlow = ai.defineFlow(
     inputSchema: LiveInterviewInputSchema,
     outputSchema: LiveInterviewOutputSchema,
   },
-  async (input) => {
-    // Limit history length sent to prompt to avoid large payloads / token limits
-    // Each turn consists of user + AI, so 10 entries = 5 turns.
+  async (input): Promise<LiveInterviewOutput> => {
     const historyLimit = (input.maxTurns || 10) * 2;
-    const recentHistory = input.conversationHistory.slice(-Math.min(input.conversationHistory.length, historyLimit - 2)); // Keep context manageable
+    const recentHistory = input.conversationHistory.slice(-Math.min(input.conversationHistory.length, historyLimit - 2));
 
     const {output} = await interviewPrompt({
       ...input,
@@ -100,7 +98,9 @@ const liveInterviewFlow = ai.defineFlow(
     });
 
     if (!output) {
+        console.error(`[liveInterviewFlow] - Prompt did not return an output for input:`, {...input, conversationHistory: `Length: ${recentHistory.length}` });
         // Fallback in case the LLM fails to produce structured output
+        // This is a critical conversational flow, so providing a graceful fallback is important.
         return {
             aiResponse: "I seem to be having a little trouble forming a response right now. Could you please repeat your last statement or ask a question?",
             isInterviewOver: false,
@@ -109,3 +109,5 @@ const liveInterviewFlow = ai.defineFlow(
     return output;
   }
 );
+
+    

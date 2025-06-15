@@ -69,11 +69,20 @@ const candidateJobMatcherFlow = ai.defineFlow(
     inputSchema: CandidateJobMatcherInputSchema,
     outputSchema: CandidateJobMatcherOutputSchema,
   },
-  async input => {
+  async (input): Promise<CandidateJobMatcherOutput> => {
     const {output} = await prompt(input);
+    
+    if (!output) {
+        console.error(`[candidateJobMatcherFlow] - Prompt did not return an output for input:`, input);
+        throw new Error('AI prompt failed to return expected candidate-job match output.');
+    }
+
     // Ensure score is within 0-1, clamp if necessary as LLMs might sometimes go slightly out of bounds
-    if (output && output.matchScore < 0) output.matchScore = 0;
-    if (output && output.matchScore > 1) output.matchScore = 1;
-    return output!;
+    if (output.matchScore < 0) output.matchScore = 0;
+    if (output.matchScore > 1) output.matchScore = 1;
+    
+    return output;
   }
 );
+
+    

@@ -11,5 +11,8 @@ import '@/ai/flows/candidate-job-matcher.ts';
 import '@/ai/flows/ai-talent-search-flow.ts';
 import '@/ai/flows/live-interview-flow.ts';
 import '@/ai/flows/process-resume-document-ai-flow.ts';
-import '@/ai/flows/generate-text-embedding-flow.ts'; // Added text embedding flow
+import '@/ai/flows/generate-text-embedding-flow.ts';
+import '@/ai/flows/ai-talent-semantic-search-flow.ts'; // Added semantic talent search
+import '@/ai/flows/job-recommendation-semantic-flow.ts'; // Added semantic job recommendation
+
 

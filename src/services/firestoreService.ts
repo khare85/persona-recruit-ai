@@ -5,7 +5,7 @@
  */
 
 import admin from 'firebase-admin';
-import type { Timestamp } from 'firebase-admin/firestore';
+import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 // --- Firebase Admin SDK Setup ---
 // **USER ACTION REQUIRED for actual deployment/local testing with credentials:**
@@ -17,21 +17,23 @@ import type { Timestamp } from 'firebase-admin/firestore';
 //      (Ensure .env.local is in .gitignore)
 //    - Deployment (e.g., Firebase App Hosting): Configure this as a secret in your hosting environment.
 // 4. Ensure the GCLOUD_PROJECT_ID, DOCAI_LOCATION, and DOCAI_PROCESSOR_ID env variables are set.
-//
-// The initialization below will be attempted. If credentials are not found or are invalid,
-// Firestore operations will fail at runtime.
 
 if (!admin.apps.length) {
   try {
     console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK...');
+    // Initialize Firebase Admin SDK.
+    // If GOOGLE_APPLICATION_CREDENTIALS is set, it will be used automatically.
+    // Otherwise, you might need to pass credential explicitly:
+    // admin.initializeApp({
+    //   credential: admin.credential.cert(require('/path/to/your/serviceAccountKey.json'))
+    // });
+    // For App Hosting and similar environments, applicationDefault usually works if secrets are set up.
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
+       credential: admin.credential.applicationDefault(),
     });
     console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
   } catch (error) {
-    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly and the service account has appropriate permissions. Details:', error);
-    // In a real app, you might want to throw this error or implement a more robust retry/fallback.
-    // For this demo, operations will likely fail if this step doesn't succeed.
+    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS (or direct cert path) is set correctly and the service account has appropriate permissions. Details:', error);
   }
 }
 
@@ -41,7 +43,6 @@ try {
   console.log('[FirestoreService] Firestore DB instance acquired.');
 } catch (error) {
   console.error('[FirestoreService] Failed to acquire Firestore DB instance. Admin SDK might not be initialized. Details:', error);
-  // db remains undefined, operations will fail.
 }
 // --- End Firebase Admin SDK Setup ---
 
@@ -65,6 +66,7 @@ export interface CandidateWithEmbeddingFirestore {
   experienceSummary?: string;   // Shorter summary for display/quick review
   avatarUrl?: string;
   videoIntroUrl?: string;
+  availability?: string; // e.g., "Immediate", "2 weeks notice" - New Field
   lastUpdatedAt: Timestamp;
 }
 
@@ -93,7 +95,7 @@ export interface JobWithEmbeddingFirestore {
  */
 export async function saveCandidateWithEmbedding(
   candidateId: string,
-  data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills'> & { extractedResumeText: string; resumeEmbedding: number[], skills: string[] }
+  data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills'> & { extractedResumeText: string; resumeEmbedding: number[], skills: string[], availability?: string }
 ): Promise<{ success: boolean; message: string; candidateId?: string }> {
   console.log(`[FirestoreService] Attempting to save/update candidate ${candidateId} with embedding.`);
 
@@ -107,15 +109,16 @@ export async function saveCandidateWithEmbedding(
     const candidateRef = db.collection(CANDIDATES_COLLECTION).doc(candidateId);
     const saveData: CandidateWithEmbeddingFirestore = {
       ...data,
-      candidateId, // Ensure candidateId is part of the data being saved
+      candidateId,
       extractedResumeText: data.extractedResumeText,
       resumeEmbedding: data.resumeEmbedding,
       skills: data.skills,
+      availability: data.availability, // Save availability if provided
       lastUpdatedAt: admin.firestore.Timestamp.now(),
     };
     await candidateRef.set(saveData, { merge: true });
     console.log(`[FirestoreService] Successfully saved/updated candidate ${candidateId} in Firestore.`);
-    return { success: true, message: 'Candidate profile and embedding (simulated) save to Firestore.', candidateId };
+    return { success: true, message: 'Candidate profile and embedding saved to Firestore.', candidateId };
   } catch (error) {
     console.error(`[FirestoreService] Error saving candidate ${candidateId} to Firestore:`, error);
     return { success: false, message: `Error saving candidate to Firestore: ${error instanceof Error ? error.message : String(error)}` };
@@ -123,25 +126,26 @@ export async function saveCandidateWithEmbedding(
 }
 
 /**
- * Placeholder function to search for candidates by semantic similarity of their resume embeddings.
+ * Searches for candidates by semantic similarity of their resume embeddings.
  * **USER ACTION REQUIRED for actual search functionality:**
- * 1. Create a vector index in Firestore on the 'resumeEmbedding' field in the 'candidates_with_embeddings' collection.
- *    - Go to your Google Cloud Console -> Firestore -> Indexes.
- *    - Create a new index.
- *    - Collection ID: `candidates_with_embeddings`
- *    - Fields to index:
- *      - `resumeEmbedding`: Vector (Dimension: 768 for 'text-embedding-004'. Distance Measure: COSINE is common).
- *    - You might also add other fields (e.g., 'lastUpdatedAt') for filtering/sorting in conjunction with vector search.
- * 2. Replace the mock logic below with actual Firestore vector search queries using `findNearest`.
+ * 1. Go to your Google Cloud Console -> Firestore -> Indexes tab.
+ * 2. Create a new Vector Index for the collection: `candidates_with_embeddings`.
+ * 3. Fields to index:
+ *    - `resumeEmbedding`:
+ *      - Index Type: Vector
+ *      - Vector dimension: `768` (for 'text-embedding-004' model from Google AI Studio)
+ *      - Distance measure: `COSINE` (recommended for text embeddings)
+ *    - (Optional) You can add other fields like `availability` or `lastUpdatedAt` for filtering in conjunction with vector search if needed.
+ * 4. Firestore will take some time to build this index. Ensure it's active before relying on search.
  *
  * @param queryEmbedding The embedding vector of the search query.
  * @param topN The number of top matching candidates to return.
- * @returns A promise that resolves to an array of matching candidate data (or their IDs).
+ * @returns A promise that resolves to an array of matching candidate data including their distance.
  */
 export async function searchCandidatesByEmbedding(
   queryEmbedding: number[],
   topN: number = 5
-): Promise<Partial<CandidateWithEmbeddingFirestore>[]> {
+): Promise<(Partial<CandidateWithEmbeddingFirestore> & { distance?: number })[]> {
   console.log(`[FirestoreService] Attempting to search for ${topN} candidates with query embedding (length: ${queryEmbedding.length}).`);
 
   if (!db) {
@@ -150,49 +154,37 @@ export async function searchCandidatesByEmbedding(
     return [];
   }
   try {
-    // --- Actual Firestore Vector Search Logic (Illustrative - Needs Index) ---
-    // This code is illustrative and requires a vector index to be set up on 'resumeEmbedding'.
-    // const snapshot = await db.collection(CANDIDATES_COLLECTION)
-    //   .findNearest('resumeEmbedding', admin.firestore.FieldValue.vector(queryEmbedding), {
-    //     limit: topN,
-    //     distanceMeasure: 'COSINE' // Or 'EUCLIDEAN', 'DOT_PRODUCT'
-    //   })
-    //   .get();
-    //
-    // if (snapshot.empty) {
-    //   console.log('[FirestoreService] No candidates found via vector search.');
-    //   return [];
-    // }
-    // const results: Partial<CandidateWithEmbeddingFirestore>[] = [];
-    // snapshot.forEach(doc => {
-    //   const data = doc.data() as CandidateWithEmbeddingFirestore;
-    //   results.push({
-    //     candidateId: doc.id,
-    //     fullName: data.fullName,
-    //     currentTitle: data.currentTitle,
-    //     skills: data.skills,
-    //     // Optionally return other fields like experienceSummary for display
-    //     experienceSummary: data.experienceSummary,
-    //   });
-    // });
-    // console.log(`[FirestoreService] Found ${results.length} candidates via vector search (conceptual).`);
-    // return results;
-    // --- End Actual Firestore Vector Search Logic ---
+    const snapshot = await db.collection(CANDIDATES_COLLECTION)
+      .findNearest('resumeEmbedding', admin.firestore.FieldValue.vector(queryEmbedding) as FieldValue, { // Cast to FieldValue
+        limit: topN,
+        distanceMeasure: 'COSINE'
+      })
+      .get();
 
-    // Current mock implementation:
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate async operation
-    console.warn("[FirestoreService] searchCandidatesByEmbedding is using MOCK DATA. Implement actual vector search after setting up Firestore indexes.");
-    const mockResults: Partial<CandidateWithEmbeddingFirestore>[] = Array.from({ length: Math.min(topN, 2) }).map((_, i) => ({
-        candidateId: `mock-cand-${i+1}`,
-        fullName: `Mock Candidate ${i+1} (Search Result)`,
-        currentTitle: 'Mock Title from Search',
-        skills: ['Mock Searched Skill A', 'Mock Searched Skill B'],
-        experienceSummary: 'This is a mock candidate profile returned by the placeholder search function.',
-    }));
-    return mockResults;
+    if (snapshot.empty) {
+      console.log('[FirestoreService] No candidates found via vector search.');
+      return [];
+    }
+    const results: (Partial<CandidateWithEmbeddingFirestore> & { distance?: number })[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data() as CandidateWithEmbeddingFirestore;
+      results.push({
+        candidateId: doc.id,
+        fullName: data.fullName,
+        currentTitle: data.currentTitle,
+        skills: data.skills,
+        experienceSummary: data.experienceSummary,
+        avatarUrl: data.avatarUrl,
+        availability: data.availability,
+        // @ts-ignore Firestore's `doc.distance` is not strongly typed yet in Node SDK, but should exist.
+        distance: doc.distance,
+      });
+    });
+    console.log(`[FirestoreService] Found ${results.length} candidates via vector search.`);
+    return results;
 
   } catch (error) {
-    console.error('[FirestoreService] Error during candidate vector search:', error);
+    console.error('[FirestoreService] Error during candidate vector search. Ensure vector index is set up correctly on "resumeEmbedding" field with COSINE distance and dimension 768 for collection "candidates_with_embeddings". Error:', error);
     return [];
   }
 }
@@ -219,14 +211,14 @@ export async function saveJobWithEmbedding(
     const jobRef = db.collection(JOBS_COLLECTION).doc(jobId);
     const saveData: JobWithEmbeddingFirestore = {
       ...data,
-      jobId, // Ensure jobId is part of the data being saved
+      jobId,
       fullJobDescriptionText: data.fullJobDescriptionText,
       jobEmbedding: data.jobEmbedding,
       lastUpdatedAt: admin.firestore.Timestamp.now(),
     };
     await jobRef.set(saveData, { merge: true });
     console.log(`[FirestoreService] Successfully saved/updated job ${jobId} in Firestore.`);
-    return { success: true, message: 'Job details and embedding (simulated) save to Firestore.', jobId };
+    return { success: true, message: 'Job details and embedding saved to Firestore.', jobId };
   } catch (error) {
     console.error(`[FirestoreService] Error saving job ${jobId} to Firestore:`, error);
     return { success: false, message: `Error saving job to Firestore: ${error instanceof Error ? error.message : String(error)}` };
@@ -234,25 +226,26 @@ export async function saveJobWithEmbedding(
 }
 
 /**
- * Placeholder function to search for jobs by semantic similarity of their description embeddings.
+ * Searches for jobs by semantic similarity of their description embeddings.
  * **USER ACTION REQUIRED for actual search functionality:**
- * 1. Create a vector index in Firestore on the 'jobEmbedding' field in the 'jobs_with_embeddings' collection.
- *    - Go to your Google Cloud Console -> Firestore -> Indexes.
- *    - Create a new index.
- *    - Collection ID: `jobs_with_embeddings`
- *    - Fields to index:
- *      - `jobEmbedding`: Vector (Dimension: 768 for 'text-embedding-004'. Distance Measure: COSINE is common).
- *    - You might also add other fields (e.g., 'companyName', 'location') for filtering/sorting.
- * 2. Replace the mock logic below with actual Firestore vector search queries using `findNearest`.
+ * 1. Go to your Google Cloud Console -> Firestore -> Indexes tab.
+ * 2. Create a new Vector Index for the collection: `jobs_with_embeddings`.
+ * 3. Fields to index:
+ *    - `jobEmbedding`:
+ *      - Index Type: Vector
+ *      - Vector dimension: `768` (for 'text-embedding-004' model)
+ *      - Distance measure: `COSINE`
+ *    - (Optional) Add other fields like `companyName`, `location` for filtering.
+ * 4. Firestore will take some time to build this index. Ensure it's active.
  *
  * @param queryEmbedding The embedding vector of the search query.
  * @param topN The number of top matching jobs to return.
- * @returns A promise that resolves to an array of matching job data (or their IDs).
+ * @returns A promise that resolves to an array of matching job data including their distance.
  */
 export async function searchJobsByEmbedding(
   queryEmbedding: number[],
   topN: number = 5
-): Promise<Partial<JobWithEmbeddingFirestore>[]> {
+): Promise<(Partial<JobWithEmbeddingFirestore> & { distance?: number })[]> {
   console.log(`[FirestoreService] Attempting to search for ${topN} jobs with query embedding (length: ${queryEmbedding.length}).`);
 
   if (!db) {
@@ -261,48 +254,35 @@ export async function searchJobsByEmbedding(
     return [];
   }
   try {
-    // --- Actual Firestore Vector Search Logic (Illustrative - Needs Index) ---
-    // const snapshot = await db.collection(JOBS_COLLECTION)
-    //   .findNearest('jobEmbedding', admin.firestore.FieldValue.vector(queryEmbedding), {
-    //     limit: topN,
-    //     distanceMeasure: 'COSINE'
-    //   })
-    //   .get();
-    //
-    // if (snapshot.empty) {
-    //   console.log('[FirestoreService] No jobs found via vector search.');
-    //   return [];
-    // }
-    // const results: Partial<JobWithEmbeddingFirestore>[] = [];
-    // snapshot.forEach(doc => {
-    //   const data = doc.data() as JobWithEmbeddingFirestore;
-    //   results.push({
-    //       jobId: doc.id,
-    //       title: data.title,
-    //       companyName: data.companyName,
-    //       location: data.location,
-    //       // Optionally return other fields like responsibilitiesSummary for display
-    //       responsibilitiesSummary: data.responsibilitiesSummary,
-    //     });
-    // });
-    // console.log(`[FirestoreService] Found ${results.length} jobs via vector search (conceptual).`);
-    // return results;
-    // --- End Actual Firestore Vector Search Logic ---
+    const snapshot = await db.collection(JOBS_COLLECTION)
+      .findNearest('jobEmbedding', admin.firestore.FieldValue.vector(queryEmbedding) as FieldValue, { // Cast to FieldValue
+        limit: topN,
+        distanceMeasure: 'COSINE'
+      })
+      .get();
 
-    // Current mock implementation:
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate async operation
-    console.warn("[FirestoreService] searchJobsByEmbedding is using MOCK DATA. Implement actual vector search after setting up Firestore indexes.");
-    const mockResults: Partial<JobWithEmbeddingFirestore>[] = Array.from({ length: Math.min(topN, 2) }).map((_, i) => ({
-      jobId: `mock-job-${i+1}`,
-      title: `Mock Job Title ${i+1} (Search Result)`,
-      companyName: 'Mock Company Inc. (Search Result)',
-      location: 'Remote (Mock)',
-      responsibilitiesSummary: 'This is a mock job description returned by the placeholder search function.'
-    }));
-    return mockResults;
+    if (snapshot.empty) {
+      console.log('[FirestoreService] No jobs found via vector search.');
+      return [];
+    }
+    const results: (Partial<JobWithEmbeddingFirestore> & { distance?: number })[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data() as JobWithEmbeddingFirestore;
+      results.push({
+          jobId: doc.id,
+          title: data.title,
+          companyName: data.companyName,
+          location: data.location,
+          responsibilitiesSummary: data.responsibilitiesSummary,
+          // @ts-ignore Firestore's `doc.distance` is not strongly typed yet in Node SDK, but should exist.
+          distance: doc.distance,
+        });
+    });
+    console.log(`[FirestoreService] Found ${results.length} jobs via vector search.`);
+    return results;
 
   } catch (error) {
-    console.error('[FirestoreService] Error during job vector search:', error);
+    console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" field with COSINE distance and dimension 768 for collection "jobs_with_embeddings". Error:', error);
     return [];
   }
 }

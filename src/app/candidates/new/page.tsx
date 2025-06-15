@@ -14,8 +14,8 @@ import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
 import { processResumeWithDocAI, ProcessResumeDocAIInput } from '@/ai/flows/process-resume-document-ai-flow';
-import { generateTextEmbedding, GenerateTextEmbeddingInput } from '@/ai/flows/generate-text-embedding-flow'; // Import embedding flow
-// import { saveCandidateWithEmbedding } from '@/services/firestoreService'; // Import placeholder Firestore service
+import { generateTextEmbedding, GenerateTextEmbeddingInput } from '@/ai/flows/generate-text-embedding-flow';
+import { saveCandidateWithEmbedding } from '@/services/firestoreService';
 import { UploadCloud, UserPlus, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, PartyPopper, Brain } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +41,7 @@ type CandidateFormValues = z.infer<typeof candidateFormSchema>;
 export default function NewCandidatePage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [isProcessingAi, setIsProcessingAi] = useState(false); // Combined AI processing state
+  const [isProcessingAi, setIsProcessingAi] = useState(false);
   const [extractedTextFromResume, setExtractedTextFromResume] = useState<string | null>(null);
   const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
   const [generatedEmbedding, setGeneratedEmbedding] = useState<number[] | null>(null);
@@ -111,13 +111,11 @@ export default function NewCandidatePage() {
         setExtractedTextFromResume(docAIResult.extractedText);
         toast({ title: "Document AI Success", description: "Resume text extracted. Now processing for skills and embedding." });
 
-        // Extract Skills
         const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
         const skillResult = await extractSkillsFromResume(skillInput);
         setExtractedSkills(skillResult.skills);
         toast({ title: "Skills Extracted", description: "Skills identified from the resume.", action: <CheckCircle className="text-green-500" /> });
         
-        // Generate Embedding
         const embeddingInput: GenerateTextEmbeddingInput = { text: docAIResult.extractedText };
         const embeddingResult = await generateTextEmbedding(embeddingInput);
         setGeneratedEmbedding(embeddingResult.embedding);
@@ -158,7 +156,7 @@ export default function NewCandidatePage() {
 
   const handleVideoIntroUpload = (file: File | null) => {
     if (file) {
-      if (file.size > 50 * 1024 * 1024) { // Example: 50MB limit
+      if (file.size > 50 * 1024 * 1024) { 
         toast({ variant: "destructive", title: "File Too Large", description: "Video intro should be under 50MB." });
         form.setValue('videoIntroduction', undefined as any, { shouldValidate: true });
         setVideoIntroFileName(null);
@@ -176,62 +174,58 @@ export default function NewCandidatePage() {
   async function onSubmit(data: CandidateFormValues) {
     setIsLoading(true);
     
-    // Ensure resume text and embedding are available if a resume was processed
-    if (data.resume && (!extractedTextFromResume || !generatedEmbedding)) {
-        toast({ variant: "destructive", title: "Processing Incomplete", description: "Resume text or embedding is missing. Please re-upload or wait for processing."});
+    if (!extractedTextFromResume || !generatedEmbedding) {
+        toast({ variant: "destructive", title: "AI Processing Incomplete", description: "Resume text or embedding is missing. Please ensure resume processing completed successfully."});
         setIsLoading(false);
         return;
     }
 
-    console.log("Candidate data for submission:", data);
-    if (extractedTextFromResume) console.log("Extracted Resume Text:", extractedTextFromResume.substring(0,100) + "...");
-    if (generatedEmbedding) console.log("Generated Embedding vector length:", generatedEmbedding.length);
+    const candidateId = `cand_${Date.now().toString()}`; 
+    const firestoreData = {
+        fullName: data.fullName,
+        email: data.email,
+        currentTitle: data.currentTitle,
+        extractedResumeText: extractedTextFromResume,
+        resumeEmbedding: generatedEmbedding,
+        skills: extractedSkills,
+        phone: data.phone,
+        linkedinProfile: data.linkedinProfile,
+        portfolioUrl: data.portfolioUrl,
+        experienceSummary: data.experienceSummary,
+        // avatarUrl and videoIntroUrl would be URLs after uploading files to storage (not implemented here)
+    };
 
-    // --- INTEGRATION POINT FOR FIRESTORE ---
-    // if (extractedTextFromResume && generatedEmbedding) {
-    //   const candidateId = Date.now().toString(); // Or generate a proper UUID
-    //   const firestoreData = {
-    //     fullName: data.fullName,
-    //     email: data.email,
-    //     currentTitle: data.currentTitle,
-    //     extractedResumeText: extractedTextFromResume,
-    //     resumeEmbedding: generatedEmbedding,
-    //     skills: extractedSkills,
-    //     // Add other fields from 'data' as needed by CandidateWithEmbedding interface
-    //   };
-    //   try {
-    //     const saveResult = await saveCandidateWithEmbedding(candidateId, firestoreData);
-    //     if (saveResult.success) {
-    //       toast({ title: "Candidate Saved to DB", description: `Candidate ID: ${saveResult.candidateId}` });
-    //     } else {
-    //       throw new Error(saveResult.message);
-    //     }
-    //   } catch (dbError) {
-    //     console.error("Error saving to Firestore:", dbError);
-    //     toast({ variant: "destructive", title: "Database Error", description: `Could not save candidate: ${dbError instanceof Error ? dbError.message : String(dbError)}` });
-    //     setIsLoading(false);
-    //     return;
-    //   }
-    // }
-    // --- END INTEGRATION POINT ---
+    try {
+      console.log("Candidate data for submission:", data);
+      console.log("Extracted Resume Text:", extractedTextFromResume.substring(0,100) + "...");
+      console.log("Generated Embedding vector length:", generatedEmbedding.length);
+      
+      toast({ title: "Saving Candidate Data...", description: "Preparing data for storage." });
+      const saveResult = await saveCandidateWithEmbedding(candidateId, firestoreData);
 
-
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call for other actions
-
-    toast({
-      title: "Profile Created! (Simulated)",
-      description: `Welcome, ${data.fullName}! Your profile is now active. Next step would be Firestore saving.`,
-      action: <PartyPopper className="text-primary" />,
-    });
-    form.reset();
-    setExtractedSkills([]);
-    setExtractedTextFromResume(null);
-    setGeneratedEmbedding(null);
-    setResumeFileName(null);
-    setProfilePicPreview(null);
-    setVideoIntroFileName(null);
-    setCurrentStep(1);
-    setIsLoading(false);
+      if (saveResult.success) {
+        toast({
+          title: "Profile Created & Processed! (Simulated)",
+          description: `Welcome, ${data.fullName}! ${saveResult.message}`,
+          action: <PartyPopper className="text-primary" />,
+        });
+        form.reset();
+        setExtractedSkills([]);
+        setExtractedTextFromResume(null);
+        setGeneratedEmbedding(null);
+        setResumeFileName(null);
+        setProfilePicPreview(null);
+        setVideoIntroFileName(null);
+        setCurrentStep(1);
+      } else {
+        throw new Error(saveResult.message);
+      }
+    } catch (error) {
+        console.error("Error during candidate submission:", error);
+        toast({ variant: "destructive", title: "Submission Failed", description: error instanceof Error ? error.message : "Could not save candidate data." });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   const nextStep = async () => {
@@ -367,7 +361,7 @@ export default function NewCandidatePage() {
                   <FormField
                     control={form.control}
                     name="resume"
-                    render={() => (
+                    render={() => ( // Field object not directly used for file input display
                       <FormItem>
                         <FormLabel>Resume (PDF, DOC, DOCX, TXT)</FormLabel>
                         <FormControl>
@@ -423,7 +417,7 @@ export default function NewCandidatePage() {
                 <section className="space-y-6 animate-fadeIn">
                   <div className="flex flex-col items-center space-y-4">
                     <Avatar className="w-32 h-32 border-4 border-primary/30">
-                      <AvatarImage src={profilePicPreview || undefined} alt="Profile Preview" data-ai-hint="profile avatar" />
+                      <AvatarImage src={profilePicPreview || undefined} alt="Profile Preview" data-ai-hint="profile avatar"/>
                       <AvatarFallback className="text-4xl">
                         {form.getValues("fullName")?.substring(0,2).toUpperCase() || <UserPlus />}
                       </AvatarFallback>
@@ -431,7 +425,7 @@ export default function NewCandidatePage() {
                     <FormField
                         control={form.control}
                         name="profilePicture"
-                        render={() => (
+                        render={() => ( // Field object not directly used
                           <FormItem className="w-full max-w-sm">
                             <FormLabel htmlFor="profilePicture-upload" className="sr-only">Profile Picture</FormLabel>
                             <FormControl>
@@ -456,7 +450,7 @@ export default function NewCandidatePage() {
                   <FormField
                     control={form.control}
                     name="videoIntroduction"
-                    render={() => (
+                    render={() => ( // Field object not directly used
                       <FormItem>
                         <FormLabel>10-Second Video Introduction (MP4, MOV, WebM)</FormLabel>
                         <FormControl>

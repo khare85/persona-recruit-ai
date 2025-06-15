@@ -15,8 +15,8 @@ import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
 import { processResumeWithDocAI, ProcessResumeDocAIInput } from '@/ai/flows/process-resume-document-ai-flow';
-import { generateTextEmbedding, GenerateTextEmbeddingInput } from '@/ai/flows/generate-text-embedding-flow'; // Import embedding flow
-// import { saveCandidateWithEmbedding } from '@/services/firestoreService'; // Import placeholder Firestore service
+import { generateTextEmbedding, GenerateTextEmbeddingInput } from '@/ai/flows/generate-text-embedding-flow';
+import { saveCandidateWithEmbedding } from '@/services/firestoreService';
 import { UploadCloud, UserCog, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, Save, AlertTriangle, Brain } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +25,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const MAX_STEPS = 4;
 
-// Mock candidate data - in a real app, this would come from a database or API
 const MOCK_CANDIDATE_DB_DATA = {
   id: '1',
   fullName: 'Alice Wonderland',
@@ -39,9 +38,8 @@ const MOCK_CANDIDATE_DB_DATA = {
   avatarUrl: 'https://placehold.co/150x150.png?a=1',
   videoIntroUrl: 'https://placehold.co/320x180.mp4',
   resumeUrl: '#',
-  // Simulate stored extracted text and embedding for an existing candidate
   extractedResumeText: "Alice Wonderland Senior Software Engineer. Experience: React, Next.js, TypeScript...",
-  resumeEmbedding: Array(768).fill(0).map(() => Math.random() * 2 - 1), // Mock 768-dim embedding
+  resumeEmbedding: Array(768).fill(0).map(() => Math.random() * 2 - 1),
 };
 
 
@@ -68,7 +66,7 @@ export default function EditCandidatePage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const [isProcessingAi, setIsProcessingAi] = useState(false); // Combined AI processing state
+  const [isProcessingAi, setIsProcessingAi] = useState(false);
   const [extractedTextFromResume, setExtractedTextFromResume] = useState<string | null>(null);
   const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
   const [generatedEmbedding, setGeneratedEmbedding] = useState<number[] | null>(null);
@@ -76,6 +74,10 @@ export default function EditCandidatePage() {
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [videoIntroFileName, setVideoIntroFileName] = useState<string | null>(null);
   const [candidateNotFound, setCandidateNotFound] = useState(false);
+
+  // Store initial AI data to revert if new resume processing fails or is removed
+  const [initialAiData, setInitialAiData] = useState<{text: string | null, skills: string[], embedding: number[] | null}>({ text: null, skills: [], embedding: null});
+
 
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const profilePicRef = useRef<HTMLInputElement>(null);
@@ -121,8 +123,10 @@ export default function EditCandidatePage() {
             });
             setProfilePicPreview(data.avatarUrl);
             setExtractedSkills(data.skills);
-            setExtractedTextFromResume(data.extractedResumeText); // Load existing text
-            setGeneratedEmbedding(data.resumeEmbedding);       // Load existing embedding
+            setExtractedTextFromResume(data.extractedResumeText);
+            setGeneratedEmbedding(data.resumeEmbedding);
+            // Store initial AI processed data
+            setInitialAiData({ text: data.extractedResumeText, skills: data.skills, embedding: data.resumeEmbedding });
         } else {
             setCandidateNotFound(true);
             toast({ variant: "destructive", title: "Error", description: "Candidate data not found."});
@@ -159,7 +163,8 @@ export default function EditCandidatePage() {
       setResumeFileName(file.name);
       form.setValue('resume', file, { shouldValidate: true });
       setIsProcessingAi(true);
-      setExtractedSkills([]);
+      // Clear previous new AI data, keep initial data intact for revert
+      setExtractedSkills([]); 
       setExtractedTextFromResume(null);
       setGeneratedEmbedding(null);
 
@@ -176,19 +181,17 @@ export default function EditCandidatePage() {
         if (!docAIResult.extractedText) {
           throw new Error("Document AI did not return extracted text from new resume.");
         }
-        setExtractedTextFromResume(docAIResult.extractedText);
+        setExtractedTextFromResume(docAIResult.extractedText); // This is the new text
         toast({ title: "New Resume Text Extracted", description: "Now processing for skills and embedding." });
 
-        // Extract Skills
         const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
         const skillResult = await extractSkillsFromResume(skillInput);
-        setExtractedSkills(skillResult.skills);
+        setExtractedSkills(skillResult.skills); // These are the new skills
         toast({ title: "Skills Updated", description: "Skills identified from new resume.", action: <CheckCircle className="text-green-500" /> });
 
-        // Generate Embedding
         const embeddingInput: GenerateTextEmbeddingInput = { text: docAIResult.extractedText };
         const embeddingResult = await generateTextEmbedding(embeddingInput);
-        setGeneratedEmbedding(embeddingResult.embedding);
+        setGeneratedEmbedding(embeddingResult.embedding); // This is the new embedding
         toast({ title: "Embedding Updated", description: `New text embedding created using ${embeddingResult.modelUsed}.`, action: <Brain className="text-purple-500" /> });
 
       } catch (error) {
@@ -198,24 +201,22 @@ export default function EditCandidatePage() {
             errorMessage = error.message;
         }
         toast({ variant: "destructive", title: "Resume Update Failed", description: errorMessage });
-        // Optionally, revert to original skills/text/embedding if update fails
-        // if (MOCK_CANDIDATE_DB_DATA.id === candidateId) {
-        //   setExtractedSkills(MOCK_CANDIDATE_DB_DATA.skills);
-        //   setExtractedTextFromResume(MOCK_CANDIDATE_DB_DATA.extractedResumeText);
-        //   setGeneratedEmbedding(MOCK_CANDIDATE_DB_DATA.resumeEmbedding);
-        // }
+        // Revert to initial AI data if new processing fails
+        setExtractedTextFromResume(initialAiData.text);
+        setExtractedSkills(initialAiData.skills);
+        setGeneratedEmbedding(initialAiData.embedding);
+        setResumeFileName(null); // Clear the failed upload
+        form.setValue('resume', undefined);
       } finally {
         setIsProcessingAi(false);
       }
-    } else {
+    } else { // File removed by user
         setResumeFileName(null);
         form.setValue('resume', undefined);
-        // If removing an uploaded file, consider reverting to original data
-        // if (MOCK_CANDIDATE_DB_DATA.id === candidateId) {
-        //   setExtractedSkills(MOCK_CANDIDATE_DB_DATA.skills);
-        //   setExtractedTextFromResume(MOCK_CANDIDATE_DB_DATA.extractedResumeText);
-        //   setGeneratedEmbedding(MOCK_CANDIDATE_DB_DATA.resumeEmbedding);
-        // }
+        // Revert to initial AI data if user clears the uploaded file
+        setExtractedTextFromResume(initialAiData.text);
+        setExtractedSkills(initialAiData.skills);
+        setGeneratedEmbedding(initialAiData.embedding);
     }
   };
 
@@ -229,6 +230,9 @@ export default function EditCandidatePage() {
       reader.readAsDataURL(file);
     } else {
         form.setValue('profilePicture', undefined);
+        // Revert to original if MOCK_CANDIDATE_DB_DATA.avatarUrl available? For now, just clears.
+        if(candidateId === MOCK_CANDIDATE_DB_DATA.id) setProfilePicPreview(MOCK_CANDIDATE_DB_DATA.avatarUrl);
+        else setProfilePicPreview(null);
     }
   };
 
@@ -252,67 +256,74 @@ export default function EditCandidatePage() {
   async function onSubmit(data: CandidateFormValues) {
     setIsLoading(true);
 
-    if (form.getValues("resume") && (!extractedTextFromResume || !generatedEmbedding)) {
-        toast({ variant: "destructive", title: "Processing Incomplete", description: "If a new resume was uploaded, its text or embedding is still processing or missing. Please wait or re-upload."});
+    // Determine which set of AI data to use
+    const useNewAiData = !!form.getValues("resume") && !!extractedTextFromResume && !!generatedEmbedding;
+    
+    const finalExtractedText = useNewAiData ? extractedTextFromResume : initialAiData.text;
+    const finalEmbedding = useNewAiData ? generatedEmbedding : initialAiData.embedding;
+    const finalSkills = useNewAiData ? extractedSkills : initialAiData.skills;
+
+    if (!finalExtractedText || !finalEmbedding) {
+        toast({ variant: "destructive", title: "AI Data Missing", description: "Essential AI processed data (text or embedding) is missing. Please ensure resume processing was successful or re-upload."});
         setIsLoading(false);
         return;
     }
-    const finalExtractedText = extractedTextFromResume || (MOCK_CANDIDATE_DB_DATA.id === candidateId ? MOCK_CANDIDATE_DB_DATA.extractedResumeText : null);
-    const finalEmbedding = generatedEmbedding || (MOCK_CANDIDATE_DB_DATA.id === candidateId ? MOCK_CANDIDATE_DB_DATA.resumeEmbedding : null);
+    
+    const firestoreData = {
+        fullName: data.fullName,
+        email: data.email,
+        currentTitle: data.currentTitle,
+        extractedResumeText: finalExtractedText,
+        resumeEmbedding: finalEmbedding,
+        skills: finalSkills,
+        phone: data.phone,
+        linkedinProfile: data.linkedinProfile,
+        portfolioUrl: data.portfolioUrl,
+        experienceSummary: data.experienceSummary,
+        // avatarUrl and videoIntroUrl would need to be updated based on file uploads to a storage service
+        // For this simulation, we are not handling file uploads to cloud storage.
+        // We'll use the existing MOCK_CANDIDATE_DB_DATA.avatarUrl if no new picture, otherwise null.
+        avatarUrl: form.getValues("profilePicture") ? "(New picture uploaded - URL TBD)" : MOCK_CANDIDATE_DB_DATA.avatarUrl,
+        videoIntroUrl: form.getValues("videoIntroduction") ? "(New video uploaded - URL TBD)" : MOCK_CANDIDATE_DB_DATA.videoIntroUrl,
+    };
 
+    try {
+      console.log("Updated candidate data for submission:", data);
+      console.log("Final Extracted Resume Text:", finalExtractedText.substring(0,100) + "...");
+      if (finalEmbedding) console.log("Final Generated Embedding vector length:", finalEmbedding.length);
 
-    console.log("Updated candidate data:", data);
-    if (finalExtractedText) console.log("Final Extracted Resume Text:", finalExtractedText.substring(0,100) + "...");
-    if (finalEmbedding) console.log("Final Generated Embedding vector length:", finalEmbedding.length);
+      toast({ title: "Updating Candidate Data...", description: "Preparing data for storage." });
+      const saveResult = await saveCandidateWithEmbedding(candidateId, firestoreData);
 
-    // --- INTEGRATION POINT FOR FIRESTORE ---
-    // if (finalExtractedText && finalEmbedding && candidateId) {
-    //   const firestoreData = {
-    //     fullName: data.fullName,
-    //     email: data.email,
-    //     currentTitle: data.currentTitle,
-    //     extractedResumeText: finalExtractedText,
-    //     resumeEmbedding: finalEmbedding,
-    //     skills: extractedSkills, // Use the latest skills
-    //     // Add other fields from 'data' as needed by CandidateWithEmbedding interface
-    //   };
-    //   try {
-    //     // Pass the actual candidateId for updates
-    //     const saveResult = await saveCandidateWithEmbedding(candidateId, firestoreData);
-    //     if (saveResult.success) {
-    //       toast({ title: "Candidate Updated in DB", description: `Candidate ID: ${saveResult.candidateId}` });
-    //     } else {
-    //       throw new Error(saveResult.message);
-    //     }
-    //   } catch (dbError) {
-    //     console.error("Error saving to Firestore:", dbError);
-    //     toast({ variant: "destructive", title: "Database Error", description: `Could not update candidate: ${dbError instanceof Error ? dbError.message : String(dbError)}` });
-    //     setIsLoading(false);
-    //     return;
-    //   }
-    // }
-    // --- END INTEGRATION POINT ---
-
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-
-    toast({
-      title: "Profile Updated! (Simulated)",
-      description: `${data.fullName}'s profile has been successfully updated. Next step would be Firestore saving.`,
-      action: <Save className="text-primary" />,
-    });
-    setIsLoading(false);
-    router.push(`/candidates/${candidateId}`);
+      if (saveResult.success) {
+         toast({
+            title: "Profile Updated! (Simulated)",
+            description: `${data.fullName}'s profile has been successfully updated. ${saveResult.message}`,
+            action: <Save className="text-primary" />,
+        });
+        // Optionally update initialAiData if new resume was successfully processed and saved
+        if (useNewAiData) {
+            setInitialAiData({ text: finalExtractedText, skills: finalSkills, embedding: finalEmbedding });
+        }
+        router.push(`/candidates/${candidateId}`);
+      } else {
+        throw new Error(saveResult.message);
+      }
+    } catch (error) {
+      console.error("Error during candidate update:", error);
+      toast({ variant: "destructive", title: "Update Failed", description: error instanceof Error ? error.message : "Could not update candidate data." });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const nextStep = async () => {
     let fieldsToValidate: (keyof CandidateFormValues)[] = [];
     if (currentStep === 1) fieldsToValidate = ['fullName', 'email', 'currentTitle'];
     if (currentStep === 2) fieldsToValidate = ['experienceSummary'];
-    if (currentStep === 3 && form.getValues("resume")) fieldsToValidate = ['resume']; // Validate resume only if a new one is staged
-    if (currentStep === 4) {
-      if (form.getValues("profilePicture")) fieldsToValidate.push('profilePicture');
-      if (form.getValues("videoIntroduction")) fieldsToValidate.push('videoIntroduction');
-    }
+    // No validation for resume at step 3 if it's optional to change
+    // if (currentStep === 4) { // File uploads are optional for edit
+    // }
 
     const isValid = fieldsToValidate.length > 0 ? await form.trigger(fieldsToValidate) : true;
 
@@ -355,6 +366,12 @@ export default function EditCandidatePage() {
         </Container>
       );
   }
+
+  // Determine display values for skills and embedding status
+  const displaySkills = form.getValues("resume") && extractedSkills.length > 0 ? extractedSkills : initialAiData.skills;
+  const displayEmbeddingStatus = (form.getValues("resume") && generatedEmbedding) || (!form.getValues("resume") && initialAiData.embedding);
+  const dataSourceMessage = form.getValues("resume") ? "Data from the newly uploaded resume." : "Data from the resume currently on file.";
+
 
   return (
     <Container>
@@ -467,7 +484,7 @@ export default function EditCandidatePage() {
                 <section className="space-y-6 animate-fadeIn">
                   <FormField
                     control={form.control}
-                    name="resume"
+                    name="resume" 
                     render={() => (
                       <FormItem>
                         <FormLabel>Update Resume (PDF, DOC, DOCX, TXT)</FormLabel>
@@ -496,35 +513,35 @@ export default function EditCandidatePage() {
                     )}
                   />
 
-                  {(extractedSkills.length > 0 || (extractedTextFromResume && !form.getValues("resume"))) && (
+                 {(displaySkills && displaySkills.length > 0) || displayEmbeddingStatus ? (
                     <FormItem>
                       <FormLabel>AI Processed Resume Data</FormLabel>
                       <div className="p-3 border rounded-md bg-muted/50 space-y-3">
-                        {extractedSkills.length > 0 && (
+                        {displaySkills && displaySkills.length > 0 && (
                             <div>
-                                <h4 className="text-xs font-semibold text-muted-foreground mb-1">Extracted Skills (from {form.getValues("resume") ? 'new' : 'current'} resume):</h4>
+                                <h4 className="text-xs font-semibold text-muted-foreground mb-1">Extracted Skills:</h4>
                                 <div className="flex flex-wrap gap-2">
-                                {extractedSkills.map((skill, index) => (
+                                {displaySkills.map((skill, index) => (
                                     <Badge key={index} variant="secondary">{skill}</Badge>
                                 ))}
                                 </div>
                             </div>
                         )}
-                        {(generatedEmbedding || (extractedTextFromResume && !form.getValues("resume") && MOCK_CANDIDATE_DB_DATA.resumeEmbedding)) && (
+                        {displayEmbeddingStatus && (
                             <div>
-                                <h4 className="text-xs font-semibold text-muted-foreground mb-1">Embedding Status (from {form.getValues("resume") ? 'new' : 'current'} resume):</h4>
+                                <h4 className="text-xs font-semibold text-muted-foreground mb-1">Embedding Status:</h4>
                                 <div className="flex items-center text-green-600 text-xs">
                                     <Brain className="mr-2 h-4 w-4" />
                                     <span>Text embedding is available.</span>
                                 </div>
                             </div>
                         )}
-                         <p className="text-xs text-muted-foreground mt-2">
-                            {form.getValues("resume") ? "Data from the newly uploaded resume." : "Data from the resume currently on file."}
+                         <p className="text-xs text-muted-foreground mt-2 italic">
+                            {dataSourceMessage}
                          </p>
                       </div>
                     </FormItem>
-                  )}
+                  ) : null}
                 </section>
               )}
 
@@ -533,7 +550,7 @@ export default function EditCandidatePage() {
                 <section className="space-y-6 animate-fadeIn">
                   <div className="flex flex-col items-center space-y-4">
                     <Avatar className="w-32 h-32 border-4 border-primary/30">
-                      <AvatarImage src={profilePicPreview || undefined} alt="Profile Preview" data-ai-hint="profile avatar" />
+                      <AvatarImage src={profilePicPreview || undefined} alt="Profile Preview" data-ai-hint="profile avatar"/>
                       <AvatarFallback className="text-4xl">
                         {form.getValues("fullName")?.substring(0,2).toUpperCase() || <UserCog />}
                       </AvatarFallback>

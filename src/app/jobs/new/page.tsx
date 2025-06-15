@@ -14,8 +14,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Container } from '@/components/shared/Container';
 import { generateJobDescription, GenerateJobDescriptionInput } from '@/ai/flows/job-description-generator';
-import { generateTextEmbedding, GenerateTextEmbeddingInput, GenerateTextEmbeddingOutput } from '@/ai/flows/generate-text-embedding-flow'; // Import embedding flow
-import { saveJobWithEmbedding } from '@/services/firestoreService'; // Import placeholder Firestore service
+import { generateTextEmbedding, GenerateTextEmbeddingInput, GenerateTextEmbeddingOutput } from '@/ai/flows/generate-text-embedding-flow';
+import { saveJobWithEmbedding } from '@/services/firestoreService';
 import { useToast } from '@/hooks/use-toast';
 import { Wand2, Loader2, CheckCircle, PlusCircle, Brain } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const jobFormSchema = z.object({
   jobLevel: z.string().min(1, { message: "Please select a job level." }),
   department: z.string().min(2, { message: "Department must be at least 2 characters." }),
   location: z.string().min(2, { message: "Location must be at least 2 characters." }),
-  companyName: z.string().min(2, {message: "Company name must be at least 2 characters."}), // Added company name
+  companyName: z.string().min(2, {message: "Company name must be at least 2 characters."}),
   responsibilities: z.string().min(20, { message: "Responsibilities must be at least 20 characters." }).describe("List key responsibilities, one per line or comma-separated."),
   qualifications: z.string().min(20, { message: "Qualifications must be at least 20 characters." }).describe("List key qualifications, one per line or comma-separated."),
 });
@@ -55,7 +55,7 @@ export default function NewJobPage() {
     const values = form.getValues();
     const validationResult = await form.trigger([
         "jobTitle", "jobLevel", "department", "location", 
-        "responsibilities", "qualifications" // CompanyName not needed for JD generation
+        "responsibilities", "qualifications"
     ]); 
     if (!validationResult) {
       toast({
@@ -68,7 +68,7 @@ export default function NewJobPage() {
 
     setIsAiLoading(true);
     setGeneratedDescription(null); 
-    setJobEmbeddingResult(null); // Clear previous embedding if description is re-generated
+    setJobEmbeddingResult(null);
     try {
       const input: GenerateJobDescriptionInput = {
         jobTitle: values.jobTitle,
@@ -99,63 +99,52 @@ export default function NewJobPage() {
   
   async function onSubmit(data: JobFormValues) {
     setIsSubmitting(true);
-    setJobEmbeddingResult(null);
+    setJobEmbeddingResult(null); // Clear previous result
 
     let jobTextForEmbedding = generatedDescription;
     if (!jobTextForEmbedding) {
-        // Fallback to concatenating fields if AI description wasn't generated or used
         jobTextForEmbedding = `${data.jobTitle}\n\nCompany: ${data.companyName}\n\nLocation: ${data.location}\n\nLevel: ${data.jobLevel}\n\nDepartment: ${data.department}\n\nResponsibilities:\n${data.responsibilities}\n\nQualifications:\n${data.qualifications}`;
     }
 
     let currentJobEmbedding: number[] | null = null;
 
     try {
-      // Step 1: Generate embedding for the job description text
       toast({ title: "Generating Job Embedding...", description: "AI is processing the job text."});
       const embeddingInput: GenerateTextEmbeddingInput = { text: jobTextForEmbedding };
       const embeddingOutput = await generateTextEmbedding(embeddingInput);
       currentJobEmbedding = embeddingOutput.embedding;
-      setJobEmbeddingResult(embeddingOutput); // Store for display/confirmation
+      setJobEmbeddingResult(embeddingOutput);
       toast({ title: "Job Embedding Generated", description: `Embedding created using ${embeddingOutput.modelUsed}.`, action: <Brain className="text-purple-500"/> });
 
-      // Step 2: Simulate backend submission of job data (conceptual)
-      console.log("Form submitted:", data);
-      if (generatedDescription) {
-        console.log("Using AI Generated description for submission:", generatedDescription);
-      }
-      // This is where you'd typically send `data` and `generatedDescription` (if used) to your backend to create the job record
-      // and get a `jobId` back. For now, we'll simulate a jobId.
-      const simulatedJobId = `job_${Date.now()}`; 
-      await new Promise(resolve => setTimeout(resolve, 700)); // Simulate API call for job creation
+      const jobId = `job_${Date.now().toString()}`; 
       
-      // Step 3: Save job with embedding to Firestore (placeholder call)
       if (currentJobEmbedding) {
         const firestoreJobData = {
             title: data.jobTitle,
-            companyName: data.companyName, // Added company name
+            companyName: data.companyName,
             fullJobDescriptionText: jobTextForEmbedding,
             jobEmbedding: currentJobEmbedding,
             location: data.location,
-            jobType: data.jobLevel, // Or map jobLevel to a more specific jobType if needed
+            jobLevel: data.jobLevel, 
+            department: data.department,
+            // For summary fields, we might use a snippet or leave them for more complex AI processing later
+            responsibilitiesSummary: data.responsibilities.substring(0, 200) + (data.responsibilities.length > 200 ? "..." : ""),
+            qualificationsSummary: data.qualifications.substring(0, 200) + (data.qualifications.length > 200 ? "..." : ""),
         };
-        // Call the placeholder service
-        const saveResult = await saveJobWithEmbedding(simulatedJobId, firestoreJobData);
+        
+        toast({ title: "Saving Job Data...", description: "Sending job details and embedding to storage." });
+        const saveResult = await saveJobWithEmbedding(jobId, firestoreJobData);
         if (saveResult.success) {
-            toast({ title: "Job Data & Embedding Sent to Firestore (Simulated)", description: saveResult.message });
+            toast({ title: "Job Posted & Processed! (Simulated)", description: `The job "${data.jobTitle}" is now active. ${saveResult.message}`, action: <PlusCircle className="text-primary" />});
+            form.reset();
+            setGeneratedDescription(null);
+            setJobEmbeddingResult(null);
         } else {
-            throw new Error(saveResult.message); // Propagate error to be caught below
+            throw new Error(saveResult.message);
         }
+      } else {
+         throw new Error("Job embedding could not be generated. Cannot save job.");
       }
-
-      toast({
-        title: "Job Posted Successfully!",
-        description: `The job "${data.jobTitle}" has been submitted and processed.`,
-        action: <PlusCircle className="text-primary" />,
-      });
-      form.reset();
-      setGeneratedDescription(null);
-      setJobEmbeddingResult(null);
-
     } catch (error) {
         console.error("Error during job submission or embedding:", error);
         let errorMessage = "An unexpected error occurred.";
@@ -355,4 +344,3 @@ export default function NewJobPage() {
     </Container>
   );
 }
-

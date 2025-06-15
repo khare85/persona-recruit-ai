@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, ThumbsUp, Brain, FileText, Search } from 'lucide-react';
+import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, ThumbsUp, Brain, FileText, Search, UsersRound } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,6 +22,7 @@ const MOCK_JOB_DETAILS = {
   type: 'Full-time',
   salary: '$120,000 - $150,000 per year',
   postedDate: '2024-07-28',
+  numberOfApplicants: 3, // Add mock number of applicants
   fullDescriptionForAI: `
     Job Title: Senior Frontend Engineer
     Company: Tech Solutions Inc.
@@ -88,14 +89,15 @@ const MOCK_JOB_DETAILS = {
   ],
 };
 
-const MOCK_CANDIDATE_PROFILE = `
+// This profile is used for AI matching demonstration on this page
+const MOCK_CANDIDATE_PROFILE_FOR_JOB_VIEW = `
 Candidate Name: Alice Wonderland
 Current Title: Senior Software Engineer
 Contact: alice.w@example.com | (555) 123-4567
 LinkedIn: linkedin.com/in/alicewonderland | Portfolio: alicew.dev
 
 Summary:
-Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Seeking a challenging remote role where I can contribute to meaningful projects and continue to grow professionally. Prefers companies with strong engineering culture and focus on work-life balance.
+Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Prefers companies with strong engineering culture and focus on work-life balance.
 
 Skills:
 React, Next.js, TypeScript, JavaScript (ES6+), Node.js, Python, HTML5, CSS3/SASS, Tailwind CSS, Styled Components, GraphQL, REST APIs, WebSockets, Zustand, Redux, Webpack, Babel, Jest, React Testing Library, Cypress, Docker, Kubernetes, AWS (EC2, S3, Lambda, API Gateway), CI/CD (Jenkins, GitLab CI), Agile Methodologies, Scrum, System Design, Microservices, Web Performance Optimization, Accessibility (WCAG).
@@ -127,9 +129,10 @@ Certifications:
 - Certified Kubernetes Administrator (CKA) (2022)
 `;
 
-interface JobDetails extends Omit<typeof MOCK_JOB_DETAILS, 'fullDescriptionForAI'> {
+interface JobDetails extends Omit<typeof MOCK_JOB_DETAILS, 'fullDescriptionForAI' | 'numberOfApplicants'> {
   aiMatch: CandidateJobMatcherOutput | null;
   displayDescription: string;
+  numberOfApplicants?: number;
 }
 
 async function getJobDetails(id: string): Promise<JobDetails | null> {
@@ -138,9 +141,9 @@ async function getJobDetails(id: string): Promise<JobDetails | null> {
     let aiMatchResult: CandidateJobMatcherOutput | null = null;
     try {
         aiMatchResult = await candidateJobMatcher({ 
-            candidateProfile: MOCK_CANDIDATE_PROFILE, 
+            candidateProfile: MOCK_CANDIDATE_PROFILE_FOR_JOB_VIEW, 
             jobDescription: MOCK_JOB_DETAILS.fullDescriptionForAI,
-            companyInformation: MOCK_JOB_DETAILS.companyDescription // Pass company description here
+            companyInformation: MOCK_JOB_DETAILS.companyDescription
         });
     } catch (error) {
         console.error("AI Matching Error:", error);
@@ -151,7 +154,28 @@ async function getJobDetails(id: string): Promise<JobDetails | null> {
     return { 
         ...restOfJobDetails, 
         aiMatch: aiMatchResult,
-        displayDescription: fullDescriptionForAI 
+        displayDescription: fullDescriptionForAI,
+        numberOfApplicants: MOCK_JOB_DETAILS.numberOfApplicants // Pass through the number of applicants
+    };
+  }
+  // Simulate another job with no applicants for demonstration
+  if (id === '2') {
+    return {
+      id: '2',
+      title: 'AI/ML Product Manager',
+      company: 'FutureAI Corp.',
+      companyLogo: 'https://placehold.co/100x100.png?b=fa',
+      companyDescription: 'FutureAI Corp. is at the forefront of AI innovation.',
+      location: 'New York, NY',
+      type: 'Full-time',
+      salary: '$140,000 - $170,000',
+      postedDate: '2024-07-25',
+      responsibilities: ['Lead AI product strategy', 'Drive innovation'],
+      qualifications: ['5+ years PM', 'AI/ML background'],
+      benefits: ['Great culture', 'Stock options'],
+      aiMatch: null, // No AI match for this demo view
+      displayDescription: "Lead the product strategy for our cutting-edge AI platform...",
+      numberOfApplicants: 0,
     };
   }
   return null;
@@ -228,13 +252,26 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
             <CardHeader>
               <CardTitle className="text-xl">Ready to Apply?</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <Button size="lg" className="w-full"> <ThumbsUp className="mr-2"/> Apply Now</Button>
+              {/* Conditional "View Applicants" button for recruiters/company users */}
+              {/* For demo, we'll show it if there are applicants. In real app, this would be role-based. */}
+              {(job.numberOfApplicants || 0) > 0 ? (
+                <Link href={`/jobs/${job.id}/applicants`} passHref className="block">
+                  <Button variant="secondary" className="w-full">
+                    <UsersRound className="mr-2" /> View Applicants ({job.numberOfApplicants})
+                  </Button>
+                </Link>
+              ) : (
+                 <Button variant="secondary" className="w-full" disabled>
+                    <UsersRound className="mr-2" /> No Applicants Yet
+                  </Button>
+              )}
               <Button variant="outline" className="w-full mt-3">Save Job</Button>
             </CardContent>
           </Card>
 
-          {job.aiMatch ? (
+          {job.aiMatch && (
             <Card className="shadow-lg bg-gradient-to-br from-accent/10 to-primary/10 border-accent">
               <CardHeader>
                 <CardTitle className="text-xl flex items-center text-primary">
@@ -265,18 +302,9 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                  <p className="text-xs text-muted-foreground/70 italic">AI assessment for demo. Actual match may vary.</p>
               </CardFooter>
             </Card>
-          ) : (
-             <Card className="shadow-lg border-dashed">
-                <CardHeader>
-                    <CardTitle className="text-xl flex items-center text-muted-foreground">
-                        <Brain className="h-6 w-6 mr-2" /> AI Match Analysis
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">AI matching analysis could not be performed for this job.</p>
-                </CardContent>
-             </Card>
           )}
+           {/* Removed the "else" for AI Match as it might not always be present for all jobs */}
+
 
           <Card className="shadow-lg">
             <CardHeader>
@@ -303,3 +331,4 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
     </Container>
   );
 }
+

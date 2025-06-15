@@ -7,7 +7,7 @@ import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mai
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
-import { jobRecommendationEngine, JobRecommendationOutput } from '@/ai/flows/job-recommendation-engine';
+import { jobRecommendationSemantic, JobRecommendationSemanticOutput } from '@/ai/flows/job-recommendation-semantic-flow';
 
 // Mock candidate data - in a real app, this would come from a database or API
 const MOCK_CANDIDATE = {
@@ -61,7 +61,7 @@ const MOCK_CANDIDATE = {
 
 interface EnrichedCandidate extends Omit<typeof MOCK_CANDIDATE, 'skills'> {
   skills: string[]; // Ensure skills is always string array
-  jobRecommendations: JobRecommendationOutput | null;
+  jobRecommendations: JobRecommendationSemanticOutput | null;
   referredBy?: string | null; // Make referredBy optional
 }
 
@@ -70,15 +70,13 @@ async function getCandidateDetails(id: string): Promise<EnrichedCandidate | null
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 50));
   if (id === MOCK_CANDIDATE.id) {
-    let recommendations: JobRecommendationOutput | null = null;
+    let recommendations: JobRecommendationSemanticOutput | null = null;
     try {
-      const candidateProfileForAI = `${MOCK_CANDIDATE.currentTitle}. ${MOCK_CANDIDATE.experienceSummary}`;
-      const jobMarketDataForAI = "Current high demand for Senior Software Engineers with React/Next.js, Cloud (AWS/Azure), and Python experience. Many remote-first companies are hiring. Also growing need for AI/ML specialists and Product Managers with tech backgrounds.";
+      const candidateProfileForAI = `${MOCK_CANDIDATE.currentTitle}. ${MOCK_CANDIDATE.experienceSummary}. Skills: ${MOCK_CANDIDATE.skills.join(', ')}`;
       
-      recommendations = await jobRecommendationEngine({
-        candidateProfile: candidateProfileForAI,
-        candidateSkills: MOCK_CANDIDATE.skills,
-        jobMarketData: jobMarketDataForAI,
+      recommendations = await jobRecommendationSemantic({
+        candidateProfileText: candidateProfileForAI,
+        resultCount: 5,
       });
     } catch (error) {
       console.error("Error fetching job recommendations:", error);
@@ -205,16 +203,29 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
                   <CardHeader>
                     <CardTitle className="text-xl flex items-center">
                       <Lightbulb className="h-6 w-6 mr-2 text-primary" />
-                      AI-Powered Job Recommendations
+                      AI-Powered Job Recommendations (Semantic)
                     </CardTitle>
-                    <CardDescription>Based on your profile and current market trends.</CardDescription>
+                    <CardDescription>Based on semantic similarity to your profile from our job database.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <ul className="space-y-2 list-disc list-inside">
-                      {candidate.jobRecommendations.recommendedJobs.map((jobTitle, index) => (
-                        <li key={index} className="font-medium text-foreground">{jobTitle}</li>
+                    <div className="space-y-3">
+                      {candidate.jobRecommendations.recommendedJobs.map((job, index) => (
+                        <div key={job.jobId || index} className="border rounded-lg p-3 bg-background/50">
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="font-semibold text-foreground">{job.title}</h4>
+                            {job.matchScore && (
+                              <Badge variant="secondary" className="text-xs">
+                                {(job.matchScore * 100).toFixed(0)}% Match
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-primary font-medium">{job.companyName}</p>
+                          {job.location && (
+                            <p className="text-xs text-muted-foreground mt-1">📍 {job.location}</p>
+                          )}
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                     {candidate.jobRecommendations.reasoning && (
                       <div>
                         <h4 className="font-semibold text-sm mt-3 mb-1">Why these roles?</h4>
@@ -225,7 +236,7 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
                     )}
                   </CardContent>
                    <CardFooter className="text-xs text-muted-foreground italic">
-                    These AI recommendations can help guide your job search. Explore <Link href="/jobs" className="text-primary hover:underline">all jobs</Link> for more options.
+                    These semantic recommendations are based on actual jobs in our database. Explore <Link href="/jobs" className="text-primary hover:underline">all jobs</Link> for more options.
                   </CardFooter>
                 </Card>
               )}

@@ -11,38 +11,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
-import { aiTalentSearch, AiTalentSearchInput, AiTalentSearchOutput } from '@/ai/flows/ai-talent-search-flow';
+import { aiTalentSemanticSearch, AiTalentSemanticSearchInput, AiTalentSemanticSearchOutput } from '@/ai/flows/ai-talent-semantic-search-flow';
 import { Loader2, SearchCode, Users, Brain, Sparkles, CheckCircle, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const talentSearchSchema = z.object({
-  searchQuery: z.string().min(20, "Search query or job description snippet must be at least 20 characters."),
-  filters: z.object({
-    availabilityInDays: z.coerce.number().optional(),
-    isOpenToRemote: z.boolean().optional(),
-    minExperienceYears: z.coerce.number().optional(),
-  }).optional(),
-  resultCount: z.coerce.number().min(3).max(10).default(5),
+  searchQuery: z.string().min(10, "Search query must be at least 10 characters."),
+  resultCount: z.coerce.number().min(1).max(20).default(5),
 });
 
 type TalentSearchFormValues = z.infer<typeof talentSearchSchema>;
 
 export default function AiTalentSearchPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResult, setSearchResult] = useState<AiTalentSearchOutput | null>(null);
+  const [searchResult, setSearchResult] = useState<AiTalentSemanticSearchOutput | null>(null);
   const { toast } = useToast();
 
   const form = useForm<TalentSearchFormValues>({
     resolver: zodResolver(talentSearchSchema),
     defaultValues: {
       searchQuery: '',
-      filters: {
-        isOpenToRemote: false,
-      },
       resultCount: 5,
     },
   });
@@ -52,13 +43,12 @@ export default function AiTalentSearchPage() {
     setSearchResult(null);
 
     try {
-      const input: AiTalentSearchInput = {
+      const input: AiTalentSemanticSearchInput = {
         searchQuery: data.searchQuery,
-        filters: data.filters,
         resultCount: data.resultCount,
       };
       
-      const result = await aiTalentSearch(input);
+      const result = await aiTalentSemanticSearch(input);
       setSearchResult(result);
       toast({
         title: "Talent Search Complete!",
@@ -83,10 +73,10 @@ export default function AiTalentSearchPage() {
       <Card className="max-w-5xl mx-auto shadow-xl">
         <CardHeader className="text-center">
           <SearchCode className="mx-auto h-12 w-12 text-primary mb-3" />
-          <CardTitle className="text-3xl font-headline">AI Talent Search (Premium)</CardTitle>
+          <CardTitle className="text-3xl font-headline">AI Talent Search (Semantic)</CardTitle>
           <CardDescription>
-            Describe your ideal candidate or paste a job description snippet. Our AI will search our talent pool.
-            For demo purposes, this uses mock candidate generation.
+            Describe your ideal candidate or paste a job description snippet. Our AI will search our talent pool using semantic similarity.
+            This searches real candidate profiles stored in our database.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -111,63 +101,18 @@ export default function AiTalentSearchPage() {
                 )}
               />
 
-              <Card className="bg-muted/50 p-6">
-                <CardTitle className="text-xl mb-4">Optional Filters</CardTitle>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="filters.availabilityInDays"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Available Within (Days)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 7 for 1 week" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="filters.minExperienceYears"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minimum Experience (Years)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 5" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="filters.isOpenToRemote"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 h-full justify-center">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            Open to Remote Work
-                          </FormLabel>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                 <FormField
-                    control={form.control}
-                    name="resultCount"
-                    render={({ field }) => (
-                      <FormItem className="mt-6">
-                        <FormLabel>Number of Results to Show (3-10)</FormLabel>
-                        <FormControl><Input type="number" min="3" max="10" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-              </Card>
+              <FormField
+                control={form.control}
+                name="resultCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of Results to Show (1-20)</FormLabel>
+                    <FormControl><Input type="number" min="1" max="20" {...field} /></FormControl>
+                    <FormDescription>How many candidate profiles to return from the semantic search.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
             </CardContent>
             <CardFooter className="flex flex-col items-center gap-4 pt-6">
@@ -177,10 +122,10 @@ export default function AiTalentSearchPage() {
               </Button>
               <Alert variant="default" className="mt-4">
                 <Info className="h-4 w-4" />
-                <AlertTitle>Premium Feature Simulation</AlertTitle>
+                <AlertTitle>Semantic Search</AlertTitle>
                 <AlertDescription>
-                  In a live version, this search would query a vast candidate database. For this demo, AI generates mock profiles matching your query.
-                  The top profiles are shown; further access could be part of a subscription or pay-per-profile model.
+                  This search uses AI embeddings to find candidates whose profiles are semantically similar to your query.
+                  Results are based on actual candidate data stored in your Firestore database.
                 </AlertDescription>
               </Alert>
             </CardFooter>
@@ -200,30 +145,24 @@ export default function AiTalentSearchPage() {
                     <div className="flex justify-between items-start">
                         <CardTitle className="text-xl">{candidate.fullName}</CardTitle>
                         <Badge variant="secondary" className="text-sm">
-                            {(candidate.matchScore * 100).toFixed(0)}% Match
+                            {candidate.matchScore ? `${(candidate.matchScore * 100).toFixed(0)}% Match` : 'Match'}
                         </Badge>
                     </div>
                     <CardDescription>{candidate.currentTitle}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                     <Progress value={candidate.matchScore * 100} className="h-2" />
-                    <div>
-                        <h4 className="text-xs font-semibold text-muted-foreground mb-1">AI Justification:</h4>
-                        <p className="text-xs text-foreground/80 bg-muted/30 p-2 rounded-md border italic">
-                            {candidate.matchJustification}
-                        </p>
-                    </div>
+                     <Progress value={candidate.matchScore ? candidate.matchScore * 100 : 0} className="h-2" />
                      <div>
                         <h4 className="text-xs font-semibold text-muted-foreground mb-1">Profile Excerpt:</h4>
-                        <p className="text-xs text-foreground/80">{candidate.profileSummaryExcerpt}</p>
+                        <p className="text-xs text-foreground/80">{candidate.profileSummaryExcerpt || 'No summary available'}</p>
                     </div>
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {candidate.topSkills.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>)}
+                        {candidate.topSkills?.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>) || <span className="text-xs text-muted-foreground">No skills listed</span>}
                       </div>
                     </div>
-                     <p className="text-xs text-muted-foreground">Availability: <span className="font-medium text-foreground">{candidate.availability}</span></p>
+                     <p className="text-xs text-muted-foreground">Availability: <span className="font-medium text-foreground">{candidate.availability || 'Not specified'}</span></p>
                   </CardContent>
                   <CardFooter>
                     <Button variant="link" className="text-xs p-0 h-auto">View Full Profile (Premium)</Button>
@@ -241,7 +180,7 @@ export default function AiTalentSearchPage() {
                 <Users className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
                 <h3 className="text-xl font-semibold">No Candidates Found</h3>
                 <p className="text-muted-foreground">
-                    The AI couldn't find mock candidates matching your specific query and filters. Try broadening your search.
+                    No candidates found matching your query. This could mean no candidates are in the database yet, or the semantic search didn't find close matches. Try different keywords.
                 </p>
             </div>
         )}

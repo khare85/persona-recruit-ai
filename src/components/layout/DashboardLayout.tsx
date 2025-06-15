@@ -3,14 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar"; 
+import { Card } from "@/components/ui/card"; 
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
@@ -118,35 +111,35 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-background">
       {currentNavItems.length > 0 && (
-        <Sidebar> 
-          <SidebarHeader className="border-b border-sidebar-border">
+        <div className="w-64 bg-card border-r border-border flex flex-col">
+          <div className="p-4 border-b border-border">
             <Link href={currentDashboardHome} className={cn(
-              "flex items-center gap-2.5 p-1 rounded-md transition-colors hover:bg-sidebar-accent/10 w-full"
+              "flex items-center gap-2.5 p-2 rounded-md transition-colors hover:bg-accent/10 w-full"
             )}>
-              <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary flex-shrink-0" />
-              <span className="font-semibold text-lg text-sidebar-foreground truncate">
+              <CurrentPersonaIcon className="h-7 w-7 text-primary flex-shrink-0" />
+              <span className="font-semibold text-lg text-foreground truncate">
                 {currentPersona}
               </span>
             </Link>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
+          </div>
+          <nav className="flex-1 p-4">
+            <ul className="space-y-2">
               {currentNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href || (item.href !== '/' && item.href !=='#' && item.href !== currentDashboardHome && pathname.startsWith(item.href) )}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <li key={item.href}>
+                  <Link href={item.href} className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                    pathname === item.href || (item.href !== '/' && item.href !=='#' && item.href !== currentDashboardHome && pathname.startsWith(item.href)) 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground"
+                  )}>
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                </li>
               ))}
-            </SidebarMenu>
-          </SidebarContent>
-        </Sidebar>
+            </ul>
+          </nav>
+        </div>
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">

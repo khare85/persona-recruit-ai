@@ -18,8 +18,8 @@ import mime from 'mime';
 
 // Mock data - in a real app, this would come from an API
 const MOCK_INTERVIEW_CONTEXT_DATA = {
-  "1": { // Changed from job1
-    "1": { // Changed from candidate1
+  "1": { 
+    "1": { 
       jobTitle: "Senior Software Engineer (SAP Basis)",
       candidateName: "John Doe",
       jobDescription: "Seeking a Senior Software Engineer with expertise in SAP Basis administration, performance tuning, and cloud integration. Responsibilities include managing complex SAP landscapes, leading system upgrades, and ensuring high availability. Strong problem-solving skills and a proactive approach are essential.",
@@ -38,8 +38,8 @@ const MOCK_INTERVIEW_CONTEXT_DATA = {
       `,
     }
   },
-  "2": { // Changed from job2
-    "2": { // Changed from khan, assuming numeric ID for consistency
+  "2": { 
+    "2": { 
       jobTitle: "Cloud Security Architect",
       candidateName: "Dr. Khan Noonien Singh",
       jobDescription: "Seeking an experienced Cloud Security Architect to design and implement robust security solutions for our multi-cloud environment (AWS, Azure, GCP). Responsibilities include threat modeling, vulnerability management, and ensuring compliance with industry standards. Must have deep knowledge of cloud-native security services and best practices.",
@@ -59,7 +59,7 @@ const MOCK_INTERVIEW_CONTEXT_DATA = {
   }
 };
 
-type CandidateContext = (typeof MOCK_INTERVIEW_CONTEXT_DATA)["1"]["1"]; // Adjusted for new structure
+type CandidateContext = (typeof MOCK_INTERVIEW_CONTEXT_DATA)["1"]["1"]; 
 
 const LiveInterviewPage: NextPage = () => {
   const router = useRouter();
@@ -174,7 +174,7 @@ const LiveInterviewPage: NextPage = () => {
         // If queue is empty and AI is not speaking, it's user's turn
         startUserAudioRecording();
     }
-  }, [isAiSpeaking]); // Removed startUserAudioRecording from dependency
+  }, [isAiSpeaking, startUserAudioRecording]); // Added startUserAudioRecording
 
 
   const processResponseQueue = useCallback(async () => {
@@ -225,7 +225,7 @@ const LiveInterviewPage: NextPage = () => {
     if (responseQueueRef.current.length > 0 && !processingQueueRef.current) {
       processResponseQueue();
     }
-  }, [responseQueueRef.current.length, processResponseQueue]);
+  }, [processResponseQueue]); // Dependency on responseQueueRef.current.length can be tricky, processResponseQueue itself is better.
 
 
   const initializeGenAiSession = useCallback(async () => {
@@ -251,11 +251,14 @@ const LiveInterviewPage: NextPage = () => {
           onopen: () => { 
             console.debug('Gemini Live Session Opened');
             toast({title: "AI Interviewer Connected", description: "Alex is ready to start."});
-             if(genAiSessionRef.current?.sendClientContent) {
-                genAiSessionRef.current.sendClientContent({ turns: [ { text: "Hello" } ] }); // Initial greeting
-             } else {
-                console.error("sendClientContent not available on session during onopen");
-             }
+            // Defer the initial message slightly to ensure session methods are available
+            setTimeout(() => {
+                if(genAiSessionRef.current && genAiSessionRef.current.sendClientContent) {
+                    genAiSessionRef.current.sendClientContent({ turns: [ { text: "Hello" } ] }); // Initial greeting
+                } else {
+                    console.error("sendClientContent still not available on session shortly after onopen");
+                }
+            }, 0); // setTimeout with 0ms delay
           },
           onmessage: (message: LiveServerMessage) => {
             responseQueueRef.current.push(message);
@@ -588,6 +591,8 @@ const LiveInterviewPage: NextPage = () => {
 };
 
 export default LiveInterviewPage;
+    
+
     
 
     

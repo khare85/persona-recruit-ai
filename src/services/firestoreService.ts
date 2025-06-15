@@ -11,15 +11,32 @@ import type { Bucket } from '@google-cloud/storage'; // Bucket type for Firebase
 import { randomUUID } from 'crypto'; // For generating unique filenames
 
 // --- Firebase Admin SDK Setup ---
+// The Firebase Admin SDK needs to be initialized to interact with Firebase services.
 if (!admin.apps.length) {
   try {
     console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK...');
+    // For deployment to Firebase App Hosting (and other GCP managed environments like Cloud Functions, Cloud Run):
+    // `applicationDefault()` automatically finds the credentials provided by the environment.
+    // Ensure the service account associated with your App Hosting backend has the necessary IAM permissions.
     admin.initializeApp({
-       credential: admin.credential.applicationDefault(), 
+       credential: admin.credential.applicationDefault(),
     });
-    console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
+    console.log('[FirestoreService] Firebase Admin SDK initialized successfully using Application Default Credentials.');
   } catch (error) {
-    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly. Details:', error);
+    console.error('[FirestoreService] Error initializing Firebase Admin SDK with Application Default Credentials. This method is expected to work in GCP managed environments (like Firebase App Hosting). Error details:', error);
+    // For local development, if Application Default Credentials are not set up (e.g., via `gcloud auth application-default login`),
+    // you might need to use a service account key file. Example (DO NOT commit service account keys to your repository):
+    //
+    // try {
+    //   const serviceAccount = require('/path/to/your/serviceAccountKey.json'); // Replace with the actual path
+    //   admin.initializeApp({
+    //     credential: admin.credential.cert(serviceAccount)
+    //   });
+    //   console.log('[FirestoreService] Firebase Admin SDK initialized successfully using a service account key file (local development).');
+    // } catch (localError) {
+    //   console.error('[FirestoreService] Failed to initialize with service account key file as well. Local error:', localError);
+    //   console.error('[FirestoreService] Please ensure Firebase Admin SDK is correctly configured for your environment.');
+    // }
   }
 }
 
@@ -35,6 +52,7 @@ try {
 
 } catch (error) {
   console.error('[FirestoreService] Failed to acquire Firestore DB or Storage instance. Details:', error);
+  // This error might occur if admin.initializeApp() failed earlier.
 }
 // --- End Firebase Admin SDK Setup ---
 
@@ -49,17 +67,17 @@ export interface CandidateWithEmbeddingFirestore {
   fullName: string;
   email: string;
   currentTitle: string;
-  extractedResumeText: string; 
-  resumeEmbedding: number[];   
+  extractedResumeText: string;
+  resumeEmbedding: number[];
   skills: string[];
   phone?: string;
   linkedinProfile?: string;
   portfolioUrl?: string;
   experienceSummary?: string;
   aiGeneratedSummary?: string;
-  profilePictureUrl?: string; 
+  profilePictureUrl?: string;
   videoIntroductionUrl?: string;
-  resumeFileUrl?: string; 
+  resumeFileUrl?: string;
   availability?: string;
   lastUpdatedAt: Timestamp;
 }
@@ -71,8 +89,8 @@ export interface JobWithEmbeddingFirestore {
   jobId: string;
   title: string;
   companyName: string;
-  fullJobDescriptionText: string; 
-  jobEmbedding: number[];        
+  fullJobDescriptionText: string;
+  jobEmbedding: number[];
   location?: string;
   jobLevel?: string;
   department?: string;
@@ -83,14 +101,15 @@ export interface JobWithEmbeddingFirestore {
 
 /**
  * Uploads a file to Firebase Storage.
- * @param file The File object to upload (from client-side).
+ * @param fileBuffer The Buffer of the file content to upload.
  * @param destinationPath The full path in Firebase Storage where the file should be saved (e.g., `candidates/candidate123/profile.jpg`).
+ * @param contentType The MIME type of the file.
  * @returns A promise that resolves to the public URL of the uploaded file.
  */
 export async function uploadFileToStorage(fileBuffer: Buffer, destinationPath: string, contentType: string): Promise<string> {
   console.log(`[StorageService] Attempting to upload file to: ${destinationPath} with type: ${contentType}`);
   if (!storageBucket) {
-    const errorMsg = "[StorageService] Firebase Storage bucket not available.";
+    const errorMsg = "[StorageService] Firebase Storage bucket not available. Ensure Firebase Admin SDK initialized correctly.";
     console.error(errorMsg);
     throw new Error(errorMsg);
   }
@@ -101,17 +120,12 @@ export async function uploadFileToStorage(fileBuffer: Buffer, destinationPath: s
     await storageFile.save(fileBuffer, {
       metadata: {
         contentType: contentType,
-        // You can add more metadata here, like cache control, custom metadata, etc.
-        // Example: cacheControl: 'public, max-age=31536000'
       },
-      public: true, // Make the file publicly readable
+      public: true,
     });
 
-    // Construct the public URL manually. Note: This format is common but can change.
-    // For more robust URL generation, consider using getSignedUrl for controlled access
-    // or ensuring your bucket has uniform public access enabled.
     const publicUrl = `https://storage.googleapis.com/${storageBucket.name}/${destinationPath}`;
-    
+
     console.log(`[StorageService] File uploaded successfully. Public URL: ${publicUrl}`);
     return publicUrl;
   } catch (error) {
@@ -131,7 +145,7 @@ export async function saveCandidateWithEmbedding(
     resumeEmbedding: number[];
     skills: string[];
     aiGeneratedSummary?: string;
-    profilePictureUrl?: string; 
+    profilePictureUrl?: string;
     videoIntroductionUrl?: string;
     resumeFileUrl?: string;
     availability?: string;
@@ -140,7 +154,7 @@ export async function saveCandidateWithEmbedding(
   console.log(`[FirestoreService] Attempting to save/update candidate ${candidateId}.`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available.";
+    const errorMsg = "[FirestoreService] Firestore DB not available. Ensure Firebase Admin SDK initialized correctly.";
     console.error(errorMsg);
     return { success: false, message: errorMsg };
   }
@@ -148,7 +162,7 @@ export async function saveCandidateWithEmbedding(
   try {
     const candidateRef = db.collection(CANDIDATES_COLLECTION).doc(candidateId);
     const saveData: CandidateWithEmbeddingFirestore = {
-      candidateId, // ensure candidateId is part of the object being saved
+      candidateId, 
       fullName: data.fullName,
       email: data.email,
       currentTitle: data.currentTitle,
@@ -199,7 +213,7 @@ export async function searchCandidatesByEmbedding(
   console.log(`[FirestoreService] Attempting to search for ${topN} candidates with query embedding (length: ${queryEmbedding.length}).`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available for search.";
+    const errorMsg = "[FirestoreService] Firestore DB not available for search. Ensure Firebase Admin SDK initialized correctly.";
     console.error(errorMsg);
     return [];
   }
@@ -253,7 +267,7 @@ export async function saveJobWithEmbedding(
   console.log(`[FirestoreService] Attempting to save/update job ${jobId}.`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available.";
+    const errorMsg = "[FirestoreService] Firestore DB not available. Ensure Firebase Admin SDK initialized correctly.";
     console.error(errorMsg);
     return { success: false, message: errorMsg };
   }
@@ -299,7 +313,7 @@ export async function searchJobsByEmbedding(
   console.log(`[FirestoreService] Attempting to search for ${topN} jobs with query embedding (length: ${queryEmbedding.length}).`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available for search.";
+    const errorMsg = "[FirestoreService] Firestore DB not available for search. Ensure Firebase Admin SDK initialized correctly.";
     console.error(errorMsg);
     return [];
   }

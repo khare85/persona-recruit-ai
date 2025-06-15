@@ -14,10 +14,10 @@ export default function HomePage() {
         <Container className="z-10 text-center">
           <Zap className="mx-auto h-16 w-16 text-primary mb-6 animate-bounce" />
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-headline font-bold tracking-tight text-foreground">
-            Revolutionize Your Recruitment with <span className="text-primary">AI Talent Stream</span>
+            Revolutionize Your Hiring with <span className="text-primary">Persona Recruit AI</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-            The intelligent platform designed to find, assess, and hire top talent faster and smarter than ever before. Leverage the power of AI to streamline your entire hiring process.
+            Accelerate your recruitment process. Our intelligent platform finds, assesses, and helps you hire top talent smarter and faster using the power of AI.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link href="/auth" passHref>
@@ -27,7 +27,7 @@ export default function HomePage() {
             </Link>
             <Link href="/auth" passHref>
               <Button size="lg" variant="outline" className="w-full sm:w-auto shadow-lg hover:shadow-accent/30 transition-shadow">
-                <LogIn className="mr-2 h-5 w-5" /> Existing User? Login
+                <LogIn className="mr-2 h-5 w-5" /> Login / View Demo
               </Button>
             </Link>
           </div>
@@ -35,8 +35,8 @@ export default function HomePage() {
         <div className="absolute inset-0 z-0 opacity-5">
             <Image 
                 src="https://placehold.co/1600x900.png" 
-                data-ai-hint="abstract technology background" 
-                alt="Abstract technology background" 
+                data-ai-hint="abstract technology recruitment" 
+                alt="Abstract technology background for Persona Recruit AI" 
                 layout="fill" 
                 objectFit="cover" 
                 className="blur-md" 
@@ -49,9 +49,9 @@ export default function HomePage() {
       <section className="py-16 lg:py-24 bg-background">
         <Container>
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-headline font-semibold text-foreground">Why AI Talent Stream?</h2>
+            <h2 className="text-3xl font-headline font-semibold text-foreground">Why Persona Recruit AI?</h2>
             <p className="mt-3 text-md text-muted-foreground max-w-xl mx-auto">
-              Discover features built to give you a competitive edge in talent acquisition.
+              Discover features built to accelerate your talent acquisition with AI.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -119,7 +119,7 @@ export default function HomePage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-headline font-semibold text-foreground">Flexible Plans for Every Need</h2>
             <p className="mt-3 text-md text-muted-foreground max-w-xl mx-auto">
-              Choose the plan that best suits your organization's size and recruitment goals.
+              Choose the plan that best suits your organization's size and recruitment goals with Persona Recruit AI.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -178,14 +178,14 @@ export default function HomePage() {
            <Image 
                 src="https://placehold.co/150x150.png" 
                 data-ai-hint="diverse team working" 
-                alt="AI Talent Stream Team" 
+                alt="Persona Recruit AI Team" 
                 width={120} 
                 height={120} 
                 className="rounded-full mx-auto mb-6 shadow-lg"
             />
-          <h2 className="text-3xl font-headline font-semibold text-foreground">About AI Talent Stream</h2>
+          <h2 className="text-3xl font-headline font-semibold text-foreground">About Persona Recruit AI</h2>
           <p className="mt-4 text-md text-muted-foreground max-w-2xl mx-auto">
-            We are a passionate team of technologists and HR experts dedicated to making recruitment more efficient, effective, and equitable through the power of artificial intelligence. Our mission is to connect great companies with exceptional talent, seamlessly.
+            We are a passionate team of technologists and HR experts dedicated to accelerating recruitment and making it more efficient, effective, and equitable through the power of artificial intelligence. Our mission is to connect great companies with exceptional talent, seamlessly.
           </p>
            <Button variant="link" className="mt-4 text-primary text-lg">
             Learn More About Us <ArrowRight className="ml-2 h-5 w-5" />

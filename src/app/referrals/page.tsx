@@ -15,10 +15,10 @@ export default function ReferralsPage() {
       <div className="text-center mb-12">
         <Gift className="mx-auto h-16 w-16 text-primary mb-4" />
         <h1 className="text-4xl font-headline font-bold text-foreground">
-          AI Talent Stream Referral Program
+          Persona Recruit AI Referral Program
         </h1>
         <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Share the benefits of AI-powered recruitment and earn rewards! Help your network find amazing opportunities or top talent.
+          Share the benefits of AI-powered recruitment and earn rewards! Help your network find amazing opportunities or top talent with Persona Recruit AI.
         </p>
       </div>
 
@@ -44,14 +44,14 @@ export default function ReferralsPage() {
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">2</div>
               <div>
                 <h4 className="font-semibold">They Sign Up & Engage</h4>
-                <p className="text-sm text-muted-foreground">Your referred candidates complete profiles or companies post jobs.</p>
+                <p className="text-sm text-muted-foreground">Your referred candidates complete profiles or companies post jobs on Persona Recruit AI.</p>
               </div>
             </div>
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">3</div>
               <div>
                 <h4 className="font-semibold">Success & Rewards!</h4>
-                <p className="text-sm text-muted-foreground">Earn cash or platform credits when your referred candidate is hired or a referred company makes a successful hire.</p>
+                <p className="text-sm text-muted-foreground">Earn cash or platform credits when your referred candidate is hired or a referred company makes a successful hire through Persona Recruit AI.</p>
               </div>
             </div>
           </CardContent>
@@ -75,8 +75,8 @@ export default function ReferralsPage() {
                 Your Unique Referral Link:
               </label>
               <div className="flex space-x-2">
-                <Input id="referralLink" value="https://aitalentstream.com/referral?id=YOUR_UNIQUE_ID" readOnly />
-                <Button variant="outline" onClick={() => navigator.clipboard.writeText('https://aitalentstream.com/referral?id=YOUR_UNIQUE_ID')}>
+                <Input id="referralLink" value="https://personarecruit.ai/referral?id=YOUR_UNIQUE_ID" readOnly />
+                <Button variant="outline" onClick={() => navigator.clipboard.writeText('https://personarecruit.ai/referral?id=YOUR_UNIQUE_ID')}>
                   Copy
                 </Button>
               </div>
@@ -119,7 +119,7 @@ export default function ReferralsPage() {
               What You Can Earn
             </h2>
             <p className="mt-2 text-md text-muted-foreground">
-              Generous rewards for helping us grow our community.
+              Generous rewards for helping us grow our community on Persona Recruit AI.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -150,11 +150,11 @@ export default function ReferralsPage() {
       <div className="mt-16 text-center">
          <Image 
             src="https://placehold.co/700x300.png" 
-            alt="Referral program visual" 
+            alt="Referral program visual for Persona Recruit AI" 
             width={700} 
             height={300} 
             className="rounded-lg mx-auto shadow-md"
-            data-ai-hint="network connection"
+            data-ai-hint="network connection growth"
           />
         <p className="mt-6 text-lg text-muted-foreground">
           Questions? Read our <Link href="#" className="text-primary hover:underline">Referral Program FAQ</Link> or <Link href="#" className="text-primary hover:underline">Contact Support</Link>.

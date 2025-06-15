@@ -12,8 +12,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'; // Authen
 // Metadata can still be defined, but if used in client component, might need dynamic handling or be static.
 // For simplicity, we'll keep it static here. Next.js handles this well.
 // export const metadata: Metadata = { 
-// title: 'AI Talent Stream',
-// description: 'Revolutionizing talent acquisition with AI.',
+// title: 'Persona Recruit AI',
+// description: 'Accelerating recruitment with the power of AI.',
 // };
 
 
@@ -36,8 +36,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <title>AI Talent Stream</title> {/* Fallback title */}
-        <meta name="description" content="Revolutionizing talent acquisition with AI." />
+        <title>Persona Recruit AI</title> 
+        <meta name="description" content="Accelerating recruitment with the power of AI." />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen bg-background">
         {isPublicPage ? (

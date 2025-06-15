@@ -3,9 +3,9 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { FileText, LogIn, UserPlus } from 'lucide-react';
+import { Zap, LogIn, UserPlus } from 'lucide-react'; // Changed icon for branding
 
-// This Navbar is now simplified for public-facing pages like Home and Auth.
+// This Navbar is simplified for public-facing pages like Home and Auth.
 // The main application navigation will be handled by DashboardLayout's sidebar.
 export function Navbar() {
   return (
@@ -14,9 +14,9 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" passHref>
             <div className="flex items-center space-x-2 cursor-pointer group">
-              <FileText className="h-8 w-8 text-primary transition-transform duration-300 ease-out group-hover:rotate-[15deg]" />
+              <Zap className="h-8 w-8 text-primary transition-transform duration-300 ease-out group-hover:rotate-[15deg]" />
               <span className="text-2xl font-headline font-semibold text-primary group-hover:text-primary/90 transition-colors">
-                AI Talent Stream
+                Persona Recruit AI
               </span>
             </div>
           </Link>

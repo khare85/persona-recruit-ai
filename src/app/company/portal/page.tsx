@@ -191,7 +191,7 @@ export default function CompanyJobPortalPage() {
                 </p>
                  <Link href="/jobs" passHref>
                     <Button variant="outline" className="mt-6">
-                        Explore All Jobs on AI Talent Stream
+                        Explore All Jobs on Persona Recruit AI
                     </Button>
                 </Link>
             </CardContent>
@@ -200,9 +200,9 @@ export default function CompanyJobPortalPage() {
 
       <div className="mt-12 text-center text-sm text-muted-foreground">
         <p>
-            This job board is powered by AI Talent Stream. This page can be embedded into your company's website.
+            This job board is powered by Persona Recruit AI. This page can be embedded into your company's website.
         </p>
-        <Link href="/" className="text-primary hover:underline">Learn more about AI Talent Stream</Link>
+        <Link href="/" className="text-primary hover:underline">Learn more about Persona Recruit AI</Link>
       </div>
     </Container>
   );

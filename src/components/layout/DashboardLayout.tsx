@@ -17,7 +17,7 @@ import {
   // SidebarFooter, // Example if needed
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FileText, Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, UserCircle, Menu } from 'lucide-react';
+import { Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, UserCircle, Menu, Zap } from 'lucide-react'; // Added Zap
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile"; // To handle mobile sidebar behavior
 
@@ -44,9 +44,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               "flex items-center gap-2.5 p-2 rounded-md transition-colors",
               "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}>
-              <FileText className="h-7 w-7 text-sidebar-primary" />
+              <Zap className="h-7 w-7 text-sidebar-primary" /> 
               <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden">
-                AI Talent Stream
+                Persona Recruit AI
               </span>
             </Link>
           </SidebarHeader>

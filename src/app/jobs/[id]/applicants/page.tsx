@@ -16,8 +16,6 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // --- Mock Data ---
-// This would typically come from a database
-
 const MOCK_JOB_LISTINGS_DATA = {
   '1': {
     id: '1',
@@ -76,7 +74,7 @@ const MOCK_JOB_LISTINGS_DATA = {
 
 const MOCK_APPLICANTS_DATA = [
   {
-    id: 'cand1', // Corresponds to Alice Wonderland if using candidate ID '1'
+    id: '1', // Corrected ID for Alice Wonderland to match candidate profile page
     jobId: '1',
     fullName: 'Alice Wonderland',
     avatarUrl: 'https://placehold.co/100x100.png?a=1',
@@ -128,13 +126,12 @@ const MOCK_APPLICANTS_DATA = [
     referredBy: 'Bruce W. (Employee)',
   },
 ];
-
 // --- End Mock Data ---
 
-interface Applicant extends Omit<(typeof MOCK_APPLICANTS_DATA)[0], 'jobId' | 'profileSummaryForAI'> {
+interface Applicant extends Omit<(typeof MOCK_APPLICANTS_DATA)[0], 'jobId'> {
   aiMatch?: CandidateJobMatcherOutput;
-  isMatching?: boolean; // To show loader for individual AI match
-  profileSummaryForAI: string; // Ensure this is always present
+  isMatching?: boolean;
+  profileSummaryForAI: string;
   source: string;
   referredBy: string | null;
 }
@@ -148,20 +145,16 @@ interface JobInfo {
 }
 
 async function getJobAndApplicants(jobId: string): Promise<{ job: JobInfo | null; applicants: Applicant[] }> {
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-  
+  await new Promise(resolve => setTimeout(resolve, 500));
   const job = MOCK_JOB_LISTINGS_DATA[jobId as keyof typeof MOCK_JOB_LISTINGS_DATA] || null;
   if (!job) {
     return { job: null, applicants: [] };
   }
-
   const jobApplicants = MOCK_APPLICANTS_DATA
     .filter(app => app.jobId === jobId)
-    .map(({ jobId, ...rest }) => ({ ...rest, isMatching: true } as Applicant)); 
-
+    .map(({ jobId, ...rest }) => ({ ...rest, isMatching: false } as Applicant));
   return { job, applicants: jobApplicants };
 }
-
 
 export default function JobApplicantsPage() {
   const router = useRouter();
@@ -175,8 +168,12 @@ export default function JobApplicantsPage() {
 
   useEffect(() => {
     if (jobId) {
-      getJobAndApplicants(jobId)
-        .then(async ({ job: fetchedJob, applicants: fetchedApplicants }) => {
+      const loadData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const { job: fetchedJob, applicants: fetchedApplicants } = await getJobAndApplicants(jobId);
+
           if (!fetchedJob) {
             setError("Job not found or no applicants for this job.");
             setJob(null);
@@ -185,40 +182,37 @@ export default function JobApplicantsPage() {
             return;
           }
           setJob(fetchedJob);
-          // Set initial applicants state with isMatching true to show loaders
+          // Set initial applicants state, mark them for AI matching
           setApplicants(fetchedApplicants.map(app => ({ ...app, isMatching: true })));
           setIsLoading(false);
 
-          // Now, perform AI matching for each applicant
-          const applicantsWithMatchesPromises = fetchedApplicants.map(async (applicant) => {
-            try {
-              const aiMatch = await candidateJobMatcher({
-                candidateProfile: applicant.profileSummaryForAI, 
-                jobDescription: fetchedJob.fullDescriptionForAI,
-                companyInformation: fetchedJob.companyDescription,
-              });
-              return { ...applicant, aiMatch, isMatching: false };
-            } catch (e) {
-              console.error(`Error matching candidate ${applicant.id}:`, e);
-              // Update this specific applicant's state to stop showing loader and indicate error
-              setApplicants(prev => prev.map(a => a.id === applicant.id ? { ...a, aiMatch: undefined, isMatching: false } : a));
-              return { ...applicant, aiMatch: undefined, isMatching: false }; // Return with isMatching false
-            }
-          });
-          
-          const resolvedApplicants = await Promise.all(applicantsWithMatchesPromises);
-          setApplicants(resolvedApplicants);
+          // Perform AI matching for each applicant
+          const matchPromises = fetchedApplicants.map(applicant =>
+            candidateJobMatcher({
+              candidateProfile: applicant.profileSummaryForAI,
+              jobDescription: fetchedJob.fullDescriptionForAI,
+              companyInformation: fetchedJob.companyDescription,
+            }).then(aiMatch => ({ ...applicant, aiMatch, isMatching: false }))
+              .catch(e => {
+                console.error(`Error matching candidate ${applicant.id}:`, e);
+                return { ...applicant, aiMatch: undefined, isMatching: false, matchError: true };
+              })
+          );
 
-        })
-        .catch(err => {
+          const applicantsWithMatches = await Promise.all(matchPromises);
+          setApplicants(applicantsWithMatches);
+
+        } catch (err) {
           console.error("Failed to fetch job and applicants:", err);
           setError("Failed to load applicant data. Please try again.");
           setIsLoading(false);
-        });
+        }
+      };
+      loadData();
     }
   }, [jobId]);
 
-  if (isLoading) {
+  if (isLoading && !job && applicants.length === 0) { // Show initial loading only
     return (
       <Container className="flex flex-col items-center justify-center min-h-[70vh]">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -240,8 +234,8 @@ export default function JobApplicantsPage() {
       </Container>
     );
   }
-  
-  if (!job) { 
+
+  if (!job) {
      return (
       <Container className="text-center py-20">
         <XSquare className="mx-auto h-16 w-16 text-destructive mb-4" />
@@ -254,7 +248,6 @@ export default function JobApplicantsPage() {
       </Container>
     );
   }
-
 
   return (
     <Container>

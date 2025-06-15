@@ -18,19 +18,17 @@ export default function AuthenticationPage() {
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const router = useRouter();
 
-  // In a real app, these would handle actual form submissions
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login submitted");
-    // Simulate login and redirect to a dashboard (conceptual)
+    // In a real app, this would handle actual form submissions
     // For now, redirecting to jobs page as a generic post-login landing.
     // A real app would check user role and redirect accordingly.
-    router.push('/jobs'); 
+    router.push('/jobs');
   };
 
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Sign Up submitted");
+    // In a real app, this would handle actual form submissions
     // Simulate sign up and redirect (conceptual)
     router.push('/jobs'); // Or a welcome/onboarding page
   };
@@ -68,7 +66,7 @@ export default function AuthenticationPage() {
             <h2 className="text-2xl font-semibold text-foreground">Welcome!</h2>
             <p className="text-muted-foreground">Sign in, create an account, or explore our demo.</p>
           </div>
-          
+
           {!showPersonaSelector ? (
             <>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -155,9 +153,9 @@ export default function AuthenticationPage() {
                   </Card>
                 </TabsContent>
               </Tabs>
-              
+
               <Separator className="my-6" />
-              
+
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-3">Or explore the platform with sample data:</p>
                 <Button variant="secondary" className="w-full" onClick={() => setShowPersonaSelector(true)}>

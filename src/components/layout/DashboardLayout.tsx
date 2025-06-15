@@ -1,7 +1,7 @@
 
 "use client";
 
-import * as React from "react";
+import * as React from "react"; // Added React import
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,14 +13,13 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  // SidebarFooter, // Removed as per request
-  SidebarRail,
+  // SidebarRail, // SidebarRail is rendered inside Sidebar component
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
-  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle, FileText, Bell, Home
+  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle, FileText, Bell, Home, // Added Home
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -28,7 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Navigation item definitions
 const defaultNavItems = [
-  { href: '/jobs', label: 'All Jobs', icon: Briefcase },
+  { href: '/', label: 'Home / All Jobs', icon: Home },
   { href: '/candidates', label: 'All Candidates', icon: Users },
   { href: '/referrals', label: 'Referrals Program', icon: Gift },
   { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
@@ -36,10 +35,11 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog },
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
+  { href: '/jobs', label: 'Search Jobs', icon: Briefcase },
   { href: '/candidates/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -55,7 +55,7 @@ const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
   { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo)', icon: UsersRound }, 
+  { href: '/jobs/1/applicants', label: 'Applicants (Demo)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
@@ -63,25 +63,30 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, 
-  { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building }, 
-  { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig }, 
-  { href: '/admin/dashboard#system', label: 'System Health', icon: Server }, 
-  { href: '/admin/dashboard#billing', label: 'Billing & Subs', icon: DollarSign }, 
-  { href: '/admin/dashboard#settings', label: 'Platform Settings', icon: Settings }, 
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound },
+  { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
+  { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
+  { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
+  { href: '/admin/dashboard#billing', label: 'Billing & Subs', icon: DollarSign },
+  { href: '/admin/dashboard#settings', label: 'Platform Settings', icon: Settings },
 ];
 
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
+  const [hasMounted, setHasMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap; 
-  let currentDashboardHome = "/jobs";
+  let CurrentPersonaIcon: React.ElementType = Zap;
+  let currentDashboardHome = "/";
 
-  
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
@@ -95,7 +100,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; 
+    CurrentPersonaIcon = LayoutDashboard;
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -108,25 +113,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = []; 
+    currentNavItems = [];
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = "/"; 
-  } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') ||
-             pathname === '/candidates' || pathname.startsWith('/candidates/new') || 
+    currentDashboardHome = pathname;
+  } else if (pathname === '/' || pathname === '/jobs' || pathname.startsWith('/jobs/') ||
+             pathname === '/candidates' || pathname.startsWith('/candidates/new') ||
              pathname === '/referrals' || pathname === '/interviews') {
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
      CurrentPersonaIcon = Zap;
-     currentDashboardHome = "/jobs"; 
+     currentDashboardHome = "/";
   }
 
+  // Determine sidebar mode based on hasMounted and isMobile
+  // On server and initial client render (before useEffect), default to "icon"
+  // After mount, use isMobile to switch to "offcanvas" if needed.
+  const sidebarCollapsibleMode = !hasMounted ? "icon" : (isMobile ? "offcanvas" : "icon");
 
   return (
     <SidebarProvider defaultOpen={!isMobile} open={isMobile ? false : undefined}>
       <div className="flex h-screen bg-background">
         {currentNavItems.length > 0 && (
-          <Sidebar collapsible={isMobile ? "offcanvas" : "icon"} side="left" className="border-r">
+          // Pass the consistently determined sidebarCollapsibleMode
+          <Sidebar collapsible={sidebarCollapsibleMode} side="left" className="border-r">
             <SidebarHeader className="p-3 border-b">
               <Link href={currentDashboardHome} className={cn(
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
@@ -148,7 +158,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     >
                       <Link href={item.href}>
                         <item.icon />
-                        {/* This span should be correctly shown/hidden by sidebar.tsx CVA rules */}
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -156,21 +165,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            {/* SidebarFooter removed */}
+            {/* SidebarRail is rendered inside Sidebar.tsx based on its props */}
           </Sidebar>
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          
           <header className="p-3 border-b border-border/30 bg-card/80 backdrop-blur-md flex items-center sticky top-0 z-30 h-14">
-            {isMobile && currentNavItems.length > 0 && (
+            {isMobile && currentNavItems.length > 0 && ( // Only show trigger if sidebar is present
               <SidebarTrigger className="text-foreground mr-2">
                  <Menu className="h-6 w-6" />
               </SidebarTrigger>
             )}
-            {/* Keep Persona Name in top bar for context, or remove if preferred */}
             <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
-               <CurrentPersonaIcon className="h-6 w-6 text-primary md:hidden" /> {/* Show icon on mobile if sidebar is hidden */}
+               <CurrentPersonaIcon className="h-6 w-6 text-primary md:hidden" />
               <span className="font-semibold text-md text-foreground truncate">
                 {currentPersona}
               </span>

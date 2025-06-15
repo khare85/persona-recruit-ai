@@ -13,6 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
+import { processResumeWithDocAI, ProcessResumeDocAIInput } from '@/ai/flows/process-resume-document-ai-flow';
 import { UploadCloud, UserPlus, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, PartyPopper } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -61,14 +62,24 @@ export default function NewCandidatePage() {
       portfolioUrl: '',
       experienceSummary: '',
     },
-    mode: "onChange", // Validate on change for better UX in multi-step
+    mode: "onChange", 
   });
 
-  const handleFileChange = (
-    e: ChangeEvent<HTMLInputElement>,
-    handler: (file: File | null) => void
-  ) => {
-    handler(e.target.files ? e.target.files[0] : null);
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64Data = result.split(',')[1];
+        if (base64Data) {
+          resolve(base64Data);
+        } else {
+          reject(new Error("Failed to extract base64 data from file."));
+        }
+      };
+      reader.onerror = (error) => reject(error);
+    });
   };
   
   const handleResumeUpload = async (file: File | null) => {
@@ -78,25 +89,31 @@ export default function NewCandidatePage() {
       setIsParsingResume(true);
       setExtractedSkills([]);
       try {
-        const reader = new FileReader();
-        reader.readAsText(file);
-        reader.onload = async (e) => {
-          const resumeText = e.target?.result as string;
-          if (resumeText) {
-            const input: ExtractSkillsFromResumeInput = { resumeText };
-            const result = await extractSkillsFromResume(input);
-            setExtractedSkills(result.skills);
-            toast({ title: "Resume Parsed", description: "Skills extracted successfully.", action: <CheckCircle className="text-green-500" /> });
-          } else {
-             throw new Error("Could not read resume file content.");
-          }
+        const resumeFileBase64 = await fileToBase64(file);
+        const docAIInput: ProcessResumeDocAIInput = {
+          resumeFileBase64,
+          mimeType: file.type
         };
-        reader.onerror = () => {
-            throw new Error("Error reading resume file.");
+        
+        toast({ title: "Processing Resume...", description: "Using Document AI to extract text. This may take a moment." });
+        const docAIResult = await processResumeWithDocAI(docAIInput);
+        
+        if (docAIResult.extractedText) {
+          toast({ title: "Document AI Success", description: "Resume text extracted. Now extracting skills." });
+          const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
+          const skillResult = await extractSkillsFromResume(skillInput);
+          setExtractedSkills(skillResult.skills);
+          toast({ title: "Skills Extracted", description: "Skills identified from the resume.", action: <CheckCircle className="text-green-500" /> });
+        } else {
+          throw new Error("Document AI did not return extracted text.");
         }
       } catch (error) {
-        console.error("Error parsing resume:", error);
-        toast({ variant: "destructive", title: "Resume Parsing Failed", description: "Could not extract skills. Please check the file or try again." });
+        console.error("Error processing resume or extracting skills:", error);
+        let errorMessage = "An unexpected error occurred.";
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        toast({ variant: "destructive", title: "Resume Processing Failed", description: errorMessage });
       } finally {
         setIsParsingResume(false);
       }
@@ -126,7 +143,7 @@ export default function NewCandidatePage() {
         toast({ variant: "destructive", title: "File Too Large", description: "Video intro should be under 50MB." });
         form.setValue('videoIntroduction', undefined as any, { shouldValidate: true });
         setVideoIntroFileName(null);
-        if (videoIntroRef.current) videoIntroRef.current.value = ""; // Clear file input
+        if (videoIntroRef.current) videoIntroRef.current.value = ""; 
       } else {
         form.setValue('videoIntroduction', file, { shouldValidate: true });
         setVideoIntroFileName(file.name);
@@ -140,7 +157,6 @@ export default function NewCandidatePage() {
   async function onSubmit(data: CandidateFormValues) {
     setIsLoading(true);
     console.log("Candidate data:", data);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     toast({
@@ -164,7 +180,7 @@ export default function NewCandidatePage() {
     if (currentStep === 3) fieldsToValidate = ['resume'];
     if (currentStep === 4) fieldsToValidate = ['profilePicture', 'videoIntroduction'];
 
-    const isValid = await form.trigger(fieldsToValidate as any);
+    const isValid = await form.trigger(fieldsToValidate);
     if (isValid && currentStep < MAX_STEPS) {
       setCurrentStep(prev => prev + 1);
     } else if (isValid && currentStep === MAX_STEPS) {
@@ -191,8 +207,7 @@ export default function NewCandidatePage() {
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-8">
-              {/* Step 1: Personal & Contact Information */}
+            <CardContent className="space-y-8 min-h-[300px]">
               {currentStep === 1 && (
                 <section className="space-y-6 animate-fadeIn">
                   <FormField
@@ -244,7 +259,6 @@ export default function NewCandidatePage() {
                 </section>
               )}
 
-              {/* Step 2: Professional Details */}
               {currentStep === 2 && (
                 <section className="space-y-6 animate-fadeIn">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,7 +301,6 @@ export default function NewCandidatePage() {
                 </section>
               )}
 
-              {/* Step 3: Resume & Skills */}
               {currentStep === 3 && (
                 <section className="space-y-6 animate-fadeIn">
                   <FormField
@@ -297,7 +310,7 @@ export default function NewCandidatePage() {
                       <FormItem>
                         <FormLabel>Resume (PDF, DOC, DOCX, TXT)</FormLabel>
                         <FormControl>
-                          <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full">
+                          <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full" disabled={isParsingResume}>
                             <UploadCloud className="mr-2 h-4 w-4" /> 
                             {resumeFileName ? `Uploaded: ${resumeFileName}` : "Upload Resume"}
                           </Button>
@@ -305,14 +318,15 @@ export default function NewCandidatePage() {
                         <Input 
                           id="resume-upload" 
                           type="file" 
-                          accept=".pdf,.doc,.docx,.txt" 
+                          accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
                           className="hidden" 
                           ref={resumeFileRef}
                           onChange={(e) => handleResumeUpload(e.target.files ? e.target.files[0] : null)} 
                         />
+                         <FormDescription>Document AI will be used for more accurate text extraction from PDFs and Word documents.</FormDescription>
                         {isParsingResume && (
                           <div className="flex items-center text-sm text-muted-foreground mt-2">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Parsing resume, please wait...
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing resume, please wait...
                           </div>
                         )}
                         <FormMessage />
@@ -322,7 +336,7 @@ export default function NewCandidatePage() {
                   
                   {extractedSkills.length > 0 && (
                     <FormItem>
-                      <FormLabel>AI Extracted Skills</FormLabel>
+                      <FormLabel>AI Extracted Skills (from Document AI processed resume)</FormLabel>
                       <div className="p-3 border rounded-md bg-muted/50">
                         <div className="flex flex-wrap gap-2">
                           {extractedSkills.map((skill, index) => (
@@ -336,7 +350,6 @@ export default function NewCandidatePage() {
                 </section>
               )}
 
-              {/* Step 4: Visuals */}
               {currentStep === 4 && (
                 <section className="space-y-6 animate-fadeIn">
                   <div className="flex flex-col items-center space-y-4">
@@ -402,8 +415,8 @@ export default function NewCandidatePage() {
               )}
 
             </CardContent>
-            <CardFooter className="flex justify-between pt-6">
-              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 1 || isLoading}>
+            <CardFooter className="flex justify-between pt-6 border-t">
+              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 1 || isLoading || isParsingResume}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>

@@ -14,6 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
+import { processResumeWithDocAI, ProcessResumeDocAIInput } from '@/ai/flows/process-resume-document-ai-flow';
 import { UploadCloud, UserCog, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -34,8 +35,8 @@ const MOCK_CANDIDATE_DB_DATA = {
   experienceSummary: "Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Seeking a challenging remote role where I can contribute to meaningful projects and continue to grow professionally.",
   skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 'AWS', 'Docker', 'Kubernetes', 'GraphQL', 'System Design', 'Agile Methodologies'],
   avatarUrl: 'https://placehold.co/150x150.png?a=1',
-  videoIntroUrl: 'https://placehold.co/320x180.mp4', // Placeholder for video,
-  resumeUrl: '#', // Placeholder for resume download
+  videoIntroUrl: 'https://placehold.co/320x180.mp4', 
+  resumeUrl: '#', 
 };
 
 
@@ -60,8 +61,8 @@ export default function EditCandidatePage() {
   const candidateId = params.id as string;
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false); // For form submission
-  const [isDataLoading, setIsDataLoading] = useState(true); // For initial data load
+  const [isLoading, setIsLoading] = useState(false); 
+  const [isDataLoading, setIsDataLoading] = useState(true); 
   const [isParsingResume, setIsParsingResume] = useState(false);
   const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
@@ -77,7 +78,7 @@ export default function EditCandidatePage() {
 
   const form = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateFormSchema),
-    defaultValues: { // Keep defaultValues minimal or empty initially
+    defaultValues: { 
         fullName: '',
         email: '',
         phone: '',
@@ -85,7 +86,6 @@ export default function EditCandidatePage() {
         linkedinProfile: '',
         portfolioUrl: '',
         experienceSummary: '',
-        // File fields are initially undefined
     },
     mode: "onChange",
   });
@@ -93,8 +93,6 @@ export default function EditCandidatePage() {
   useEffect(() => {
     setIsDataLoading(true);
     setCandidateNotFound(false);
-    // Simulate fetching candidate data
-    // In a real app, this would be an API call: await fetchCandidate(candidateId)
     new Promise<typeof MOCK_CANDIDATE_DB_DATA | null>(resolve => {
         setTimeout(() => {
             if (candidateId === MOCK_CANDIDATE_DB_DATA.id) {
@@ -113,14 +111,12 @@ export default function EditCandidatePage() {
                 linkedinProfile: data.linkedinProfile,
                 portfolioUrl: data.portfolioUrl,
                 experienceSummary: data.experienceSummary,
-                // Files are not part of form.reset initially unless you have their File objects
             });
             setProfilePicPreview(data.avatarUrl);
             setExtractedSkills(data.skills);
         } else {
             setCandidateNotFound(true);
             toast({ variant: "destructive", title: "Error", description: "Candidate data not found."});
-            // Optionally redirect: router.push('/candidates');
         }
     }).catch(error => {
         console.error("Failed to load candidate data:", error);
@@ -129,40 +125,68 @@ export default function EditCandidatePage() {
     }).finally(() => {
         setIsDataLoading(false);
     });
-  }, [candidateId, form, toast, router]);
+  }, [candidateId, form, toast]);
 
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64Data = result.split(',')[1];
+        if (base64Data) {
+          resolve(base64Data);
+        } else {
+          reject(new Error("Failed to extract base64 data from file."));
+        }
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   const handleResumeUpload = async (file: File | null) => {
     if (file) {
       setResumeFileName(file.name);
       form.setValue('resume', file, { shouldValidate: true });
       setIsParsingResume(true);
+      setExtractedSkills([]); 
       try {
-        const reader = new FileReader();
-        reader.readAsText(file);
-        reader.onload = async (e) => {
-          const resumeText = e.target?.result as string;
-          if (resumeText) {
-            const input: ExtractSkillsFromResumeInput = { resumeText };
-            const result = await extractSkillsFromResume(input);
-            setExtractedSkills(result.skills);
-            toast({ title: "Resume Parsed", description: "Skills updated successfully.", action: <CheckCircle className="text-green-500" /> });
-          } else {
-             throw new Error("Could not read resume file content.");
-          }
+        const resumeFileBase64 = await fileToBase64(file);
+        const docAIInput: ProcessResumeDocAIInput = {
+          resumeFileBase64,
+          mimeType: file.type
         };
-        reader.onerror = () => {
-            throw new Error("Error reading resume file.");
+        
+        toast({ title: "Processing Resume...", description: "Using Document AI to extract text. This may take a moment." });
+        const docAIResult = await processResumeWithDocAI(docAIInput);
+        
+        if (docAIResult.extractedText) {
+          toast({ title: "Document AI Success", description: "Resume text extracted. Now extracting skills." });
+          const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
+          const skillResult = await extractSkillsFromResume(skillInput);
+          setExtractedSkills(skillResult.skills); // Update with new skills
+          toast({ title: "Skills Updated", description: "Skills identified from the newly uploaded resume.", action: <CheckCircle className="text-green-500" /> });
+        } else {
+          throw new Error("Document AI did not return extracted text.");
         }
       } catch (error) {
-        console.error("Error parsing resume:", error);
-        toast({ variant: "destructive", title: "Resume Parsing Failed", description: "Could not extract skills. Please check the file or try again." });
+        console.error("Error processing resume or extracting skills:", error);
+        let errorMessage = "An unexpected error occurred during resume processing.";
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        toast({ variant: "destructive", title: "Resume Update Failed", description: errorMessage });
+        // Optionally, reset to original skills if parsing fails for a new file
+        // if (MOCK_CANDIDATE_DB_DATA.id === candidateId) setExtractedSkills(MOCK_CANDIDATE_DB_DATA.skills);
       } finally {
         setIsParsingResume(false);
       }
     } else {
         setResumeFileName(null);
-        form.setValue('resume', undefined, { shouldValidate: true });
+        form.setValue('resume', undefined);
+        // If removing an uploaded file (not just initial load), consider resetting skills to original
+        // if (MOCK_CANDIDATE_DB_DATA.id === candidateId) setExtractedSkills(MOCK_CANDIDATE_DB_DATA.skills);
     }
   };
 
@@ -175,17 +199,15 @@ export default function EditCandidatePage() {
       };
       reader.readAsDataURL(file);
     } else {
-        form.setValue('profilePicture', undefined, { shouldValidate: true });
-        // Optionally reset preview to original avatar if available
-        // setProfilePicPreview(MOCK_CANDIDATE_DB_DATA.id === candidateId ? MOCK_CANDIDATE_DB_DATA.avatarUrl : null);
+        form.setValue('profilePicture', undefined);
     }
   };
   
   const handleVideoIntroUpload = (file: File | null) => {
     if (file) {
-      if (file.size > 50 * 1024 * 1024) { // Example: 50MB limit
+      if (file.size > 50 * 1024 * 1024) { 
         toast({ variant: "destructive", title: "File Too Large", description: "Video intro should be under 50MB." });
-        form.setValue('videoIntroduction', undefined, { shouldValidate: true });
+        form.setValue('videoIntroduction', undefined);
         setVideoIntroFileName(null);
         if (videoIntroRef.current) videoIntroRef.current.value = ""; 
       } else {
@@ -194,14 +216,13 @@ export default function EditCandidatePage() {
       }
     } else {
       setVideoIntroFileName(null);
-      form.setValue('videoIntroduction', undefined, { shouldValidate: true });
+      form.setValue('videoIntroduction', undefined);
     }
   };
 
   async function onSubmit(data: CandidateFormValues) {
     setIsLoading(true);
     console.log("Updated candidate data:", data);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     toast({
@@ -217,8 +238,8 @@ export default function EditCandidatePage() {
     let fieldsToValidate: (keyof CandidateFormValues)[] = [];
     if (currentStep === 1) fieldsToValidate = ['fullName', 'email', 'currentTitle'];
     if (currentStep === 2) fieldsToValidate = ['experienceSummary'];
-    if (currentStep === 3 && form.getValues("resume")) fieldsToValidate = ['resume']; // Validate only if new resume is added
-    if (currentStep === 4) { // Validate only if new files are added
+    if (currentStep === 3 && form.getValues("resume")) fieldsToValidate = ['resume'];
+    if (currentStep === 4) { 
       if (form.getValues("profilePicture")) fieldsToValidate.push('profilePicture');
       if (form.getValues("videoIntroduction")) fieldsToValidate.push('videoIntroduction');
     }
@@ -278,7 +299,7 @@ export default function EditCandidatePage() {
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-8 min-h-[300px]"> {/* Added min-height for consistent form size */}
+            <CardContent className="space-y-8 min-h-[300px]">
               {currentStep === 1 && (
                 <section className="space-y-6 animate-fadeIn">
                   <FormField
@@ -381,7 +402,7 @@ export default function EditCandidatePage() {
                       <FormItem>
                         <FormLabel>Update Resume (PDF, DOC, DOCX, TXT)</FormLabel>
                         <FormControl>
-                          <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full">
+                          <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full" disabled={isParsingResume}>
                             <UploadCloud className="mr-2 h-4 w-4" /> 
                             {resumeFileName ? `New: ${resumeFileName}` : "Upload New Resume"}
                           </Button>
@@ -389,15 +410,15 @@ export default function EditCandidatePage() {
                         <Input 
                           id="resume-upload" 
                           type="file" 
-                          accept=".pdf,.doc,.docx,.txt" 
+                          accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                           className="hidden" 
                           ref={resumeFileRef}
                           onChange={(e) => handleResumeUpload(e.target.files ? e.target.files[0] : null)} 
                         />
-                        <FormDescription>Leave blank to keep current resume. Uploading a new one will replace it and re-parse skills.</FormDescription>
+                        <FormDescription>Leave blank to keep current resume. Uploading new replaces it and re-parses skills using Document AI.</FormDescription>
                         {isParsingResume && (
                           <div className="flex items-center text-sm text-muted-foreground mt-2">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Parsing resume, please wait...
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing resume, please wait...
                           </div>
                         )}
                         <FormMessage />
@@ -414,7 +435,7 @@ export default function EditCandidatePage() {
                             <Badge key={index} variant="secondary">{skill}</Badge>
                           ))}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">These skills are based on the current resume on file or the one just uploaded.</p>
+                        <p className="text-xs text-muted-foreground mt-2">These skills are based on the current resume on file or the one just processed by Document AI.</p>
                       </div>
                     </FormItem>
                   )}
@@ -509,5 +530,3 @@ export default function EditCandidatePage() {
     </Container>
   );
 }
-
-    

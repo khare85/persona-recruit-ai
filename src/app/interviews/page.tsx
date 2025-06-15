@@ -12,9 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
-import { generateVideoInterviewAnalysisReport, VideoInterviewAnalysisReportInput } from '@/ai/flows/video-interview-analysis';
-import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye } from 'lucide-react';
+import { generateVideoInterviewAnalysisReport, VideoInterviewAnalysisReportInput, VideoInterviewAnalysisReportOutput } from '@/ai/flows/video-interview-analysis';
+import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
 
 const interviewAnalysisSchema = z.object({
   videoFile: z.custom<File>((val) => val instanceof File, "Video file is required."),
@@ -25,15 +26,10 @@ const interviewAnalysisSchema = z.object({
 
 type InterviewAnalysisFormValues = z.infer<typeof interviewAnalysisSchema>;
 
-interface AnalysisReport {
-  behavioralAnalysis: string;
-  audioTranscriptHighlights: string;
-  suitabilityJustifications: string;
-}
 
 export default function InterviewAnalysisPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
+  const [analysisReport, setAnalysisReport] = useState<VideoInterviewAnalysisReportOutput | null>(null);
   const [videoFileName, setVideoFileName] = useState<string | null>(null);
   const videoFileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -51,21 +47,23 @@ export default function InterviewAnalysisPage() {
     if (file) {
       if (file.type.startsWith('video/')) {
         setVideoFileName(file.name);
-        form.setValue('videoFile', file);
+        form.setValue('videoFile', file, { shouldValidate: true });
         if (file.size > 100 * 1024 * 1024) { // Example: 100MB limit
             toast({ variant: "destructive", title: "File Too Large", description: "Video file should be under 100MB." });
-            form.setValue('videoFile', undefined as any); // Reset if too large
+            form.setValue('videoFile', undefined as any, { shouldValidate: true }); 
             setVideoFileName(null);
         }
       } else {
         toast({ variant: "destructive", title: "Invalid File Type", description: "Please upload a valid video file." });
-        form.setValue('videoFile', undefined as any);
+        form.setValue('videoFile', undefined as any, { shouldValidate: true });
         setVideoFileName(null);
       }
+    } else {
+        setVideoFileName(null);
+        form.setValue('videoFile', undefined as any, { shouldValidate: true });
     }
   };
   
-  // Helper to convert File to Data URI
   const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -80,6 +78,11 @@ export default function InterviewAnalysisPage() {
     setAnalysisReport(null);
 
     try {
+      if (!data.videoFile) {
+          toast({ variant: "destructive", title: "Missing File", description: "Please upload a video file." });
+          setIsLoading(false);
+          return;
+      }
       const videoDataUri = await fileToDataUri(data.videoFile);
       
       const input: VideoInterviewAnalysisReportInput = {
@@ -109,6 +112,36 @@ export default function InterviewAnalysisPage() {
     }
   }
 
+  const getRecommendationBadgeVariant = (recommendation?: string) => {
+    switch (recommendation) {
+      case "Strongly Recommended":
+        return "default";
+      case "Recommended":
+        return "secondary";
+      case "Recommended with Reservations":
+        return "outline";
+      case "Not Recommended":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+  
+  const getRecommendationIcon = (recommendation?: string) => {
+    switch (recommendation) {
+      case "Strongly Recommended":
+      case "Recommended":
+        return <ThumbsUp className="mr-2 h-5 w-5 text-green-500" />;
+      case "Recommended with Reservations":
+        return <AlertTriangle className="mr-2 h-5 w-5 text-yellow-500" />;
+      case "Not Recommended":
+        return <ThumbsDown className="mr-2 h-5 w-5 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+
   return (
     <Container>
       <Card className="max-w-4xl mx-auto shadow-xl">
@@ -127,7 +160,7 @@ export default function InterviewAnalysisPage() {
               <FormField
                 control={form.control}
                 name="videoFile"
-                render={({ field }) => (
+                render={({ field }) => ( // field is not directly used due to custom handler
                   <FormItem>
                     <FormLabel>Interview Video File (MP4, MOV, WebM)</FormLabel>
                     <FormControl>
@@ -204,17 +237,57 @@ export default function InterviewAnalysisPage() {
 
         {analysisReport && (
           <div className="p-6 border-t">
-            <h2 className="text-2xl font-headline font-semibold mb-4">Analysis Report</h2>
-            <Tabs defaultValue="behavioral" className="w-full">
+            <h2 className="text-2xl font-headline font-semibold mb-4">AI Analysis Report</h2>
+            <Tabs defaultValue="suitability" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="suitability">Suitability Assessment</TabsTrigger>
                 <TabsTrigger value="behavioral">Behavioral Analysis</TabsTrigger>
                 <TabsTrigger value="transcript">Transcript Highlights</TabsTrigger>
-                <TabsTrigger value="suitability">Suitability</TabsTrigger>
               </TabsList>
+              <TabsContent value="suitability">
+                <Card className="mt-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                        {getRecommendationIcon(analysisReport.suitabilityAssessment.overallRecommendation)}
+                        Overall Recommendation:
+                        <Badge variant={getRecommendationBadgeVariant(analysisReport.suitabilityAssessment.overallRecommendation)} className="ml-3 text-sm px-3 py-1">
+                            {analysisReport.suitabilityAssessment.overallRecommendation}
+                        </Badge>
+                    </CardTitle>
+                     <CardDescription>{analysisReport.suitabilityAssessment.detailedJustification}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                        <h4 className="font-semibold text-md mb-1">Key Strengths Aligned with Role:</h4>
+                        {analysisReport.suitabilityAssessment.keyStrengths.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-1 pl-2 text-sm text-foreground/80">
+                                {analysisReport.suitabilityAssessment.keyStrengths.map((strength, index) => (
+                                    <li key={`strength-${index}`}>{strength}</li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No specific key strengths highlighted by AI.</p>
+                        )}
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-md mb-1">Potential Areas for Development/Concern:</h4>
+                         {analysisReport.suitabilityAssessment.areasForDevelopment.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-1 pl-2 text-sm text-foreground/80">
+                                {analysisReport.suitabilityAssessment.areasForDevelopment.map((area, index) => (
+                                    <li key={`area-${index}`}>{area}</li>
+                                ))}
+                            </ul>
+                        ) : (
+                             <p className="text-sm text-muted-foreground">No specific areas for development highlighted by AI.</p>
+                        )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
               <TabsContent value="behavioral">
                 <Card className="mt-2">
                   <CardHeader><CardTitle>Behavioral Insights</CardTitle></CardHeader>
-                  <CardContent className="prose prose-sm max-w-none">
+                  <CardContent className="prose prose-sm max-w-none dark:prose-invert">
                     <p>{analysisReport.behavioralAnalysis}</p>
                   </CardContent>
                 </Card>
@@ -222,16 +295,8 @@ export default function InterviewAnalysisPage() {
               <TabsContent value="transcript">
                 <Card className="mt-2">
                   <CardHeader><CardTitle>Key Transcript Moments</CardTitle></CardHeader>
-                  <CardContent className="prose prose-sm max-w-none">
+                  <CardContent className="prose prose-sm max-w-none dark:prose-invert">
                      <p>{analysisReport.audioTranscriptHighlights}</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="suitability">
-                <Card className="mt-2">
-                  <CardHeader><CardTitle>Suitability Justification</CardTitle></CardHeader>
-                  <CardContent className="prose prose-sm max-w-none">
-                    <p>{analysisReport.suitabilityJustifications}</p>
                   </CardContent>
                 </Card>
               </TabsContent>

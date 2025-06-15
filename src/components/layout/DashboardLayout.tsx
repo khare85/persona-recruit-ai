@@ -47,15 +47,13 @@ const recruiterNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
   { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
-  // Consider adding a settings link if/when a recruiter settings page exists
-  // { href: '/recruiter/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, // Conceptually, these would be jobs posted by this company
+  { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, 
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound }, // Link to a demo job's applicants
+  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound }, 
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
@@ -63,12 +61,12 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '#admin-users', label: 'User Management', icon: UsersRound }, // Conceptual link
-  { href: '#admin-companies', label: 'Company Management', icon: Building }, // Conceptual link
-  { href: '#admin-analytics', label: 'Platform Analytics', icon: BarChartBig }, // Conceptual link
-  { href: '#admin-system', label: 'System Health', icon: Server }, // Conceptual link
-  { href: '#admin-billing', label: 'Billing & Subs', icon: DollarSign }, // Conceptual link
-  { href: '#admin-settings', label: 'Platform Settings', icon: Settings }, // Conceptual link
+  { href: '#admin-users', label: 'User Management', icon: UsersRound }, 
+  { href: '#admin-companies', label: 'Company Management', icon: Building }, 
+  { href: '#admin-analytics', label: 'Platform Analytics', icon: BarChartBig }, 
+  { href: '#admin-system', label: 'System Health', icon: Server }, 
+  { href: '#admin-billing', label: 'Billing & Subs', icon: DollarSign }, 
+  { href: '#admin-settings', label: 'Platform Settings', icon: Settings }, 
 ];
 
 
@@ -78,45 +76,45 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let currentPersonaIcon: React.ElementType = Zap;
-  let currentDashboardHome = "/jobs"; // Default home for generic app view
+  let CurrentPersonaIcon: React.ElementType = Zap; // Capitalized for JSX
+  let currentDashboardHome = "/jobs"; 
 
   if (pathname.startsWith('/candidates/dashboard') || 
       pathname.startsWith('/candidates/my-') || 
       pathname.startsWith('/candidates/settings') || 
-      (pathname.startsWith('/candidates/') && pathname.endsWith('/edit')) || // Handle edit page
-      (pathname.startsWith('/candidates/') && !pathname.endsWith('/new') && !pathname.endsWith('/edit') && pathname.split('/').length === 3) // Candidate profile /candidates/[id]
+      (pathname.startsWith('/candidates/') && pathname.endsWith('/edit')) || 
+      (pathname.startsWith('/candidates/') && !pathname.endsWith('/new') && !pathname.endsWith('/edit') && pathname.split('/').length === 3) 
      ) {
     currentNavItems = candidateNavItems;
     currentPersona = "Candidate Portal";
-    currentPersonaIcon = UserCog;
+    CurrentPersonaIcon = UserCog;
     currentDashboardHome = "/candidates/dashboard";
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    currentPersonaIcon = LayoutDashboard;
+    CurrentPersonaIcon = LayoutDashboard;
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
     currentPersona = "Company Hub";
-    currentPersonaIcon = Building;
+    CurrentPersonaIcon = Building;
     currentDashboardHome = "/company/dashboard";
   } else if (pathname.startsWith('/admin')) {
     currentNavItems = adminNavItems;
     currentPersona = "Admin Panel";
-    currentPersonaIcon = ShieldCheck;
+    CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
     currentNavItems = []; 
     currentPersona = "Live Interview";
-    currentPersonaIcon = Video;
+    CurrentPersonaIcon = Video;
     currentDashboardHome = "/"; 
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') || 
-             pathname === '/candidates' || pathname.startsWith('/candidates/new') || // Keep /candidates/new in default for now or decide on persona
+             pathname === '/candidates' || pathname.startsWith('/candidates/new') || 
              pathname === '/referrals' || pathname === '/interviews') {
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
-     currentPersonaIcon = Zap;
+     CurrentPersonaIcon = Zap;
      currentDashboardHome = "/jobs";
   }
 
@@ -130,7 +128,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link href={currentDashboardHome} className={cn(
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
               )}>
-                <currentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
+                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
                 <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
                   {currentPersona}
                 </span>
@@ -167,7 +165,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarTrigger>
             )}
             <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
-              <currentPersonaIcon className="h-6 w-6 text-primary" />
+              <CurrentPersonaIcon className="h-6 w-6 text-primary" />
               <span className="font-semibold text-md text-foreground truncate">
                 {currentPersona}
               </span>
@@ -194,6 +192,3 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-    
-
-    

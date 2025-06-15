@@ -14,7 +14,9 @@ import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { extractSkillsFromResume, ExtractSkillsFromResumeInput } from '@/ai/flows/resume-skill-extractor';
 import { processResumeWithDocAI, ProcessResumeDocAIInput } from '@/ai/flows/process-resume-document-ai-flow';
-import { UploadCloud, UserPlus, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, PartyPopper } from 'lucide-react';
+import { generateTextEmbedding, GenerateTextEmbeddingInput } from '@/ai/flows/generate-text-embedding-flow'; // Import embedding flow
+// import { saveCandidateWithEmbedding } from '@/services/firestoreService'; // Import placeholder Firestore service
+import { UploadCloud, UserPlus, Loader2, FileText, Video, CheckCircle, ArrowLeft, ArrowRight, PartyPopper, Brain } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -39,8 +41,10 @@ type CandidateFormValues = z.infer<typeof candidateFormSchema>;
 export default function NewCandidatePage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [isParsingResume, setIsParsingResume] = useState(false);
+  const [isProcessingAi, setIsProcessingAi] = useState(false); // Combined AI processing state
+  const [extractedTextFromResume, setExtractedTextFromResume] = useState<string | null>(null);
   const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
+  const [generatedEmbedding, setGeneratedEmbedding] = useState<number[] | null>(null);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [videoIntroFileName, setVideoIntroFileName] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export default function NewCandidatePage() {
       portfolioUrl: '',
       experienceSummary: '',
     },
-    mode: "onChange", 
+    mode: "onChange",
   });
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -81,44 +85,59 @@ export default function NewCandidatePage() {
       reader.onerror = (error) => reject(error);
     });
   };
-  
+
   const handleResumeUpload = async (file: File | null) => {
     if (file) {
       setResumeFileName(file.name);
       form.setValue('resume', file, { shouldValidate: true });
-      setIsParsingResume(true);
+      setIsProcessingAi(true);
       setExtractedSkills([]);
+      setExtractedTextFromResume(null);
+      setGeneratedEmbedding(null);
+
       try {
         const resumeFileBase64 = await fileToBase64(file);
         const docAIInput: ProcessResumeDocAIInput = {
           resumeFileBase64,
           mimeType: file.type
         };
-        
+
         toast({ title: "Processing Resume...", description: "Using Document AI to extract text. This may take a moment." });
         const docAIResult = await processResumeWithDocAI(docAIInput);
-        
-        if (docAIResult.extractedText) {
-          toast({ title: "Document AI Success", description: "Resume text extracted. Now extracting skills." });
-          const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
-          const skillResult = await extractSkillsFromResume(skillInput);
-          setExtractedSkills(skillResult.skills);
-          toast({ title: "Skills Extracted", description: "Skills identified from the resume.", action: <CheckCircle className="text-green-500" /> });
-        } else {
+
+        if (!docAIResult.extractedText) {
           throw new Error("Document AI did not return extracted text.");
         }
+        setExtractedTextFromResume(docAIResult.extractedText);
+        toast({ title: "Document AI Success", description: "Resume text extracted. Now processing for skills and embedding." });
+
+        // Extract Skills
+        const skillInput: ExtractSkillsFromResumeInput = { resumeText: docAIResult.extractedText };
+        const skillResult = await extractSkillsFromResume(skillInput);
+        setExtractedSkills(skillResult.skills);
+        toast({ title: "Skills Extracted", description: "Skills identified from the resume.", action: <CheckCircle className="text-green-500" /> });
+        
+        // Generate Embedding
+        const embeddingInput: GenerateTextEmbeddingInput = { text: docAIResult.extractedText };
+        const embeddingResult = await generateTextEmbedding(embeddingInput);
+        setGeneratedEmbedding(embeddingResult.embedding);
+        toast({ title: "Embedding Generated", description: `Text embedding created using ${embeddingResult.modelUsed}.`, action: <Brain className="text-purple-500" /> });
+
       } catch (error) {
-        console.error("Error processing resume or extracting skills:", error);
-        let errorMessage = "An unexpected error occurred.";
+        console.error("Error processing resume, extracting skills, or generating embedding:", error);
+        let errorMessage = "An unexpected error occurred during resume processing.";
         if (error instanceof Error) {
             errorMessage = error.message;
         }
         toast({ variant: "destructive", title: "Resume Processing Failed", description: errorMessage });
       } finally {
-        setIsParsingResume(false);
+        setIsProcessingAi(false);
       }
     } else {
         setResumeFileName(null);
+        setExtractedTextFromResume(null);
+        setGeneratedEmbedding(null);
+        setExtractedSkills([]);
         form.setValue('resume', undefined as any, { shouldValidate: true });
     }
   };
@@ -136,14 +155,14 @@ export default function NewCandidatePage() {
         form.setValue('profilePicture', undefined as any, { shouldValidate: true });
     }
   };
-  
+
   const handleVideoIntroUpload = (file: File | null) => {
     if (file) {
       if (file.size > 50 * 1024 * 1024) { // Example: 50MB limit
         toast({ variant: "destructive", title: "File Too Large", description: "Video intro should be under 50MB." });
         form.setValue('videoIntroduction', undefined as any, { shouldValidate: true });
         setVideoIntroFileName(null);
-        if (videoIntroRef.current) videoIntroRef.current.value = ""; 
+        if (videoIntroRef.current) videoIntroRef.current.value = "";
       } else {
         form.setValue('videoIntroduction', file, { shouldValidate: true });
         setVideoIntroFileName(file.name);
@@ -156,16 +175,58 @@ export default function NewCandidatePage() {
 
   async function onSubmit(data: CandidateFormValues) {
     setIsLoading(true);
-    console.log("Candidate data:", data);
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
+    // Ensure resume text and embedding are available if a resume was processed
+    if (data.resume && (!extractedTextFromResume || !generatedEmbedding)) {
+        toast({ variant: "destructive", title: "Processing Incomplete", description: "Resume text or embedding is missing. Please re-upload or wait for processing."});
+        setIsLoading(false);
+        return;
+    }
+
+    console.log("Candidate data for submission:", data);
+    if (extractedTextFromResume) console.log("Extracted Resume Text:", extractedTextFromResume.substring(0,100) + "...");
+    if (generatedEmbedding) console.log("Generated Embedding vector length:", generatedEmbedding.length);
+
+    // --- INTEGRATION POINT FOR FIRESTORE ---
+    // if (extractedTextFromResume && generatedEmbedding) {
+    //   const candidateId = Date.now().toString(); // Or generate a proper UUID
+    //   const firestoreData = {
+    //     fullName: data.fullName,
+    //     email: data.email,
+    //     currentTitle: data.currentTitle,
+    //     extractedResumeText: extractedTextFromResume,
+    //     resumeEmbedding: generatedEmbedding,
+    //     skills: extractedSkills,
+    //     // Add other fields from 'data' as needed by CandidateWithEmbedding interface
+    //   };
+    //   try {
+    //     const saveResult = await saveCandidateWithEmbedding(candidateId, firestoreData);
+    //     if (saveResult.success) {
+    //       toast({ title: "Candidate Saved to DB", description: `Candidate ID: ${saveResult.candidateId}` });
+    //     } else {
+    //       throw new Error(saveResult.message);
+    //     }
+    //   } catch (dbError) {
+    //     console.error("Error saving to Firestore:", dbError);
+    //     toast({ variant: "destructive", title: "Database Error", description: `Could not save candidate: ${dbError instanceof Error ? dbError.message : String(dbError)}` });
+    //     setIsLoading(false);
+    //     return;
+    //   }
+    // }
+    // --- END INTEGRATION POINT ---
+
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call for other actions
+
     toast({
-      title: "Profile Created!",
-      description: `Welcome, ${data.fullName}! Your profile is now active.`,
+      title: "Profile Created! (Simulated)",
+      description: `Welcome, ${data.fullName}! Your profile is now active. Next step would be Firestore saving.`,
       action: <PartyPopper className="text-primary" />,
     });
     form.reset();
     setExtractedSkills([]);
+    setExtractedTextFromResume(null);
+    setGeneratedEmbedding(null);
     setResumeFileName(null);
     setProfilePicPreview(null);
     setVideoIntroFileName(null);
@@ -306,44 +367,52 @@ export default function NewCandidatePage() {
                   <FormField
                     control={form.control}
                     name="resume"
-                    render={() => ( 
+                    render={() => (
                       <FormItem>
                         <FormLabel>Resume (PDF, DOC, DOCX, TXT)</FormLabel>
                         <FormControl>
-                          <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full" disabled={isParsingResume}>
-                            <UploadCloud className="mr-2 h-4 w-4" /> 
+                          <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full" disabled={isProcessingAi}>
+                            <UploadCloud className="mr-2 h-4 w-4" />
                             {resumeFileName ? `Uploaded: ${resumeFileName}` : "Upload Resume"}
                           </Button>
                         </FormControl>
-                        <Input 
-                          id="resume-upload" 
-                          type="file" 
-                          accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
-                          className="hidden" 
+                        <Input
+                          id="resume-upload"
+                          type="file"
+                          accept=".pdf,application/pdf,.doc,application/msword,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.txt,text/plain"
+                          className="hidden"
                           ref={resumeFileRef}
-                          onChange={(e) => handleResumeUpload(e.target.files ? e.target.files[0] : null)} 
+                          onChange={(e) => handleResumeUpload(e.target.files ? e.target.files[0] : null)}
                         />
-                         <FormDescription>Document AI will be used for more accurate text extraction from PDFs and Word documents.</FormDescription>
-                        {isParsingResume && (
+                         <FormDescription>Document AI will extract text, then skills and embeddings will be generated.</FormDescription>
+                        {isProcessingAi && (
                           <div className="flex items-center text-sm text-muted-foreground mt-2">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing resume, please wait...
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> AI processing resume, please wait...
                           </div>
                         )}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   {extractedSkills.length > 0 && (
                     <FormItem>
-                      <FormLabel>AI Extracted Skills (from Document AI processed resume)</FormLabel>
+                      <FormLabel>AI Extracted Skills</FormLabel>
                       <div className="p-3 border rounded-md bg-muted/50">
                         <div className="flex flex-wrap gap-2">
                           {extractedSkills.map((skill, index) => (
                             <Badge key={index} variant="secondary">{skill}</Badge>
                           ))}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">Review these skills. You can add more or edit them on your profile later.</p>
+                      </div>
+                    </FormItem>
+                  )}
+                  {generatedEmbedding && (
+                     <FormItem>
+                      <FormLabel>AI Generated Embedding Status</FormLabel>
+                      <div className="p-3 border rounded-md bg-muted/50 flex items-center text-green-600">
+                        <Brain className="mr-2 h-5 w-5" />
+                        <span>Text embedding successfully generated (vector length: {generatedEmbedding.length}).</span>
                       </div>
                     </FormItem>
                   )}
@@ -370,11 +439,11 @@ export default function NewCandidatePage() {
                                   <UploadCloud className="mr-2 h-4 w-4" /> {profilePicPreview ? "Change" : "Upload"} Profile Picture
                               </Button>
                             </FormControl>
-                            <Input 
-                              id="profilePicture-upload" 
-                              type="file" 
-                              accept="image/*" 
-                              className="hidden" 
+                            <Input
+                              id="profilePicture-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
                               ref={profilePicRef}
                               onChange={(e) => handleProfilePicUpload(e.target.files ? e.target.files[0] : null)}
                             />
@@ -383,7 +452,7 @@ export default function NewCandidatePage() {
                         )}
                       />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="videoIntroduction"
@@ -392,17 +461,17 @@ export default function NewCandidatePage() {
                         <FormLabel>10-Second Video Introduction (MP4, MOV, WebM)</FormLabel>
                         <FormControl>
                           <Button type="button" variant="outline" onClick={() => videoIntroRef.current?.click()} className="w-full">
-                            <Video className="mr-2 h-4 w-4" /> 
+                            <Video className="mr-2 h-4 w-4" />
                             {videoIntroFileName ? `Uploaded: ${videoIntroFileName}` : "Upload Video Intro"}
                           </Button>
                         </FormControl>
-                        <Input 
-                          id="video-intro-upload" 
-                          type="file" 
-                          accept="video/mp4,video/quicktime,video/webm" 
-                          className="hidden" 
+                        <Input
+                          id="video-intro-upload"
+                          type="file"
+                          accept="video/mp4,video/quicktime,video/webm"
+                          className="hidden"
                           ref={videoIntroRef}
-                          onChange={(e) => handleVideoIntroUpload(e.target.files ? e.target.files[0] : null)} 
+                          onChange={(e) => handleVideoIntroUpload(e.target.files ? e.target.files[0] : null)}
                         />
                         <FormDescription>
                           A short video (max 10s, 50MB) to introduce yourself. This helps with ID verification and gives a personal touch.
@@ -416,17 +485,17 @@ export default function NewCandidatePage() {
 
             </CardContent>
             <CardFooter className="flex justify-between pt-6 border-t">
-              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 1 || isLoading || isParsingResume}>
+              <Button type="button" variant="outline" onClick={prevStep} disabled={currentStep === 1 || isLoading || isProcessingAi}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
               {currentStep < MAX_STEPS ? (
-                <Button type="button" onClick={nextStep} disabled={isLoading || isParsingResume}>
+                <Button type="button" onClick={nextStep} disabled={isLoading || isProcessingAi}>
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={isLoading || isParsingResume} size="lg">
+                <Button type="submit" disabled={isLoading || isProcessingAi} size="lg">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Create Profile
                 </Button>

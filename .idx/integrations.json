@@ -1,4 +1,6 @@
 {
-  "firebase_hosting": {},
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://persona-recruit-ai.web.app"
+  },
   "secrets_manager": {}
 }

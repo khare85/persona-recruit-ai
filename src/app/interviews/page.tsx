@@ -13,9 +13,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { generateVideoInterviewAnalysisReport, VideoInterviewAnalysisReportInput, VideoInterviewAnalysisReportOutput } from '@/ai/flows/video-interview-analysis';
-import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
+import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye, ThumbsUp, ThumbsDown, AlertTriangle, BarChartHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+
 
 const interviewAnalysisSchema = z.object({
   videoFile: z.custom<File>((val) => val instanceof File, "Video file is required."),
@@ -141,6 +144,13 @@ export default function InterviewAnalysisPage() {
     }
   };
 
+  const chartConfig = {
+    score: {
+      label: "Score (1-5)",
+      color: "hsl(var(--primary))",
+    },
+  } satisfies Parameters<typeof ChartContainer>[0]["config"];
+
 
   return (
     <Container>
@@ -160,7 +170,7 @@ export default function InterviewAnalysisPage() {
               <FormField
                 control={form.control}
                 name="videoFile"
-                render={({ field }) => ( // field is not directly used due to custom handler
+                render={({ field }) => ( 
                   <FormItem>
                     <FormLabel>Interview Video File (MP4, MOV, WebM)</FormLabel>
                     <FormControl>
@@ -239,10 +249,11 @@ export default function InterviewAnalysisPage() {
           <div className="p-6 border-t">
             <h2 className="text-2xl font-headline font-semibold mb-4">AI Analysis Report</h2>
             <Tabs defaultValue="suitability" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="suitability">Suitability Assessment</TabsTrigger>
-                <TabsTrigger value="behavioral">Behavioral Analysis</TabsTrigger>
-                <TabsTrigger value="transcript">Transcript Highlights</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="suitability">Suitability</TabsTrigger>
+                <TabsTrigger value="competencies">Competencies</TabsTrigger>
+                <TabsTrigger value="behavioral">Behavioral</TabsTrigger>
+                <TabsTrigger value="transcript">Highlights</TabsTrigger>
               </TabsList>
               <TabsContent value="suitability">
                 <Card className="mt-2">
@@ -284,6 +295,39 @@ export default function InterviewAnalysisPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+               <TabsContent value="competencies">
+                <Card className="mt-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center"><BarChartHorizontal className="mr-2 h-5 w-5 text-primary" /> Key Competency Scores</CardTitle>
+                    <CardDescription>AI-assessed scores (1-5) for core competencies.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {analysisReport.competencyScores && analysisReport.competencyScores.length > 0 ? (
+                       <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+                        <BarChart accessibilityLayer data={analysisReport.competencyScores} layout="vertical" margin={{ left: 20, right: 20 }}>
+                          <CartesianGrid horizontal={false} />
+                          <XAxis type="number" dataKey="score" domain={[0, 5]} tickCount={6} />
+                          <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            tickLine={false} 
+                            axisLine={false}
+                            width={120} 
+                            style={{ fontSize: '0.8rem' }}
+                          />
+                           <RechartsTooltip
+                            cursor={{fill: 'hsl(var(--muted))'}}
+                            content={<ChartTooltipContent indicator="dot" />}
+                          />
+                          <Bar dataKey="score" radius={4} />
+                        </BarChart>
+                      </ChartContainer>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No competency scores available from AI analysis.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
               <TabsContent value="behavioral">
                 <Card className="mt-2">
                   <CardHeader><CardTitle>Behavioral Insights</CardTitle></CardHeader>
@@ -307,3 +351,4 @@ export default function InterviewAnalysisPage() {
     </Container>
   );
 }
+

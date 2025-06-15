@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb } from 'lucide-react';
+import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb, Search } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';

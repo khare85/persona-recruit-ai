@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Generates an enhanced report with behavioral analysis, audio transcript highlights, and suitability justifications from video interviews.
+ * @fileOverview Generates an enhanced report with behavioral analysis, audio transcript highlights, suitability justifications, and competency scores from video interviews.
  *
  * - generateVideoInterviewAnalysisReport - A function that handles the generation of the video interview analysis report.
  * - VideoInterviewAnalysisReportInput - The input type for the generateVideoInterviewAnalysisReport function.
@@ -28,6 +28,12 @@ export type VideoInterviewAnalysisReportInput = z.infer<
   typeof VideoInterviewAnalysisReportInputSchema
 >;
 
+const CompetencyScoreSchema = z.object({
+  name: z.string().describe("Name of the competency (e.g., Communication, Problem Solving, Technical Acumen)."),
+  score: z.number().min(1).max(5).describe("Score for the competency, on a scale of 1 (Needs Development) to 5 (Exceptional)."),
+  justification: z.string().optional().describe("Brief justification for the score, if applicable (1-2 sentences).")
+});
+
 const VideoInterviewAnalysisReportOutputSchema = z.object({
   behavioralAnalysis: z
     .string()
@@ -40,7 +46,8 @@ const VideoInterviewAnalysisReportOutputSchema = z.object({
       areasForDevelopment: z.array(z.string()).describe('List 1-3 potential areas for development or concerns observed during the interview, relative to the job requirements.'),
       overallRecommendation: z.enum(["Strongly Recommended", "Recommended", "Recommended with Reservations", "Not Recommended"]).describe("Provide an overall recommendation for the candidate's suitability for the role."),
       detailedJustification: z.string().describe("A detailed justification (3-4 lines) supporting the overall recommendation, synthesizing insights from behavioral analysis, transcript highlights, resume, and job description.")
-  }).describe("A structured assessment of the candidate's suitability for the role.")
+  }).describe("A structured assessment of the candidate's suitability for the role."),
+  competencyScores: z.array(CompetencyScoreSchema).describe("An array of key competency scores (e.g., Communication, Problem Solving, Technical Fit, Teamwork, Leadership Potential). Aim for 3-5 core competencies relevant to most professional roles, each scored 1-5.")
 });
 export type VideoInterviewAnalysisReportOutput = z.infer<
   typeof VideoInterviewAnalysisReportOutputSchema
@@ -73,6 +80,7 @@ const prompt = ai.definePrompt({
       *   **Areas For Development**: List 1-3 potential areas where the candidate could improve or concerns observed during the interview, specifically relative to the job requirements.
       *   **Overall Recommendation**: Choose one of the following: "Strongly Recommended", "Recommended", "Recommended with Reservations", or "Not Recommended".
       *   **Detailed Justification**: Provide a concise (3-4 lines) justification for your overall recommendation, synthesizing insights from the behavioral analysis, transcript highlights, resume, and job description. Explain *why* you chose that recommendation based on the candidate's performance against the role requirements.
+  4.  **Competency Scores**: Evaluate the candidate on 3-5 core professional competencies (such as Communication, Problem Solving, Technical Acumen relevant to the role, Teamwork, Leadership Potential if evident). For each competency, provide a name, a score from 1 (Needs Development) to 5 (Exceptional), and optionally a very brief justification for the score.
 
   Ensure the output strictly adheres to the VideoInterviewAnalysisReportOutputSchema.
   `,
@@ -86,6 +94,14 @@ const videoInterviewAnalysisReportFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    // Ensure competency scores are within 1-5, clamp if necessary
+    if (output && output.competencyScores) {
+        output.competencyScores.forEach(comp => {
+            if (comp.score < 1) comp.score = 1;
+            if (comp.score > 5) comp.score = 5;
+        });
+    }
     return output!;
   }
 );
+

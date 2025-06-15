@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, Users, FileText, Gift, Video, Zap, LayoutDashboard } from 'lucide-react';
+import { Briefcase, Users, FileText, Gift, Video, Zap, LayoutDashboard, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/candidates', label: 'Candidates', icon: Users },
   { href: '/recruiter/dashboard', label: 'Recruiter Hub', icon: LayoutDashboard },
+  { href: '/company/dashboard', label: 'Company Hub', icon: Building },
   { href: '/referrals', label: 'Referrals', icon: Gift },
   { href: '/interviews', label: 'Interview AI', icon: Video },
 ];
@@ -39,8 +40,7 @@ export function Navbar() {
                   size="sm"
                   className={cn(
                     "font-medium text-foreground/70 hover:text-primary hover:bg-primary/10 px-3 py-2 text-sm",
-                    pathname === item.href && "text-primary bg-primary/10",
-                    pathname.startsWith(item.href) && item.href !== '/' && "text-primary bg-primary/10", // Highlight parent routes
+                    (pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/')) && "text-primary bg-primary/10",
                     "transition-all duration-200 ease-out"
                   )}
                   aria-current={pathname === item.href ? "page" : undefined}

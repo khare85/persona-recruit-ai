@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,20 +15,21 @@ import {z} from 'genkit';
 const CandidateJobMatcherInputSchema = z.object({
   candidateProfile: z
     .string()
-    .describe('The detailed profile of the candidate including skills, experience, and qualifications.'),
-  jobDescription: z.string().describe('The detailed description of the job vacancy.'),
+    .describe('The detailed profile of the candidate including skills, experience, education, projects, and preferences. This could be resume text or structured data.'),
+  jobDescription: z.string().describe('The detailed description of the job vacancy, including title, responsibilities, qualifications, and company information.'),
 });
 export type CandidateJobMatcherInput = z.infer<typeof CandidateJobMatcherInputSchema>;
 
 const CandidateJobMatcherOutputSchema = z.object({
   matchScore: z
     .number()
+    .min(0).max(1)
     .describe(
-      'A score (0-1) indicating the degree of match between the candidate and the job, where 1 is a perfect match.'
+      'A score (0-1) indicating the degree of match between the candidate and the job, where 1 is a perfect match. The score should reflect how well the candidate\'s skills, experience, and qualifications align with the job requirements.'
     ),
   justification: z
     .string()
-    .describe('A detailed justification of the match score, explaining why the candidate is or is not a good fit.'),
+    .describe('A detailed justification (5-6 lines) of the match score. Explain the key reasons for the determined match level, highlighting specific alignments or gaps between the candidate profile and the job description. Focus on skills, experience, and qualifications.'),
 });
 export type CandidateJobMatcherOutput = z.infer<typeof CandidateJobMatcherOutputSchema>;
 
@@ -39,17 +41,21 @@ const prompt = ai.definePrompt({
   name: 'candidateJobMatcherPrompt',
   input: {schema: CandidateJobMatcherInputSchema},
   output: {schema: CandidateJobMatcherOutputSchema},
-  prompt: `You are an expert recruiter specializing in matching candidates to job vacancies.
+  prompt: `You are an expert AI recruitment assistant specializing in evaluating candidate profiles against job descriptions. Your task is to provide a precise match score and a concise, insightful justification.
 
-You will use the candidate profile and job description to determine how well the candidate matches the job vacancy.
+  Analyze the following candidate profile and job description:
 
-You will output a match score between 0 and 1, where 1 is a perfect match.
+  Candidate Profile:
+  {{{candidateProfile}}}
 
-You will also provide a justification for the score, explaining why the candidate is or is not a good fit.
+  Job Description:
+  {{{jobDescription}}}
 
-Candidate Profile: {{{candidateProfile}}}
+  Based on your analysis:
+  1.  Determine a match score between 0.0 and 1.0, where 1.0 represents a perfect alignment. Consider the candidate's skills, years of experience, specific tool/technology proficiency, educational background, and how well they meet the stated qualifications and responsibilities in the job description.
+  2.  Provide a clear justification for your score in 5-6 lines. This justification should highlight the most critical factors (both positive and negative if applicable) that influenced the score. Be specific by referencing aspects from both the candidate's profile and the job's requirements.
 
-Job Description: {{{jobDescription}}}
+  Return ONLY the match score and the justification in the specified output format.
 `,
 });
 
@@ -61,6 +67,10 @@ const candidateJobMatcherFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    // Ensure score is within 0-1, clamp if necessary as LLMs might sometimes go slightly out of bounds
+    if (output && output.matchScore < 0) output.matchScore = 0;
+    if (output && output.matchScore > 1) output.matchScore = 1;
     return output!;
   }
 );
+

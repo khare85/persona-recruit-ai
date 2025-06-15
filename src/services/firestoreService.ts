@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Service for interacting with Firestore, specifically for candidate and job data with embeddings.
  * Also initializes Firebase Storage and provides file upload capabilities.

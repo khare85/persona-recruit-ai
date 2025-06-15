@@ -11,18 +11,18 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"; // Simplified imports
+} from "@/components/ui/sidebar"; 
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home,
+  Home, SearchCheck,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Navigation item definitions (remain the same)
+// Navigation item definitions
 const defaultNavItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/jobs', label: 'All Jobs', icon: Briefcase },
@@ -33,7 +33,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Assuming candidate ID 1 for demo
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -55,13 +55,14 @@ const companyNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/jobs/1/applicants', label: 'Applicants (Demo)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
+  { href: '/company/advanced-match', label: 'Advanced Match', icon: SearchCheck }, // New Link
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
 ];
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, // Using hash for conceptual links
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, 
   { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
   { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
@@ -89,7 +90,7 @@ function determineNavigation(pathname: string) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; // Example, can be specific
+    CurrentPersonaIcon = LayoutDashboard; 
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -102,10 +103,10 @@ function determineNavigation(pathname: string) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = []; // No sidebar for live interview page
+    currentNavItems = []; 
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = pathname; // Or redirect to a relevant dashboard
+    currentDashboardHome = pathname; 
   }
   return { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome };
 }
@@ -118,7 +119,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-background">
       {currentNavItems.length > 0 && (
-        <Sidebar> {/* Static sidebar, no collapsible prop */}
+        <Sidebar> 
           <SidebarHeader className="border-b border-sidebar-border">
             <Link href={currentDashboardHome} className={cn(
               "flex items-center gap-2.5 p-1 rounded-md transition-colors hover:bg-sidebar-accent/10 w-full"
@@ -150,15 +151,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar for main content area */}
+        
         <header className={cn(
             "p-3 border-b border-border/30 bg-card/95 backdrop-blur-sm flex items-center sticky top-0 z-30 h-14",
-            currentNavItems.length === 0 ? "pl-6" : "" // Add padding if no sidebar
+            currentNavItems.length === 0 ? "pl-6" : "" 
         )}>
-          {/* Persona display for consistency, especially if sidebar is ever hidden on ultra-small screens or for specific pages */}
+          
            <div className={cn(
              "flex items-center gap-2",
-             currentNavItems.length > 0 ? "md:hidden" : "" // Hide on desktop if sidebar is present, show otherwise or on mobile
+             currentNavItems.length > 0 ? "md:hidden" : "" 
            )}>
               <CurrentPersonaIcon className="h-6 w-6 text-primary" />
               <span className="font-semibold text-md text-foreground truncate">
@@ -178,7 +179,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {/* Container for consistent padding around content */}
+          
           <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
                {children}
           </div>

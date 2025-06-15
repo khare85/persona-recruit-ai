@@ -35,7 +35,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Points to mock candidate Alice
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -52,7 +52,7 @@ const recruiterNavItems = [
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, // Conceptually filtered
+  { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, 
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
@@ -77,10 +77,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap; // Uppercase C, this is correct
+  let CurrentPersonaIcon: React.ElementType = Zap; // Uppercase C for component type
   let currentDashboardHome = "/jobs";
 
-  // Determine Persona and Navigation based on path
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
@@ -107,17 +106,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = [];
+    currentNavItems = []; // No sidebar for live interview page
     currentPersona = "Live Interview";
-    CurrentPersonaIcon = Video;
-    currentDashboardHome = "/";
+    CurrentPersonaIcon = Video; // Or another appropriate icon
+    currentDashboardHome = "/"; // Or a relevant dashboard if applicable post-interview
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') ||
              pathname === '/candidates' || pathname.startsWith('/candidates/new') ||
              pathname === '/referrals' || pathname === '/interviews') {
+     // These are general app pages, use default navigation
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
      CurrentPersonaIcon = Zap;
-     currentDashboardHome = "/jobs";
+     currentDashboardHome = "/jobs"; // Or a more generic app home if you have one
   }
 
 
@@ -130,7 +130,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link href={currentDashboardHome} className={cn(
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
               )}>
-                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" /> {/* Ensure this is PascalCase */}
+                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
                 <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
                   {currentPersona}
                 </span>
@@ -155,9 +155,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenu>
             </SidebarContent>
              <SidebarFooter className="p-3 border-t">
-                <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+                <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center">
                      <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7">
-                        <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar" />
+                        <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
                         <AvatarFallback className="text-xs">DU</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col group-data-[collapsible=icon]:hidden truncate">
@@ -180,7 +180,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarTrigger>
             )}
             <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
-              <CurrentPersonaIcon className="h-6 w-6 text-primary" /> {/* Ensure this is PascalCase */}
+              <CurrentPersonaIcon className="h-6 w-6 text-primary" />
               <span className="font-semibold text-md text-foreground truncate">
                 {currentPersona}
               </span>
@@ -188,7 +188,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             <div className="ml-auto flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar" />
+                    <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
                     <AvatarFallback>DU</AvatarFallback>
                 </Avatar>
                  <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
@@ -207,3 +207,5 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

@@ -2,47 +2,39 @@
 'use server';
 /**
  * @fileOverview Service for interacting with Firestore, specifically for candidate and job data with embeddings.
- * Also initializes Firebase Storage.
+ * Also initializes Firebase Storage and provides file upload capabilities.
  */
 
 import admin from 'firebase-admin';
 import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { Bucket } from '@google-cloud/storage'; // Bucket type for Firebase Storage
+import { randomUUID } from 'crypto'; // For generating unique filenames
 
 // --- Firebase Admin SDK Setup ---
-// Assumes GOOGLE_APPLICATION_CREDENTIALS environment variable is set in the deployment environment (e.g., App Hosting secrets).
-// For local development, ensure .env.local has GOOGLE_APPLICATION_CREDENTIALS pointing to your service account key JSON file.
-// Also ensure GCLOUD_PROJECT_ID, DOCAI_LOCATION, and DOCAI_PROCESSOR_ID are set.
-
 if (!admin.apps.length) {
   try {
     console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK...');
     admin.initializeApp({
-       credential: admin.credential.applicationDefault(), // Automatically uses GOOGLE_APPLICATION_CREDENTIALS
+       credential: admin.credential.applicationDefault(), 
     });
     console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
   } catch (error) {
-    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly and the service account has appropriate permissions. Details:', error);
+    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly. Details:', error);
   }
 }
 
 let db: admin.firestore.Firestore;
-let storageBucket: Bucket; // Variable to hold the storage bucket instance
+let storageBucket: Bucket;
 
 try {
   db = admin.firestore();
   console.log('[FirestoreService] Firestore DB instance acquired.');
 
-  // Initialize Firebase Storage and get a reference to the default bucket
-  // The default bucket is usually named <project-id>.appspot.com
-  storageBucket = admin.storage().bucket();
+  storageBucket = admin.storage().bucket(); // Uses default bucket from project
   console.log(`[FirestoreService] Firebase Storage bucket '${storageBucket.name}' instance acquired.`);
 
 } catch (error) {
-  console.error('[FirestoreService] Failed to acquire Firestore DB or Storage instance. Admin SDK might not be initialized correctly. Details:', error);
-  // If these are critical at module load, you might consider throwing an error
-  // or implementing a more robust retry/fallback mechanism.
-  // For now, we log the error and proceed; functions using db or storageBucket should check if they are defined.
+  console.error('[FirestoreService] Failed to acquire Firestore DB or Storage instance. Details:', error);
 }
 // --- End Firebase Admin SDK Setup ---
 
@@ -57,16 +49,17 @@ export interface CandidateWithEmbeddingFirestore {
   fullName: string;
   email: string;
   currentTitle: string;
-  extractedResumeText: string; // Full text used for embedding
-  resumeEmbedding: number[];    // Vector embedding
+  extractedResumeText: string; 
+  resumeEmbedding: number[];   
   skills: string[];
   phone?: string;
   linkedinProfile?: string;
   portfolioUrl?: string;
   experienceSummary?: string;
   aiGeneratedSummary?: string;
-  avatarUrl?: string; // URL of the avatar image in Firebase Storage or external
-  videoIntroUrl?: string; // URL of the video intro in Firebase Storage or external
+  profilePictureUrl?: string; 
+  videoIntroductionUrl?: string;
+  resumeFileUrl?: string; 
   availability?: string;
   lastUpdatedAt: Timestamp;
 }
@@ -78,8 +71,8 @@ export interface JobWithEmbeddingFirestore {
   jobId: string;
   title: string;
   companyName: string;
-  fullJobDescriptionText: string; // Full text used for embedding
-  jobEmbedding: number[];         // Vector embedding
+  fullJobDescriptionText: string; 
+  jobEmbedding: number[];        
   location?: string;
   jobLevel?: string;
   department?: string;
@@ -88,28 +81,66 @@ export interface JobWithEmbeddingFirestore {
   lastUpdatedAt: Timestamp;
 }
 
+/**
+ * Uploads a file to Firebase Storage.
+ * @param file The File object to upload (from client-side).
+ * @param destinationPath The full path in Firebase Storage where the file should be saved (e.g., `candidates/candidate123/profile.jpg`).
+ * @returns A promise that resolves to the public URL of the uploaded file.
+ */
+export async function uploadFileToStorage(fileBuffer: Buffer, destinationPath: string, contentType: string): Promise<string> {
+  console.log(`[StorageService] Attempting to upload file to: ${destinationPath} with type: ${contentType}`);
+  if (!storageBucket) {
+    const errorMsg = "[StorageService] Firebase Storage bucket not available.";
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  const storageFile = storageBucket.file(destinationPath);
+
+  try {
+    await storageFile.save(fileBuffer, {
+      metadata: {
+        contentType: contentType,
+        // You can add more metadata here, like cache control, custom metadata, etc.
+        // Example: cacheControl: 'public, max-age=31536000'
+      },
+      public: true, // Make the file publicly readable
+    });
+
+    // Construct the public URL manually. Note: This format is common but can change.
+    // For more robust URL generation, consider using getSignedUrl for controlled access
+    // or ensuring your bucket has uniform public access enabled.
+    const publicUrl = `https://storage.googleapis.com/${storageBucket.name}/${destinationPath}`;
+    
+    console.log(`[StorageService] File uploaded successfully. Public URL: ${publicUrl}`);
+    return publicUrl;
+  } catch (error) {
+    console.error(`[StorageService] Error uploading file to ${destinationPath}:`, error);
+    throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 
 /**
  * Saves/Updates a candidate's profile along with their resume embedding and AI summary to Firestore.
- * @param candidateId The unique ID of the candidate.
- * @param data The candidate data including the embedding and AI summary.
  */
 export async function saveCandidateWithEmbedding(
   candidateId: string,
-  data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills' | 'aiGeneratedSummary' | 'avatarUrl' | 'videoIntroUrl'> & {
+  data: Omit<CandidateWithEmbeddingFirestore, 'candidateId' | 'lastUpdatedAt' | 'resumeEmbedding' | 'extractedResumeText' | 'skills' | 'aiGeneratedSummary' | 'profilePictureUrl' | 'videoIntroductionUrl' | 'resumeFileUrl'> & {
     extractedResumeText: string;
     resumeEmbedding: number[];
     skills: string[];
     aiGeneratedSummary?: string;
-    avatarUrl?: string; // URLs will be passed after upload
-    videoIntroUrl?: string; // URLs will be passed after upload
+    profilePictureUrl?: string; 
+    videoIntroductionUrl?: string;
+    resumeFileUrl?: string;
     availability?: string;
   }
 ): Promise<{ success: boolean; message: string; candidateId?: string }> {
   console.log(`[FirestoreService] Attempting to save/update candidate ${candidateId}.`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available. Firebase Admin SDK might not have initialized correctly.";
+    const errorMsg = "[FirestoreService] Firestore DB not available.";
     console.error(errorMsg);
     return { success: false, message: errorMsg };
   }
@@ -117,14 +148,21 @@ export async function saveCandidateWithEmbedding(
   try {
     const candidateRef = db.collection(CANDIDATES_COLLECTION).doc(candidateId);
     const saveData: CandidateWithEmbeddingFirestore = {
-      ...data,
-      candidateId,
+      candidateId, // ensure candidateId is part of the object being saved
+      fullName: data.fullName,
+      email: data.email,
+      currentTitle: data.currentTitle,
       extractedResumeText: data.extractedResumeText,
       resumeEmbedding: data.resumeEmbedding,
       skills: data.skills,
       aiGeneratedSummary: data.aiGeneratedSummary,
-      avatarUrl: data.avatarUrl,
-      videoIntroUrl: data.videoIntroUrl,
+      profilePictureUrl: data.profilePictureUrl,
+      videoIntroductionUrl: data.videoIntroductionUrl,
+      resumeFileUrl: data.resumeFileUrl,
+      phone: data.phone,
+      linkedinProfile: data.linkedinProfile,
+      portfolioUrl: data.portfolioUrl,
+      experienceSummary: data.experienceSummary,
       availability: data.availability,
       lastUpdatedAt: admin.firestore.Timestamp.now(),
     };
@@ -136,6 +174,7 @@ export async function saveCandidateWithEmbedding(
     return { success: false, message: `Error saving candidate to Firestore: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
+
 
 /**
  * Searches for candidates by semantic similarity of their resume embeddings.
@@ -160,7 +199,7 @@ export async function searchCandidatesByEmbedding(
   console.log(`[FirestoreService] Attempting to search for ${topN} candidates with query embedding (length: ${queryEmbedding.length}).`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available for search. Firebase Admin SDK might not have initialized correctly.";
+    const errorMsg = "[FirestoreService] Firestore DB not available for search.";
     console.error(errorMsg);
     return [];
   }
@@ -186,7 +225,7 @@ export async function searchCandidatesByEmbedding(
         skills: data.skills,
         experienceSummary: data.experienceSummary,
         aiGeneratedSummary: data.aiGeneratedSummary,
-        avatarUrl: data.avatarUrl,
+        profilePictureUrl: data.profilePictureUrl,
         availability: data.availability,
         // @ts-ignore Firestore's `doc.distance` is not strongly typed yet in Node SDK, but should exist.
         distance: doc.distance,
@@ -196,8 +235,7 @@ export async function searchCandidatesByEmbedding(
     return results;
 
   } catch (error) {
-    console.error('[FirestoreService] Error during candidate vector search. Ensure vector index is set up correctly on "resumeEmbedding" field with COSINE distance and dimension 768 for collection "candidates_with_embeddings". Error:', error);
-    // Consider how to handle this error in the calling flow. For now, returning empty.
+    console.error('[FirestoreService] Error during candidate vector search. Ensure vector index is set up correctly on "resumeEmbedding" (dim:768, COSINE) for collection "candidates_with_embeddings". Error:', error);
     return [];
   }
 }
@@ -215,7 +253,7 @@ export async function saveJobWithEmbedding(
   console.log(`[FirestoreService] Attempting to save/update job ${jobId}.`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available. Firebase Admin SDK might not have initialized correctly.";
+    const errorMsg = "[FirestoreService] Firestore DB not available.";
     console.error(errorMsg);
     return { success: false, message: errorMsg };
   }
@@ -261,7 +299,7 @@ export async function searchJobsByEmbedding(
   console.log(`[FirestoreService] Attempting to search for ${topN} jobs with query embedding (length: ${queryEmbedding.length}).`);
 
   if (!db) {
-    const errorMsg = "[FirestoreService] Firestore DB not available for search. Firebase Admin SDK might not have initialized correctly.";
+    const errorMsg = "[FirestoreService] Firestore DB not available for search.";
     console.error(errorMsg);
     return [];
   }
@@ -295,10 +333,11 @@ export async function searchJobsByEmbedding(
 
   } catch (error)
 {
-    console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" field with COSINE distance and dimension 768 for collection "jobs_with_embeddings". Error:', error);
+    console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" (dim:768, COSINE) for collection "jobs_with_embeddings". Error:', error);
     return [];
   }
 }
 
 // Export db and storageBucket for use in other services if needed
 export { db, storageBucket };
+

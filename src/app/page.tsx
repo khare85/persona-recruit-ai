@@ -61,10 +61,9 @@ export default function HomePage() {
             <Image 
               src="https://placehold.co/600x450.png" 
               alt="AI powered recruitment" 
-              layout="fill" 
-              objectFit="cover" 
+              fill
+              className="object-cover transform hover:scale-105 transition-transform duration-500 ease-out"
               data-ai-hint="team collaboration"
-              className="transform hover:scale-105 transition-transform duration-500 ease-out"
             />
              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
              <div className="absolute bottom-6 left-6 text-white">

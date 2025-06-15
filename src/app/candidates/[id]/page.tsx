@@ -227,7 +227,7 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
                 <CardContent>
                   {candidate.videoIntroUrl ? (
                      <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                        <video controls src={candidate.videoIntroUrl} className="w-full h-full object-cover" poster="https://placehold.co/320x180.png?text=Video+Preview" data-ai-hint="video placeholder">
+                        <video controls src={candidate.videoIntroUrl} className="w-full h-full object-cover" poster="https://placehold.co/320x180.png?text=Video+Preview" data-ai-hint="interview video">
                             Your browser does not support the video tag.
                         </video>
                      </div>
@@ -297,4 +297,3 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
     </Container>
   );
 }
-

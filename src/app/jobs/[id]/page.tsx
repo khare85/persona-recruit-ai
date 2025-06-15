@@ -331,4 +331,3 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
     </Container>
   );
 }
-

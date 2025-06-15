@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,19 +58,19 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="relative h-64 md:h-96 lg:h-[450px] rounded-xl overflow-hidden shadow-2xl">
+          <div className="relative h-64 md:h-96 lg:h-[450px] rounded-xl overflow-hidden shadow-2xl group">
             <Image 
               src="https://placehold.co/600x450.png" 
               alt="AI powered recruitment" 
               layout="fill" 
               objectFit="cover" 
               data-ai-hint="team collaboration"
-              className="transform hover:scale-105 transition-transform duration-500 ease-out"
+              className="transform group-hover:scale-105 transition-transform duration-500 ease-out"
             />
-             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-             <div className="absolute bottom-6 left-6 text-white">
-                <h3 className="text-2xl font-semibold">Intelligent Hiring Starts Here</h3>
-                <p className="text-sm">AI-driven tools for modern recruitment.</p>
+             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
+             <div className="absolute bottom-6 left-6 text-white p-4">
+                <h3 className="text-2xl font-semibold drop-shadow-md">Intelligent Hiring Starts Here</h3>
+                <p className="text-sm drop-shadow-sm">AI-driven tools for modern recruitment.</p>
              </div>
           </div>
         </Container>
@@ -88,9 +89,9 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature) => (
-              <Card key={feature.title} className="flex flex-col hover:shadow-xl transition-shadow duration-300">
+              <Card key={feature.title} className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-card hover:bg-muted/30">
                 <CardHeader className="items-center text-center">
-                  <div className="p-4 bg-primary/10 rounded-full mb-4">
+                  <div className="p-4 bg-primary/10 rounded-full mb-4 inline-block ring-4 ring-primary/20">
                     <feature.icon className="h-10 w-10 text-primary" />
                   </div>
                   <CardTitle className="font-headline text-2xl">{feature.title}</CardTitle>
@@ -100,7 +101,7 @@ export default function HomePage() {
                 </CardContent>
                 <div className="p-6 pt-0 mt-auto text-center">
                   <Link href={feature.href} passHref>
-                    <Button variant="link" className="text-primary hover:text-primary/80">
+                    <Button variant="link" className="text-primary hover:text-primary/80 text-sm font-semibold">
                       {feature.cta} &rarr;
                     </Button>
                   </Link>
@@ -112,7 +113,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="w-full py-16 md:py-24 bg-muted/30">
+      <section className="w-full py-16 md:py-24 bg-muted/40">
         <Container>
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-headline font-semibold text-foreground">
@@ -129,15 +130,15 @@ export default function HomePage() {
               { icon: Video, title: 'AI Video Interviews', description: 'Conduct or participate in AI-assisted video interviews for deeper insights.' },
               { icon: Users, title: 'Hire & Onboard', description: 'Make informed decisions and onboard new talent seamlessly.' },
             ].map((step, index) => (
-              <Card key={step.title} className="text-center hover:shadow-lg transition-shadow duration-300">
+              <Card key={step.title} className="text-center hover:shadow-lg transition-shadow duration-300 bg-card transform hover:-translate-y-1">
                 <CardHeader>
-                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-accent/10 mb-4">
+                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-accent/10 mb-4 border-2 border-accent/50">
                     <step.icon className="h-8 w-8 text-accent" />
                   </div>
                   <CardTitle className="font-headline text-xl">{step.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{step.description}</p>
+                  <p className="text-muted-foreground text-sm">{step.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -156,12 +157,12 @@ export default function HomePage() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/jobs/new" passHref>
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow">
                 Recruiters: Get Started
               </Button>
             </Link>
             <Link href="/candidates/new" passHref>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow">
                 Candidates: Find Your Fit
               </Button>
             </Link>

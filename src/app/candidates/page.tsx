@@ -13,7 +13,7 @@ const candidateListings = [
   {
     id: '1',
     name: 'Alice Wonderland',
-    avatarUrl: 'https://placehold.co/100x100.png?a=1', // Added query param for unique image
+    avatarUrl: 'https://placehold.co/100x100.png?a=1', 
     title: 'Senior Software Engineer',
     topSkills: ['React', 'Node.js', 'AWS', 'Python'],
     experience: '8 years',

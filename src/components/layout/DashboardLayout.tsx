@@ -14,12 +14,13 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, PlusCircle, SearchCode, DollarSign,
-  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, Home, FileText
+  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, Home, FileText, Bell // Added Bell for Recruiter Dashboard
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -48,13 +49,14 @@ const recruiterNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
   { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
+  // Add more recruiter specific links here if needed, e.g., Payouts, Settings
 ];
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
   { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, 
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
+  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound }, // Example, might need more dynamic linking
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
@@ -62,7 +64,7 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound },
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, // Conceptual links
   { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
   { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
@@ -77,9 +79,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap; // Uppercase C for component type
+  let CurrentPersonaIcon: React.ElementType = Zap; 
   let currentDashboardHome = "/jobs";
 
+  // Determine persona and navigation based on path
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
@@ -93,7 +96,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard;
+    CurrentPersonaIcon = LayoutDashboard; 
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -106,18 +109,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = []; // No sidebar for live interview page
+    currentNavItems = []; 
     currentPersona = "Live Interview";
-    CurrentPersonaIcon = Video; // Or another appropriate icon
-    currentDashboardHome = "/"; // Or a relevant dashboard if applicable post-interview
+    CurrentPersonaIcon = Video;
+    currentDashboardHome = "/"; 
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') ||
              pathname === '/candidates' || pathname.startsWith('/candidates/new') ||
              pathname === '/referrals' || pathname === '/interviews') {
-     // These are general app pages, use default navigation
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
      CurrentPersonaIcon = Zap;
-     currentDashboardHome = "/jobs"; // Or a more generic app home if you have one
+     currentDashboardHome = "/jobs";
   }
 
 
@@ -130,7 +132,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link href={currentDashboardHome} className={cn(
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
               )}>
-                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
+                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" /> 
                 <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
                   {currentPersona}
                 </span>
@@ -155,24 +157,39 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenu>
             </SidebarContent>
              <SidebarFooter className="p-3 border-t">
-                <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center">
-                     <Avatar className="h-8 w-8 group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7">
+               {/* Expanded View for Footer */}
+                <div className="flex items-center justify-between group-data-[collapsible=icon]:hidden">
+                    <div className="flex items-center gap-2 truncate">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
+                            <AvatarFallback className="text-xs">DU</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col truncate">
+                            <span className="text-xs font-medium text-sidebar-foreground truncate">Demo User</span>
+                            <span className="text-xs text-sidebar-foreground/70 truncate">demo@example.com</span>
+                        </div>
+                    </div>
+                    <Button variant="ghost" size="icon" asChild className="text-sidebar-foreground/70 hover:text-sidebar-foreground">
+                        <Link href="/auth"><LogOut /></Link>
+                    </Button>
+                </div>
+                {/* Collapsed (Icon-Only) View for Footer */}
+                <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center space-y-2">
+                     <Avatar className="h-7 w-7">
                         <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
                         <AvatarFallback className="text-xs">DU</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col group-data-[collapsible=icon]:hidden truncate">
-                        <span className="text-xs font-medium text-sidebar-foreground truncate">Demo User</span>
-                        <span className="text-xs text-sidebar-foreground/70 truncate">demo@example.com</span>
-                    </div>
+                    <Button variant="ghost" size="icon" asChild className="text-sidebar-foreground/70 hover:text-sidebar-foreground w-full h-8">
+                        <Link href="/auth"><LogOut className="h-4 w-4" /></Link>
+                    </Button>
                 </div>
-                 <Button variant="ghost" size="icon" asChild className="text-sidebar-foreground/70 hover:text-sidebar-foreground group-data-[collapsible=icon]:mt-2 group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-8">
-                    <Link href="/auth"><LogOut className="group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:w-4" /></Link>
-                  </Button>
             </SidebarFooter>
+            {collapsible === 'icon' && !isMobile && <SidebarRail />}
           </Sidebar>
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top bar in content area */}
           <header className="p-3 border-b border-border/30 bg-card/80 backdrop-blur-md flex items-center sticky top-0 z-30 h-14">
             {isMobile && currentNavItems.length > 0 && (
               <SidebarTrigger className="text-foreground mr-2">

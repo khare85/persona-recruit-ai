@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
-import { generateVideoInterviewAnalysisReport, VideoInterviewAnalysisReportInput } from '@/ai/flows/video-interview-analysis';
+import { generateVideoInterviewAnalysisReport, VideoInterviewAnalysisReportInput, VideoInterviewAnalysisReportOutput } from '@/ai/flows/video-interview-analysis';
 import { UploadCloud, Video, Loader2, Brain, FileText, CheckCircle, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -25,15 +25,9 @@ const interviewAnalysisSchema = z.object({
 
 type InterviewAnalysisFormValues = z.infer<typeof interviewAnalysisSchema>;
 
-interface AnalysisReport {
-  behavioralAnalysis: string;
-  audioTranscriptHighlights: string;
-  suitabilityJustifications: string;
-}
-
 export default function InterviewAnalysisPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
+  const [analysisReport, setAnalysisReport] = useState<VideoInterviewAnalysisReportOutput | null>(null);
   const [videoFileName, setVideoFileName] = useState<string | null>(null);
   const videoFileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -206,10 +200,11 @@ export default function InterviewAnalysisPage() {
           <div className="p-6 border-t">
             <h2 className="text-2xl font-headline font-semibold mb-4">Analysis Report</h2>
             <Tabs defaultValue="behavioral" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="behavioral">Behavioral Analysis</TabsTrigger>
-                <TabsTrigger value="transcript">Transcript Highlights</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4"> {/* Adjusted for 4 tabs */}
+                <TabsTrigger value="behavioral">Behavioral</TabsTrigger>
+                <TabsTrigger value="transcript">Highlights</TabsTrigger>
                 <TabsTrigger value="suitability">Suitability</TabsTrigger>
+                <TabsTrigger value="competencies">Competencies</TabsTrigger>
               </TabsList>
               <TabsContent value="behavioral">
                 <Card className="mt-2">
@@ -229,11 +224,46 @@ export default function InterviewAnalysisPage() {
               </TabsContent>
               <TabsContent value="suitability">
                 <Card className="mt-2">
-                  <CardHeader><CardTitle>Suitability Justification</CardTitle></CardHeader>
-                  <CardContent className="prose prose-sm max-w-none">
-                    <p>{analysisReport.suitabilityJustifications}</p>
+                  <CardHeader><CardTitle>Suitability Assessment</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                        <h4 className="font-semibold">Overall Recommendation:</h4>
+                        <p className="text-primary font-medium">{analysisReport.suitabilityAssessment.overallRecommendation}</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold">Key Strengths:</h4>
+                        <ul className="list-disc pl-5 text-sm">
+                            {analysisReport.suitabilityAssessment.keyStrengths.map((strength, i) => <li key={`strength-${i}`}>{strength}</li>)}
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold">Areas for Development:</h4>
+                         <ul className="list-disc pl-5 text-sm">
+                            {analysisReport.suitabilityAssessment.areasForDevelopment.map((area, i) => <li key={`area-${i}`}>{area}</li>)}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold">Detailed Justification:</h4>
+                        <p className="text-sm">{analysisReport.suitabilityAssessment.detailedJustification}</p>
+                    </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+              <TabsContent value="competencies">
+                 <Card className="mt-2">
+                    <CardHeader><CardTitle>Competency Scores</CardTitle></CardHeader>
+                    <CardContent className="space-y-3">
+                        {analysisReport.competencyScores.map((comp, i) => (
+                            <div key={`comp-${i}`}>
+                                <div className="flex justify-between items-center">
+                                   <h4 className="font-semibold">{comp.name}</h4>
+                                   <Badge>{comp.score}/5</Badge>
+                                </div>
+                                {comp.justification && <p className="text-xs text-muted-foreground mt-0.5">{comp.justification}</p>}
+                            </div>
+                        ))}
+                    </CardContent>
+                 </Card>
               </TabsContent>
             </Tabs>
           </div>

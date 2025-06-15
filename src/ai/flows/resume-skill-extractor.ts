@@ -32,9 +32,11 @@ const prompt = ai.definePrompt({
   output: {schema: ExtractSkillsFromResumeOutputSchema},
   prompt: `You are an expert in resume analysis and skill extraction.
 
-  Given the following resume text, extract a list of skills that the candidate possesses.
+  Given the following resume text, extract a list of skills that the candidate possesses. Focus on technical skills, software proficiency, methodologies, and soft skills relevant to professional roles.
+  Return a diverse list of skills. Ensure each skill is a concise term or phrase.
 
-  Resume Text: {{{resumeText}}}
+  Resume Text:
+  {{{resumeText}}}
 
   Skills:`, 
 });

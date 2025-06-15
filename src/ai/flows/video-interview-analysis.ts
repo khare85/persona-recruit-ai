@@ -63,7 +63,7 @@ const prompt = ai.definePrompt({
   name: 'videoInterviewAnalysisReportPrompt',
   input: {schema: VideoInterviewAnalysisReportInputSchema},
   output: {schema: VideoInterviewAnalysisReportOutputSchema},
-  prompt: `You are an expert recruitment analyst AI. Your task is to analyze a video interview and associated documents to provide a comprehensive report.
+  prompt: \`You are an expert recruitment analyst AI. Your task is to analyze a video interview and associated documents to provide a comprehensive report.
 
   Context:
   - Job Description: {{{jobDescription}}}
@@ -83,7 +83,7 @@ const prompt = ai.definePrompt({
   4.  **Competency Scores**: Evaluate the candidate on 3-5 core professional competencies (such as Communication, Problem Solving, Technical Acumen relevant to the role, Teamwork, Leadership Potential if evident). For each competency, provide a name, a score from 1 (Needs Development) to 5 (Exceptional), and optionally a very brief justification for the score.
 
   Ensure the output strictly adheres to the VideoInterviewAnalysisReportOutputSchema.
-  `,
+  \`,
 });
 
 const videoInterviewAnalysisReportFlow = ai.defineFlow(
@@ -96,7 +96,7 @@ const videoInterviewAnalysisReportFlow = ai.defineFlow(
     const {output} = await prompt(input);
 
     if (!output) {
-        console.error(`[videoInterviewAnalysisReportFlow] - Prompt did not return an output for input (video URI length: ${input.videoDataUri.length}, JD length: ${input.jobDescription.length}).`);
+        console.error(\`[videoInterviewAnalysisReportFlow] - Prompt did not return an output for input (video URI length: \${input.videoDataUri.length}, JD length: \${input.jobDescription.length}).\`);
         throw new Error('AI prompt failed to return expected video interview analysis report.');
     }
     

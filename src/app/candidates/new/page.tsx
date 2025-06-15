@@ -67,10 +67,17 @@ export default function NewCandidatePage() {
       setExtractedSkills([]);
       try {
         const reader = new FileReader();
-        reader.readAsText(file);
+        reader.readAsText(file); // Read as text for text-based resumes (txt, potentially docx if converted)
         reader.onload = async (e) => {
           const resumeText = e.target?.result as string;
           if (resumeText) {
+            // Simple check for PDF/DOCX which might not be plain text.
+            // Ideally, use processResumeWithDocAI for PDF/DOCX.
+            // For this example, we assume text-based or user ensures text is extractable.
+            if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                 toast({ variant: "default", title: "Info", description: "For PDF/DOCX, skill extraction quality is best with Document AI. This demo uses direct text extraction.", duration: 7000 });
+            }
+
             const input: ExtractSkillsFromResumeInput = { resumeText };
             const result = await extractSkillsFromResume(input);
             setExtractedSkills(result.skills);
@@ -117,8 +124,22 @@ export default function NewCandidatePage() {
   async function onSubmit(data: CandidateFormValues) {
     setIsLoading(true);
     // In a real app, you would upload files to storage and save data to a database
-    console.log("Candidate data:", data);
-    // Simulate API call
+    // This would involve:
+    // 1. Uploading data.resume (File object) to Firebase Storage or similar
+    // 2. Uploading data.profilePicture (File object) if present
+    // 3. Uploading data.videoIntroduction (File object)
+    // 4. Getting the download URLs for these files
+    // 5. Saving all text data + file URLs + extractedSkills to Firestore (e.g., using a new 'saveCandidateProfile' flow)
+
+    console.log("Candidate form data:", {
+      ...data,
+      resume: data.resume.name, // Log file name instead of object
+      profilePicture: data.profilePicture ? data.profilePicture.name : undefined,
+      videoIntroduction: data.videoIntroduction.name,
+      extractedSkills,
+    });
+    
+    // Simulate API call for saving data
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     toast({
@@ -140,7 +161,7 @@ export default function NewCandidatePage() {
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Create Your Candidate Profile</CardTitle>
           <CardDescription>
-            Tell us about yourself. Upload your resume to let our AI extract your skills.
+            Tell us about yourself. Upload your resume to let our AI extract your skills. For PDF/DOCX, ensure Document AI is configured for best results on the backend.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -271,7 +292,7 @@ export default function NewCandidatePage() {
                 name="resume"
                 render={({ field }) => ( /* field is not directly used for input, but for error state */
                   <FormItem>
-                    <FormLabel>Resume (PDF, DOC, DOCX)</FormLabel>
+                    <FormLabel>Resume (PDF, DOCX, TXT)</FormLabel>
                     <FormControl>
                       <Button type="button" variant="outline" onClick={() => resumeFileRef.current?.click()} className="w-full">
                         <UploadCloud className="mr-2 h-4 w-4" /> 
@@ -291,6 +312,9 @@ export default function NewCandidatePage() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Parsing resume, please wait...
                       </div>
                     )}
+                    <FormDescription>
+                      AI will attempt to extract skills. For PDF/DOCX, backend Document AI processing (if configured) provides best results.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

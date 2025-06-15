@@ -32,3 +32,12 @@ env:
   
   # Firebase Storage configuration
   FIREBASE_STORAGE_BUCKET: "persona-recruit-ai.firebasestorage.app"
+  
+  # Firebase Web App configuration (client-side)
+  NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyBSkLKzUQinb6BOgIYanrKvQFkqpiNihok"
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "persona-recruit-ai.firebaseapp.com"
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: "persona-recruit-ai"
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "persona-recruit-ai.firebasestorage.app"
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "272257542005"
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:272257542005:web:55f534699ea57baaa7953c"
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: "G-N5QWSWPMTL"

@@ -13,16 +13,16 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarRail,
+  useSidebar, // Import useSidebar to access context
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
-  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle, FileText, Bell, Home,
+  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
+  Home, // Added Home icon
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Navigation item definitions
@@ -36,7 +36,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Assuming candidate ID 1 for demo
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog },
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -73,18 +73,10 @@ const adminNavItems = [
 ];
 
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isMobile = useIsMobile();
-  const [hasMounted, setHasMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
+function determineNavigation(pathname: string) {
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap;
+  let CurrentPersonaIcon: React.ElementType = Home; // Default to Home icon
   let currentDashboardHome = "/";
 
   if (pathname.startsWith('/candidates/dashboard') ||
@@ -100,7 +92,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; // Or a specific Recruiter icon if available
+    CurrentPersonaIcon = LayoutDashboard;
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -113,38 +105,46 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    // For live interview, we might want minimal chrome or a specific layout
-    // For now, assuming it uses the same dashboard layout for context
-    currentNavItems = []; // No sidebar items for live interview focus
+    currentNavItems = []; 
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = pathname; // Or link back to a relevant dashboard
-  } else if (pathname === '/' || pathname === '/jobs' || pathname.startsWith('/jobs/') ||
-             pathname === '/candidates' || pathname.startsWith('/candidates/new') || // Includes /candidates/new
-             pathname === '/referrals' || pathname === '/interviews') {
-     currentNavItems = defaultNavItems;
-     currentPersona = "Persona Recruit AI";
-     CurrentPersonaIcon = Zap;
-     currentDashboardHome = "/"; // Default home
+    currentDashboardHome = pathname; 
   }
+  // Default case handled by initial values for public pages
+  return { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome };
+}
 
 
-  // Determine sidebar mode based on hasMounted and isMobile
-  // On server and initial client render (before useEffect), default to "icon"
-  // After mount, use isMobile to switch to "offcanvas" if needed.
-  const sidebarCollapsibleMode = !hasMounted ? "icon" : (isMobile ? "offcanvas" : "icon");
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome } = determineNavigation(pathname);
+  
+  // We use useSidebar here to access context values like isMobile and effectiveCollapsibleMode
+  // But we need to render SidebarProvider first. So, internal components can use useSidebar.
+  // For setting the Sidebar collapsible prop, we need to check isMobile and hasMounted from context.
+  const SidebarInnerLayout = () => {
+    const { isMobile, hasMounted, effectiveCollapsibleMode } = useSidebar();
 
-  return (
-    <SidebarProvider defaultOpen={!isMobile} open={isMobile ? false : undefined}>
+    // Determine sidebar mode based on hasMounted and isMobile from context
+    // On server and initial client render (before useEffect), default to "icon"
+    // After mount, use isMobile to switch to "offcanvas" if needed.
+    const sidebarCollapsibleModeToPass = !hasMounted || isMobile === undefined ? "icon" : (isMobile ? "offcanvas" : "icon");
+
+    return (
       <div className="flex h-screen bg-background">
         {currentNavItems.length > 0 && (
-          <Sidebar collapsible={sidebarCollapsibleMode} side="left" className="border-r">
-            <SidebarHeader className="p-3 border-b">
+          <Sidebar collapsible={sidebarCollapsibleModeToPass} side="left" className="border-r border-sidebar-border">
+            <SidebarHeader className="p-3 border-b border-sidebar-border">
               <Link href={currentDashboardHome} className={cn(
-                "flex items-center gap-2.5 p-1 rounded-md transition-colors"
+                "flex items-center gap-2.5 p-1 rounded-md transition-colors hover:bg-sidebar-accent/10"
               )}>
                 <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
-                <span className="font-semibold text-lg text-sidebar-foreground group-[[data-collapsible=icon][data-state=collapsed]]/sidebar:hidden group-[data-collapsible=offcanvas]/sidebar:inline truncate">
+                {/* Text span styling adjusted to hide correctly when icon-collapsed on desktop */}
+                <span className={cn(
+                  "font-semibold text-lg text-sidebar-foreground truncate",
+                  "group-data-[collapsible=icon]:group-data-[state=collapsed]/sidebar:hidden", // Hide if icon mode and collapsed
+                  "group-data-[collapsible=offcanvas]/sidebar:inline" // Ensure shown in offcanvas
+                )}>
                   {currentPersona}
                 </span>
               </Link>
@@ -167,23 +167,28 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            {/* SidebarRail is rendered within Sidebar.tsx based on props, no need to add it here if it's internal to Sidebar */}
+            {/* SidebarRail is rendered within Sidebar.tsx itself */}
           </Sidebar>
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="p-3 border-b border-border/30 bg-card/80 backdrop-blur-md flex items-center sticky top-0 z-30 h-14">
-            {isMobile && currentNavItems.length > 0 && (
-              <SidebarTrigger className="text-foreground mr-2">
-                 <Menu className="h-6 w-6" />
-              </SidebarTrigger>
-            )}
-            <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
-              <CurrentPersonaIcon className="h-6 w-6 text-primary md:hidden" />
-              <span className="font-semibold text-md text-foreground truncate">
-                {currentPersona} {/* This is the title in the top bar */}
-              </span>
+          <header className="p-3 border-b border-border/30 bg-card/95 backdrop-blur-sm flex items-center sticky top-0 z-30 h-14">
+            {/* SidebarTrigger will be rendered by Sidebar component if mode is offcanvas and isMobile */}
+            {currentNavItems.length > 0 && <SidebarTrigger className="text-foreground mr-2">
+              <Menu className="h-6 w-6" />
+            </SidebarTrigger>}
+            
+            {/* Top bar persona link - shown when sidebar is icon-collapsed or on mobile */}
+             <Link href={currentDashboardHome} className={cn(
+                "flex items-center gap-2 md:hidden", // Hidden on md+ for icon sidebar's header to take precedence
+                {"md:flex": currentNavItems.length === 0} // Show if no sidebar items (e.g. live interview)
+             )}>
+                <CurrentPersonaIcon className="h-6 w-6 text-primary" />
+                <span className="font-semibold text-md text-foreground truncate">
+                    {currentPersona}
+                </span>
             </Link>
+
 
             <div className="ml-auto flex items-center space-x-3">
                 <Avatar className="h-8 w-8">
@@ -203,6 +208,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+    );
+  }
+
+  return (
+    // defaultOpen for SidebarProvider controls initial desktop state (expanded true/false)
+    // open prop could be used for controlled state, but defaultOpen is simpler for cookie logic
+    <SidebarProvider defaultOpen={true}> 
+      <SidebarInnerLayout />
     </SidebarProvider>
   );
 }

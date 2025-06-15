@@ -4,15 +4,13 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft, X } from "lucide-react" 
+import { X } from "lucide-react" 
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input" 
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet" 
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
@@ -27,18 +25,19 @@ const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3.5rem" 
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
-type SidebarContext = {
+type SidebarContextValue = {
   state: "expanded" | "collapsed"
   open: boolean 
   setOpen: (open: boolean) => void
   openMobile: boolean 
   setOpenMobile: (open: boolean) => void
-  isMobile: boolean
+  isMobile: boolean | undefined // Changed to allow undefined initially
   toggleSidebar: () => void
   effectiveCollapsibleMode: "offcanvas" | "icon" | "none"
+  hasMounted: boolean
 }
 
-const SidebarContext = React.createContext<SidebarContext | null>(null)
+const SidebarContext = React.createContext<SidebarContextValue | null>(null)
 
 function useSidebar() {
   const context = React.useContext(SidebarContext)
@@ -68,15 +67,16 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile();
+    const isMobileHook = useIsMobile(); // Hook result can be boolean or undefined
+    const [isMobile, setIsMobileState] = React.useState<boolean | undefined>(undefined);
     const [hasMounted, setHasMounted] = React.useState(false);
     const [openMobile, setOpenMobile] = React.useState(false);
     const [_open, _setOpen] = React.useState(defaultOpen);
     
     React.useEffect(() => {
+      setIsMobileState(isMobileHook); // Update state once hook resolves
       setHasMounted(true);
-      // Initialize sidebar state from cookie on client-side
-      if (!isMobile) {
+      if (isMobileHook === false) { // Check explicitly for false, as undefined means not yet determined
         const cookieValue = document.cookie
           .split("; ")
           .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
@@ -85,7 +85,7 @@ const SidebarProvider = React.forwardRef<
           _setOpen(cookieValue === 'true');
         }
       }
-    }, [isMobile]);
+    }, [isMobileHook]);
 
 
     const open = openProp ?? _open
@@ -97,7 +97,7 @@ const SidebarProvider = React.forwardRef<
         } else {
           _setOpen(openState)
         }
-        if (!isMobile && hasMounted) { 
+        if (isMobile === false && hasMounted) { 
           document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
         }
       },
@@ -124,12 +124,13 @@ const SidebarProvider = React.forwardRef<
     }, [toggleSidebar])
 
     const state = open ? "expanded" : "collapsed"
-    const effectiveCollapsibleMode = !hasMounted ? "icon" : (isMobile ? "offcanvas" : "icon");
+    // Determine effectiveCollapsibleMode only after mount and isMobile is determined
+    const effectiveCollapsibleMode = !hasMounted || isMobile === undefined ? "icon" : (isMobile ? "offcanvas" : "icon");
 
 
-    const contextValue = React.useMemo<SidebarContext>(
-      () => ({ state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, effectiveCollapsibleMode }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, effectiveCollapsibleMode]
+    const contextValue = React.useMemo<SidebarContextValue>(
+      () => ({ state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, effectiveCollapsibleMode, hasMounted }),
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, effectiveCollapsibleMode, hasMounted]
     )
 
     return (
@@ -166,11 +167,14 @@ const Sidebar = React.forwardRef<
     { side = "left", collapsible = "icon", className, children, ...props },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile, effectiveCollapsibleMode } = useSidebar()
-    const currentCollapsible = collapsible === "none" ? "none" : effectiveCollapsibleMode;
+    const { state, openMobile, setOpenMobile, effectiveCollapsibleMode, hasMounted } = useSidebar()
+    
+    // On initial render (server or pre-hydration), don't render mobile specific parts if not mounted
+    if (!hasMounted && effectiveCollapsibleMode === "offcanvas") {
+        return null; // Or a placeholder/skeleton
+    }
 
-
-    if (currentCollapsible === "none") {
+    if (effectiveCollapsibleMode === "none") {
       return (
         <div
           className={cn("flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground", className)}
@@ -182,7 +186,7 @@ const Sidebar = React.forwardRef<
       )
     }
     
-    if (currentCollapsible === "offcanvas") { 
+    if (effectiveCollapsibleMode === "offcanvas") { 
       return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent
@@ -204,16 +208,16 @@ const Sidebar = React.forwardRef<
         ref={ref}
         className={cn(
           "group/sidebar peer hidden md:flex flex-col text-sidebar-foreground bg-sidebar transition-all duration-300 ease-in-out h-svh",
-          side === "left" ? "border-r" : "border-l",
+          side === "left" ? "border-r border-sidebar-border" : "border-l border-sidebar-border",
           state === "expanded" ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
           className
         )}
         data-state={state}
-        data-collapsible={currentCollapsible} 
+        data-collapsible={effectiveCollapsibleMode} 
         {...props}
       >
         {children}
-         {currentCollapsible === 'icon' && <SidebarRail />}
+         {effectiveCollapsibleMode === 'icon' && <SidebarRail />}
       </div>
     )
   }
@@ -225,7 +229,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar, isMobile, effectiveCollapsibleMode } = useSidebar()
+  const { toggleSidebar, effectiveCollapsibleMode } = useSidebar()
 
   if (effectiveCollapsibleMode !== "offcanvas") return null; 
 
@@ -248,18 +252,21 @@ SidebarTrigger.displayName = "SidebarTrigger"
 
 const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"button">>(
   ({ className, ...props }, ref) => {
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, effectiveCollapsibleMode, state } = useSidebar();
+    if (effectiveCollapsibleMode !== 'icon') return null;
+    
+    const label = state === "collapsed" ? "Expand sidebar" : "Collapse sidebar";
+
     return (
       <button
         ref={ref}
         data-sidebar="rail"
-        aria-label="Toggle Sidebar"
-        title="Toggle Sidebar (Ctrl+B)"
+        aria-label={label}
+        title={`${label} (Ctrl+${SIDEBAR_KEYBOARD_SHORTCUT})`}
         onClick={toggleSidebar}
         className={cn(
           "absolute top-1/2 -translate-y-1/2 z-20 h-10 w-2 items-center justify-center opacity-0 group-hover/sidebar-wrapper:opacity-100 transition-opacity cursor-pointer",
           "group-data-[side=left]/sidebar-wrapper:-right-1 group-data-[side=right]/sidebar-wrapper:-left-1", 
-          "group-[[data-collapsible=icon]]/sidebar:flex", 
           "hidden md:flex", 
           className
         )}
@@ -271,23 +278,6 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"bu
   }
 );
 SidebarRail.displayName = "SidebarRail";
-
-
-const SidebarInset = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ className, ...props }, ref) => {
-    return (
-        <div
-        ref={ref}
-        className={cn(
-            "flex-1 flex flex-col overflow-hidden", 
-            className
-        )}
-        {...props}
-        />
-    );
-    }
-);
-SidebarInset.displayName = "SidebarInset";
 
 
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
@@ -306,7 +296,7 @@ const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
         {children}
         {effectiveCollapsibleMode === "offcanvas" && ( 
           <SheetClose asChild>
-            <Button variant="ghost" size="icon" className="mr-2 text-sidebar-foreground">
+            <Button variant="ghost" size="icon" className="mr-2 text-sidebar-foreground hover:bg-sidebar-accent/20">
               <X className="h-5 w-5" />
               <span className="sr-only">Close sidebar</span>
             </Button>
@@ -374,11 +364,11 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        default: "hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground",
       },
       sizeMode: {
-        expanded: "p-2.5", // Default padding for expanded state
-        collapsed: "justify-center px-0 py-2.5 size-10", // Styles for icon-only collapsed state
+        expanded: "p-2.5",
+        collapsed: "justify-center px-0 py-2.5 size-10",
       }
     },
     defaultVariants: {
@@ -418,8 +408,8 @@ const SidebarMenuButton = React.forwardRef<
             return React.cloneElement(child as React.ReactElement<React.HTMLAttributes<HTMLSpanElement>>, {
               className: cn(
                 child.props.className,
-                "truncate", // Always truncate
-                (currentSizeMode === 'collapsed') ? "hidden" : "inline"
+                "truncate", 
+                (currentSizeMode === 'collapsed') ? "hidden" : "inline" // Hide span if collapsed on desktop
               )
             });
           }
@@ -428,7 +418,8 @@ const SidebarMenuButton = React.forwardRef<
       </Comp>
     );
 
-    if (!tooltip || isMobile || currentSizeMode === "expanded") {
+    // No tooltips on mobile or when expanded
+    if (isMobile || currentSizeMode === "expanded" || !tooltip) {
       return buttonContent;
     }
     
@@ -448,9 +439,7 @@ SidebarMenuButton.displayName = "SidebarMenuButton"
 export {
   Sidebar,
   SidebarContent,
-  // SidebarFooter, // Removed as per user request
   SidebarHeader,
-  SidebarInset, 
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,

@@ -45,13 +45,13 @@ body {
     
     --radius: 0.5rem;
 
-    /* Sidebar specific colors - kept defaults for now, can be themed if sidebar is used extensively */
+    /* Sidebar specific colors */
     --sidebar-background: 222.9 47.4% 11.2%; 
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 145 50% 55%;
-    --sidebar-primary-foreground: 145 50% 5%;
-    --sidebar-accent: 207 70% 53%;
-    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-primary: 145 50% 55%; /* Vibrant green for sidebar primary highlights */
+    --sidebar-primary-foreground: 145 50% 5%; /* Dark text for sidebar primary highlights */
+    --sidebar-accent: 207 70% 53%; /* Blue for sidebar accent highlights */
+    --sidebar-accent-foreground: 0 0% 98%; /* White text for sidebar accent highlights */
     --sidebar-border: 217.2 32.6% 17.5%;
     --sidebar-ring: 207 70% 53%;
   }

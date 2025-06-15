@@ -35,7 +35,21 @@ const CandidateJobMatcherOutputSchema = z.object({
 export type CandidateJobMatcherOutput = z.infer<typeof CandidateJobMatcherOutputSchema>;
 
 export async function candidateJobMatcher(input: CandidateJobMatcherInput): Promise<CandidateJobMatcherOutput> {
-  return candidateJobMatcherFlow(input);
+  try {
+    console.log(`[candidateJobMatcher] Initiating flow with candidate profile (length: ${input.candidateProfile.length}) and job description (length: ${input.jobDescription.length})`);
+    const result = await candidateJobMatcherFlow(input);
+    console.log(`[candidateJobMatcher] Flow completed successfully. Match Score: ${result.matchScore}`);
+    return result;
+  } catch (error) {
+    console.error(`[candidateJobMatcher] Error executing flow. Input Profile Length: ${input.candidateProfile.length}, Input JD Length: ${input.jobDescription.length}. Error:`, error);
+    // It's often better to throw a more specific error or handle it,
+    // but for diagnosing an ISE, re-throwing ensures the server logs the failure.
+    // The console.error above will provide context in the logs.
+    if (error instanceof Error && error.stack) {
+        console.error("[candidateJobMatcher] Stack trace:", error.stack);
+    }
+    throw new Error(`Candidate-Job Matching AI flow failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -84,5 +98,4 @@ const candidateJobMatcherFlow = ai.defineFlow(
     return output;
   }
 );
-
     

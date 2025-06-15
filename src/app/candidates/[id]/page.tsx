@@ -64,14 +64,24 @@ interface EnrichedCandidate extends Omit<typeof MOCK_CANDIDATE, 'skills' | 'prof
 
 
 async function getCandidateDetails(id: string): Promise<EnrichedCandidate | null> {
-  await new Promise(resolve => setTimeout(resolve, 50));
+  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate network delay
   if (id === MOCK_CANDIDATE.id) {
     let recommendations: JobRecommendationSemanticOutput | null = null;
     try {
       const candidateProfileForAI = `${MOCK_CANDIDATE.currentTitle}. ${MOCK_CANDIDATE.aiGeneratedSummary || MOCK_CANDIDATE.experienceSummary}. Skills: ${MOCK_CANDIDATE.skills.join(', ')}`;
-      recommendations = await jobRecommendationSemantic({ candidateProfileText: candidateProfileForAI, resultCount: 5 });
+      if (candidateProfileForAI.length >= 50) { // Ensure minimum length for the flow
+        console.log(`[CandidateProfilePage] Fetching job recommendations for candidate ID: ${id}`);
+        recommendations = await jobRecommendationSemantic({ candidateProfileText: candidateProfileForAI, resultCount: 5 });
+        console.log(`[CandidateProfilePage] Successfully fetched ${recommendations?.recommendedJobs?.length || 0} job recommendations.`);
+      } else {
+        console.warn(`[CandidateProfilePage] Candidate profile text too short for AI recommendations (ID: ${id}). Length: ${candidateProfileForAI.length}`);
+      }
     } catch (error) {
-      console.error("Error fetching job recommendations:", error);
+      console.error(`[CandidateProfilePage] Error fetching AI job recommendations for candidate ID ${id}:`, error);
+      if (error instanceof Error && error.stack) {
+        console.error("[CandidateProfilePage] Stack trace for AI job recommendation error:", error.stack);
+      }
+      // recommendations will remain null, which is handled by the UI
     }
 
     return { 
@@ -197,3 +207,5 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
     </Container>
   );
 }
+
+    

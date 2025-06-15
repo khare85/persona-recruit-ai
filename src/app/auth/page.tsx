@@ -9,29 +9,65 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info } from 'lucide-react';
+import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useToast } from '@/hooks/use-toast';
 
 export default function AuthenticationPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const router = useRouter();
+  const { signIn, signUp, loading: authLoading } = useAuth(); // Use auth context
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Form states
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would handle actual form submissions
-    // For now, redirecting to jobs page as a generic post-login landing.
-    // A real app would check user role and redirect accordingly.
-    router.push('/jobs');
+    if (!loginEmail || !loginPassword) {
+      toast({ variant: "destructive", title: "Login Error", description: "Email and password are required." });
+      return;
+    }
+    try {
+      await signIn(loginEmail, loginPassword);
+      toast({ title: "Login Successful!", description: "Redirecting to your dashboard..."});
+      // TODO: Implement role-based redirection. For now, redirect to a generic page or candidate dashboard.
+      router.push('/candidates/dashboard'); // Example redirect
+    } catch (error) {
+      // Error toast is handled by AuthContext
+      console.error("Login failed on page:", error);
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would handle actual form submissions
-    // Simulate sign up and redirect (conceptual)
-    router.push('/jobs'); // Or a welcome/onboarding page
+    if (signupPassword !== signupConfirmPassword) {
+      toast({ variant: "destructive", title: "Sign Up Error", description: "Passwords do not match." });
+      return;
+    }
+    if (!signupName || !signupEmail || !signupPassword) {
+       toast({ variant: "destructive", title: "Sign Up Error", description: "All fields are required." });
+      return;
+    }
+    try {
+      await signUp(signupEmail, signupPassword, signupName);
+      toast({ title: "Sign Up Successful!", description: "Account created. Redirecting..." });
+      // TODO: Implement role assignment and role-based redirection.
+      router.push('/candidates/dashboard'); // Example redirect to candidate profile creation or dashboard
+    } catch (error) {
+      // Error toast is handled by AuthContext
+       console.error("Sign up failed on page:", error);
+    }
   };
 
   const handlePersonaSelection = (personaPath: string) => {
@@ -87,22 +123,22 @@ export default function AuthenticationPage() {
                       <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="login-email">Email</Label>
-                          <Input id="login-email" type="email" placeholder="m@example.com" required />
+                          <Input id="login-email" type="email" placeholder="m@example.com" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label htmlFor="login-password">Password</Label>
                             <Link
-                              href="#"
+                              href="#" // TODO: Implement password reset
                               className="text-xs text-primary hover:underline"
                             >
                               Forgot password?
                             </Link>
                           </div>
-                          <Input id="login-password" type="password" required />
+                          <Input id="login-password" type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
                         </div>
-                        <Button type="submit" className="w-full" size="lg">
-                          <LogIn className="mr-2 h-5 w-5" /> Login
+                        <Button type="submit" className="w-full" size="lg" disabled={authLoading}>
+                          {authLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <LogIn className="mr-2 h-5 w-5" />} Login
                         </Button>
                       </form>
                       <p className="text-center text-sm text-muted-foreground">
@@ -126,22 +162,22 @@ export default function AuthenticationPage() {
                       <form onSubmit={handleSignUp} className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="signup-name">Full Name</Label>
-                          <Input id="signup-name" placeholder="Your Name" required />
+                          <Input id="signup-name" placeholder="Your Name" required value={signupName} onChange={(e) => setSignupName(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-email">Email</Label>
-                          <Input id="signup-email" type="email" placeholder="you@example.com" required />
+                          <Input id="signup-email" type="email" placeholder="you@example.com" required value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-password">Password</Label>
-                          <Input id="signup-password" type="password" required />
+                          <Input id="signup-password" type="password" required value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                          <Input id="signup-confirm-password" type="password" required />
+                          <Input id="signup-confirm-password" type="password" required value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} />
                         </div>
-                        <Button type="submit" className="w-full" size="lg">
-                          <UserPlus className="mr-2 h-5 w-5" /> Sign Up
+                        <Button type="submit" className="w-full" size="lg" disabled={authLoading}>
+                          {authLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <UserPlus className="mr-2 h-5 w-5" />} Sign Up
                         </Button>
                       </form>
                       <p className="text-center text-sm text-muted-foreground">
@@ -160,7 +196,7 @@ export default function AuthenticationPage() {
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-3">Or explore the platform with sample data:</p>
                 <Button variant="secondary" className="w-full" onClick={() => setShowPersonaSelector(true)}>
-                    <PlayCircle className="mr-2 h-5 w-5" /> Explore Demo Personas
+                    <PlayCircle className="mr-2 h-5 w-5" /> Explore Demo Personas (No Auth)
                 </Button>
               </div>
             </>
@@ -177,7 +213,7 @@ export default function AuthenticationPage() {
                   <Info className="h-4 w-4" />
                   <AlertTitle>Demo Mode</AlertTitle>
                   <AlertDescription>
-                    You are about to enter a demonstration environment. No actual user account will be created.
+                    You are about to enter a demonstration environment. No actual user account will be created or required for these views.
                   </AlertDescription>
                 </Alert>
                 <Button onClick={() => handlePersonaSelection('/candidates/dashboard')} className="w-full justify-start" variant="outline" size="lg">

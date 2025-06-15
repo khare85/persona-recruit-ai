@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; // Added useRouter
 import {
   Sidebar,
   SidebarHeader,
@@ -17,11 +17,13 @@ import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home, SearchCheck, Sparkles, Info,
+  Home, SearchCheck, Sparkles, Info, Mail, Loader2,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge"; // Added for Demo User badge
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 // Navigation item definitions
 const defaultNavItems = [
@@ -72,10 +74,11 @@ const adminNavItems = [
 ];
 
 
-function determineNavigation(pathname: string) {
+function determineNavigation(pathname: string, userRole?: string /* Placeholder for future role-based nav */) {
+  // TODO: Replace pathname-based logic with userRole-based logic once roles are implemented
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Sparkles; // Changed default icon
+  let CurrentPersonaIcon: React.ElementType = Sparkles; 
   let currentDashboardHome = "/";
 
   if (pathname.startsWith('/candidates/dashboard') ||
@@ -115,7 +118,64 @@ function determineNavigation(pathname: string) {
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome } = determineNavigation(pathname);
+  const router = useRouter();
+  const { user, signOut, loading: authLoading } = useAuth(); // Use auth context
+  const { toast } = useToast();
+  
+  // TODO: Implement proper role fetching. For now, we use pathname for persona.
+  const { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome } = determineNavigation(pathname, /* user?.role */);
+
+  // Effect to handle redirection if user is not authenticated
+  // This is a basic form of route protection. More robust solutions (like middleware) exist.
+  React.useEffect(() => {
+    if (!authLoading && !user && !pathname.startsWith('/auth')) {
+      // If not loading, no user, and not on auth page, redirect to auth.
+      // Exclude demo persona paths from this strict auth check for now.
+      const isDemoPath = pathname.startsWith('/candidates/dashboard') || 
+                         pathname.startsWith('/recruiter/dashboard') || 
+                         pathname.startsWith('/company/dashboard') ||
+                         pathname.startsWith('/admin/dashboard');
+      
+      // A simple check: if it's not explicitly a demo path and no user, redirect.
+      // This logic will need refinement with actual role-based auth.
+      // For now, demo persona paths are accessible without Firebase login.
+      // True protected routes would check user and role.
+
+      // If we want to strictly protect ALL dashboard routes:
+      // router.push('/auth?redirect=' + pathname);
+      // toast({ title: "Authentication Required", description: "Please log in to access this page.", variant: "destructive" });
+    }
+  }, [authLoading, user, pathname, router, toast]);
+
+
+  if (authLoading && !pathname.startsWith('/auth')) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-3 text-lg text-muted-foreground">Loading session...</p>
+      </div>
+    );
+  }
+
+  // The following handles a brief moment where user is null but auth is not loading,
+  // and we're not yet redirected. This avoids rendering layout for unauth user.
+  // This will be more robust with proper route protection.
+  // if (!user && !authLoading && !pathname.startsWith('/auth') && !pathname.startsWith('/demo')) {
+  //    return null; // Or a specific "Access Denied" component
+  // }
+
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+  
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const avatarFallback = getInitials(user?.displayName || user?.email);
 
   return (
     <div className="flex h-screen bg-background">
@@ -172,13 +232,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Badge variant="outline" className="border-primary/50 text-primary text-xs hidden sm:flex items-center">
                 <Info className="h-3.5 w-3.5 mr-1.5" /> Demo Environment
               </Badge>
-              <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
-                  <AvatarFallback>DU</AvatarFallback>
-              </Avatar>
-               <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
-                  <Link href="/auth"><LogOut className="h-5 w-5" /></Link>
-                </Button>
+              {user ? (
+                <>
+                  <span className="text-sm text-muted-foreground hidden md:inline">
+                    {user.email}
+                  </span>
+                  <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.photoURL || undefined} alt={displayName} data-ai-hint="user avatar"/>
+                      <AvatarFallback>{avatarFallback}</AvatarFallback>
+                  </Avatar>
+                  <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground">
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </>
+              ) : (
+                <Link href="/auth" passHref>
+                  <Button variant="outline" size="sm">
+                    <LogIn className="mr-2 h-4 w-4"/> Login
+                  </Button>
+                </Link>
+              )}
           </div>
         </header>
 

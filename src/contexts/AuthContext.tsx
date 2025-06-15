@@ -1,0 +1,121 @@
+
+"use client";
+
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { auth } from '@/config/firebase';
+import type { User as FirebaseUser, AuthError } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut 
+} from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation'; // Corrected import
+
+interface User extends FirebaseUser {
+  // Add custom properties like role if needed later
+  // role?: string; 
+}
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, pass: string) => Promise<void>;
+  signUp: (email: string, pass: string, fullName?:string) => Promise<void>;
+  signOut: () => Promise<void>;
+  // fetchUserRole: (uid: string) => Promise<string | null>; // For future role implementation
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Basic user object for now. Role fetching can be added here later.
+        setUser(firebaseUser as User); 
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, pass: string) => {
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      // User state will be updated by onAuthStateChanged
+      // Redirection can happen in the component or here
+    } catch (error) {
+      const authError = error as AuthError;
+      console.error("Sign in error:", authError);
+      toast({ variant: "destructive", title: "Login Failed", description: authError.message || "Invalid credentials." });
+      setLoading(false);
+      throw authError; // Re-throw to handle in component
+    }
+  };
+
+  const signUp = async (email: string, pass: string, fullName?: string) => {
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+      // You might want to update the user's profile with fullName here if Firebase supports it directly
+      // or save it to Firestore along with a role.
+      // For now, user state will be updated by onAuthStateChanged.
+      // TODO: Add logic to save user to Firestore with role (e.g., default 'candidate')
+    } catch (error) {
+      const authError = error as AuthError;
+      console.error("Sign up error:", authError);
+      toast({ variant: "destructive", title: "Sign Up Failed", description: authError.message || "Could not create account." });
+      setLoading(false);
+      throw authError; // Re-throw to handle in component
+    }
+  };
+
+  const signOut = async () => {
+    setLoading(true);
+    try {
+      await firebaseSignOut(auth);
+      setUser(null);
+      // Redirect to home or auth page after sign out
+      router.push('/'); 
+      toast({ title: "Signed Out", description: "You have been successfully signed out." });
+    } catch (error) {
+      const authError = error as AuthError;
+      console.error("Sign out error:", authError);
+      toast({ variant: "destructive", title: "Sign Out Failed", description: authError.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Placeholder for fetching user role from Firestore in the future
+  // const fetchUserRole = async (uid: string): Promise<string | null> => {
+  //   // Firestore logic to get role based on uid
+  //   return 'candidate'; // example
+  // };
+
+  return (
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

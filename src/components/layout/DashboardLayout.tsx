@@ -13,18 +13,19 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
+  // SidebarFooter, // Footer not used in this reverted layout
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, PlusCircle, SearchCode, DollarSign,
-  ExternalLink, Activity, LogOut, LineChart, UsersRound, Settings2, Server, BarChartBig, Settings
+  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// Navigation item definitions remain the same
 const defaultNavItems = [
   { href: '/jobs', label: 'All Jobs', icon: Briefcase },
   { href: '/candidates', label: 'All Candidates', icon: Users },
@@ -33,7 +34,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog },
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Assuming candidate ID 1 for demo
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -45,8 +46,7 @@ const recruiterNavItems = [
   { href: '/jobs', label: 'Manage Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
-  { href: '/interviews', label: 'AI Interview Analysis', icon: Activity }, // Changed Video to Activity as per its page
-  // { href: '#recruiter-settings', label: 'Settings', icon: Settings }, // Conceptual
+  { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
 ];
 
 const companyNavItems = [
@@ -60,12 +60,12 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '#admin-users', label: 'User Management', icon: UsersRound },
-  { href: '#admin-companies', label: 'Company Management', icon: Building },
-  { href: '#admin-analytics', label: 'Platform Analytics', icon: BarChartBig },
-  { href: '#admin-system', label: 'System Health', icon: Server },
-  { href: '#admin-billing', label: 'Billing & Subs', icon: DollarSign },
-  { href: '#admin-settings', label: 'Platform Settings', icon: Settings },
+  { href: '#admin-users', label: 'User Management', icon: UsersRound }, // Conceptual link
+  { href: '#admin-companies', label: 'Company Management', icon: Building }, // Conceptual link
+  { href: '#admin-analytics', label: 'Platform Analytics', icon: BarChartBig }, // Conceptual link
+  { href: '#admin-system', label: 'System Health', icon: Server }, // Conceptual link
+  { href: '#admin-billing', label: 'Billing & Subs', icon: DollarSign }, // Conceptual link
+  { href: '#admin-settings', label: 'Platform Settings', icon: Settings }, // Conceptual link
 ];
 
 
@@ -86,7 +86,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    currentPersonaIcon = UsersRound;
+    currentPersonaIcon = LayoutDashboard; // Using LayoutDashboard for Recruiter Hub icon
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -99,11 +99,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     currentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = [];
+    currentNavItems = []; // No sidebar for live interview page
     currentPersona = "Live Interview";
     currentPersonaIcon = Video;
-    currentDashboardHome = "/";
-  } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') || pathname === '/candidates' || pathname === '/referrals' || pathname === '/interviews' ) {
+    currentDashboardHome = "/"; // Or relevant dashboard
+  } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') || pathname === '/candidates' || pathname === '/referrals' || pathname === '/interviews') {
+     // These are general app pages, might use default nav or a more specific context if needed
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
      currentPersonaIcon = Zap;
@@ -144,56 +145,41 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-            <SidebarFooter className="p-3 border-t">
-              {/* Content for EXPANDED sidebar */}
-              <div className="group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar" />
-                    <AvatarFallback>DU</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium text-sidebar-foreground">Demo User</p>
-                    <p className="text-xs text-muted-foreground">user@example.com</p>
-                  </div>
-                  <Button variant="ghost" size="icon" asChild className="ml-auto text-muted-foreground hover:text-sidebar-foreground">
-                    <Link href="/auth"><LogOut className="h-5 w-5" /></Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Content for COLLAPSED sidebar (ICON-ONLY) */}
-              <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center space-y-2 py-1">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar" />
-                  <AvatarFallback>DU</AvatarFallback>
-                </Avatar>
-                <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-sidebar-foreground w-full">
-                  <Link href="/auth" className="flex justify-center"><LogOut className="h-5 w-5" /></Link>
-                </Button>
-              </div>
-            </SidebarFooter>
+            {/* SidebarFooter is intentionally omitted in this reverted layout, user info is in top bar */}
           </Sidebar>
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {isMobile && currentNavItems.length > 0 && (
-            <div className="p-3 border-b bg-card/80 backdrop-blur-md md:hidden flex items-center sticky top-0 z-30 h-14"> {/* Ensure consistent height and z-index */}
-              <SidebarTrigger className="text-foreground">
+          {/* Top bar for mobile trigger and user actions */}
+          <header className="p-3 border-b border-border/30 bg-card/80 backdrop-blur-md flex items-center sticky top-0 z-30 h-14">
+            {isMobile && currentNavItems.length > 0 && (
+              <SidebarTrigger className="text-foreground mr-2">
                 <Menu className="h-6 w-6" />
               </SidebarTrigger>
-              <Link href={currentDashboardHome} className={cn(
-                "flex items-center gap-2 ml-3"
-              )}>
-                {/* Corrected icon rendering */}
-                <currentPersonaIcon className="h-6 w-6 text-primary" />
-                <span className="font-semibold text-md text-foreground truncate">
-                  {currentPersona}
-                </span>
-              </Link>
+            )}
+            {/* App name/logo for mobile header */}
+            <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
+               {/* Render the icon component directly */}
+              <currentPersonaIcon className="h-6 w-6 text-primary" />
+              <span className="font-semibold text-md text-foreground truncate">
+                {currentPersona}
+              </span>
+            </Link>
+
+            {/* User Avatar and Logout - moved to top bar */}
+            <div className="ml-auto flex items-center space-x-3">
+                <Avatar className="h-8 w-8">
+                    <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar" />
+                    <AvatarFallback>DU</AvatarFallback>
+                </Avatar>
+                 <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
+                    <Link href="/auth"><LogOut className="h-5 w-5" /></Link>
+                  </Button>
             </div>
-          )}
+          </header>
+          
           <main className="flex-1 overflow-y-auto">
+            {/* Container for consistent padding, can be adjusted or made conditional */}
             <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
                  {children}
             </div>
@@ -203,3 +189,4 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+    

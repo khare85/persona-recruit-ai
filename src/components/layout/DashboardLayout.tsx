@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, PlusCircle, SearchCode, DollarSign,
-  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, Home, FileText, Bell // Added Bell for Recruiter Dashboard
+  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, Home, FileText, Bell
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,7 +36,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog },
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -49,14 +49,13 @@ const recruiterNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
   { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
-  // Add more recruiter specific links here if needed, e.g., Payouts, Settings
 ];
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Company Jobs', icon: Briefcase }, 
+  { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound }, // Example, might need more dynamic linking
+  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
@@ -64,7 +63,7 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, // Conceptual links
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound },
   { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
   { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
@@ -79,10 +78,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap; 
+  let CurrentPersonaIcon: React.ElementType = Zap;
   let currentDashboardHome = "/jobs";
 
-  // Determine persona and navigation based on path
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
@@ -96,7 +94,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; 
+    CurrentPersonaIcon = LayoutDashboard;
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -109,10 +107,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = []; 
+    currentNavItems = [];
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = "/"; 
+    currentDashboardHome = "/";
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') ||
              pathname === '/candidates' || pathname.startsWith('/candidates/new') ||
              pathname === '/referrals' || pathname === '/interviews') {
@@ -132,7 +130,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Link href={currentDashboardHome} className={cn(
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
               )}>
-                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" /> 
+                <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
                 <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
                   {currentPersona}
                 </span>
@@ -184,7 +182,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </Button>
                 </div>
             </SidebarFooter>
-            {collapsible === 'icon' && !isMobile && <SidebarRail />}
+            {/* The SidebarRail is rendered by the Sidebar component itself based on its 'collapsible' prop in sidebar.tsx */}
           </Sidebar>
         )}
 
@@ -224,5 +222,3 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

@@ -11,13 +11,13 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"; 
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home, SearchCheck, Sparkles, Info, Mail, Loader2,
+  Home, SearchCheck, Sparkles, Info, Mail, Loader2, LogIn // Added LogIn here
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,7 +36,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog },
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -58,14 +58,14 @@ const companyNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
-  { href: '/company/advanced-match', label: 'Advanced Match', icon: SearchCheck }, 
+  { href: '/company/advanced-match', label: 'Advanced Match', icon: SearchCheck },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
 ];
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, 
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound },
   { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
   { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
@@ -78,7 +78,7 @@ function determineNavigation(pathname: string, userRole?: string /* Placeholder 
   // TODO: Replace pathname-based logic with userRole-based logic once roles are implemented
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Sparkles; 
+  let CurrentPersonaIcon: React.ElementType = Sparkles;
   let currentDashboardHome = "/";
 
   if (pathname.startsWith('/candidates/dashboard') ||
@@ -94,7 +94,7 @@ function determineNavigation(pathname: string, userRole?: string /* Placeholder 
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; 
+    CurrentPersonaIcon = LayoutDashboard;
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -107,10 +107,10 @@ function determineNavigation(pathname: string, userRole?: string /* Placeholder 
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = []; 
+    currentNavItems = [];
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = pathname; 
+    currentDashboardHome = pathname;
   }
   return { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome };
 }
@@ -121,7 +121,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, signOut, loading: authLoading } = useAuth(); // Use auth context
   const { toast } = useToast();
-  
+
   // TODO: Implement proper role fetching. For now, we use pathname for persona.
   const { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome } = determineNavigation(pathname, /* user?.role */);
 
@@ -131,11 +131,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (!authLoading && !user && !pathname.startsWith('/auth')) {
       // If not loading, no user, and not on auth page, redirect to auth.
       // Exclude demo persona paths from this strict auth check for now.
-      const isDemoPath = pathname.startsWith('/candidates/dashboard') || 
-                         pathname.startsWith('/recruiter/dashboard') || 
+      const isDemoPath = pathname.startsWith('/candidates/dashboard') ||
+                         pathname.startsWith('/recruiter/dashboard') ||
                          pathname.startsWith('/company/dashboard') ||
                          pathname.startsWith('/admin/dashboard');
-      
+
       // A simple check: if it's not explicitly a demo path and no user, redirect.
       // This logic will need refinement with actual role-based auth.
       // For now, demo persona paths are accessible without Firebase login.
@@ -173,14 +173,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
     return name.substring(0, 2).toUpperCase();
   };
-  
+
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
   const avatarFallback = getInitials(user?.displayName || user?.email);
 
   return (
     <div className="flex h-screen bg-background">
       {currentNavItems.length > 0 && (
-        <Sidebar> 
+        <Sidebar>
           <SidebarHeader className="border-b border-sidebar-border">
             <Link href={currentDashboardHome} className={cn(
               "flex items-center gap-2.5 p-1 rounded-md transition-colors hover:bg-sidebar-accent/10 w-full"
@@ -212,22 +212,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        
+
         <header className={cn(
             "p-3 border-b border-border/30 bg-card/95 backdrop-blur-sm flex items-center sticky top-0 z-30 h-14",
-            currentNavItems.length === 0 ? "pl-6" : "" 
+            currentNavItems.length === 0 ? "pl-6" : ""
         )}>
-          
+
            <div className={cn(
              "flex items-center gap-2",
-             currentNavItems.length > 0 ? "md:hidden" : "" 
+             currentNavItems.length > 0 ? "md:hidden" : ""
            )}>
               <CurrentPersonaIcon className="h-6 w-6 text-primary" />
               <span className="font-semibold text-md text-foreground truncate">
                   {currentPersona}
               </span>
           </div>
-          
+
           <div className="ml-auto flex items-center space-x-3">
               <Badge variant="outline" className="border-primary/50 text-primary text-xs hidden sm:flex items-center">
                 <Info className="h-3.5 w-3.5 mr-1.5" /> Demo Environment

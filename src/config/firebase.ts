@@ -11,16 +11,12 @@ const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 // Log a warning if the API key or Project ID is missing
 if (!apiKey) {
   console.warn(
-    "WARNING: NEXT_PUBLIC_FIREBASE_API_KEY is missing for 'ai-talent-stream'. Client-side Firebase will not initialize correctly."
+    `WARNING: NEXT_PUBLIC_FIREBASE_API_KEY is missing${projectId ? ` for '${projectId}'` : ''}. Client-side Firebase will not initialize correctly.`
   );
 }
 if (!projectId) {
   console.warn(
-    "WARNING: NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing for 'ai-talent-stream'. Client-side Firebase will not initialize correctly."
-  );
-} else if (projectId !== "ai-talent-stream") {
-    console.warn(
-    `WARNING: NEXT_PUBLIC_FIREBASE_PROJECT_ID is set to '${projectId}' but you intend to use 'ai-talent-stream'. Please ensure consistency for client-side Firebase.`
+    "WARNING: NEXT_PUBLIC_FIREBASE_PROJECT_ID is missing. Client-side Firebase will not initialize correctly."
   );
 }
 
@@ -50,7 +46,7 @@ if (getApps().length === 0) {
       app = {} as FirebaseApp; // Fallback to prevent further crashes if app is accessed
     }
   } else {
-    console.error("Firebase critical configuration missing for 'ai-talent-stream'. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set. Initialization skipped.");
+    console.error(`Firebase critical configuration missing${projectId ? ` for '${projectId}'` : ''}. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set. Initialization skipped.`);
     app = {} as FirebaseApp; // Fallback
   }
 } else {
@@ -63,13 +59,13 @@ if (app && app.options && app.options.apiKey) {
     auth = getAuth(app);
   } catch (e) {
     console.error("Firebase Auth initialization (getAuth) failed. Error:", e);
-    console.error("This often means the API Key (NEXT_PUBLIC_FIREBASE_API_KEY), while present, is invalid for the specified Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID='ai-talent-stream'), or the Identity Toolkit API is not enabled, or the key has restrictive settings in Google Cloud Console.");
+    console.error(`This often means the API Key (NEXT_PUBLIC_FIREBASE_API_KEY), while present, is invalid for the specified Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID='${projectId}'), or the Identity Toolkit API is not enabled, or the key has restrictive settings in Google Cloud Console.`);
     auth = {} as Auth; // Fallback
   }
 } else {
   console.error(
     "Firebase Auth initialization skipped: Firebase App was not properly initialized. " +
-    "This usually means NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID for 'ai-talent-stream' was missing or empty."
+    `This usually means NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID${projectId ? ` for '${projectId}'` : ''} was missing or empty.`
   );
   auth = {} as Auth; // Fallback
 }
@@ -79,7 +75,7 @@ if (app && app.options && app.options.apiKey && typeof window !== 'undefined' &&
   try {
     analytics = getAnalytics(app);
   } catch (error) {
-    console.warn("Firebase Analytics could not be initialized for 'ai-talent-stream'.", error);
+    console.warn(`Firebase Analytics could not be initialized${projectId ? ` for '${projectId}'` : ''}.`, error);
     analytics = undefined; // Ensure analytics is undefined if init fails
   }
 }

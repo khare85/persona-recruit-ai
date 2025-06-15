@@ -2,13 +2,13 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, ThumbsUp, Brain, FileText } from 'lucide-react';
+import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, ThumbsUp, Brain, FileText, Search } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import Image from 'next/image';
 import { candidateJobMatcher, CandidateJobMatcherOutput } from '@/ai/flows/candidate-job-matcher';
 import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label'; // Added import
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 
 // Mock job data - in a real app, this would come from a database or API
@@ -17,7 +17,7 @@ const MOCK_JOB_DETAILS = {
   title: 'Senior Frontend Engineer',
   company: 'Tech Solutions Inc.',
   companyLogo: 'https://placehold.co/100x100.png?b=ts', // Unique placeholder
-  companyDescription: 'Tech Solutions Inc. is a leading innovator in cloud-based software, committed to delivering cutting-edge solutions that empower businesses globally. We foster a collaborative and inclusive work environment where creativity and growth are encouraged.',
+  companyDescription: 'Tech Solutions Inc. is a leading innovator in cloud-based software, committed to delivering cutting-edge solutions that empower businesses globally. We foster a collaborative and inclusive work environment where creativity and growth are encouraged. Our core values include innovation, customer obsession, and teamwork.',
   location: 'Remote',
   type: 'Full-time',
   salary: '$120,000 - $150,000 per year',
@@ -30,7 +30,7 @@ const MOCK_JOB_DETAILS = {
     Salary: $120,000 - $150,000 per year
 
     About Tech Solutions Inc.:
-    Tech Solutions Inc. is a leading innovator in cloud-based software, committed to delivering cutting-edge solutions that empower businesses globally. We foster a collaborative and inclusive work environment where creativity and growth are encouraged.
+    Tech Solutions Inc. is a leading innovator in cloud-based software, committed to delivering cutting-edge solutions that empower businesses globally. We foster a collaborative and inclusive work environment where creativity and growth are encouraged. Our core values include innovation, customer obsession, and teamwork.
 
     Role Overview:
     We are seeking a talented and passionate Senior Frontend Engineer to join our dynamic team. In this role, you will be a key player in designing, developing, and maintaining the user interfaces for our flagship products. You will work closely with UX designers, product managers, and backend engineers to create seamless and intuitive user experiences.
@@ -65,7 +65,6 @@ const MOCK_JOB_DETAILS = {
     - Professional development budget for conferences, courses, and certifications.
     - Opportunity to work on impactful projects with cutting-edge technology.
   `,
-  // Shorter display sections from the full description
   responsibilities: [
     'Develop and maintain user-facing features using React.js and Next.js.',
     'Build reusable components and front-end libraries for future use.',
@@ -89,7 +88,6 @@ const MOCK_JOB_DETAILS = {
   ],
 };
 
-// Mock candidate profile for AI matching demo
 const MOCK_CANDIDATE_PROFILE = `
 Candidate Name: Alice Wonderland
 Current Title: Senior Software Engineer
@@ -97,7 +95,7 @@ Contact: alice.w@example.com | (555) 123-4567
 LinkedIn: linkedin.com/in/alicewonderland | Portfolio: alicew.dev
 
 Summary:
-Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Seeking a challenging remote role where I can contribute to meaningful projects and continue to grow professionally.
+Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Seeking a challenging remote role where I can contribute to meaningful projects and continue to grow professionally. Prefers companies with strong engineering culture and focus on work-life balance.
 
 Skills:
 React, Next.js, TypeScript, JavaScript (ES6+), Node.js, Python, HTML5, CSS3/SASS, Tailwind CSS, Styled Components, GraphQL, REST APIs, WebSockets, Zustand, Redux, Webpack, Babel, Jest, React Testing Library, Cypress, Docker, Kubernetes, AWS (EC2, S3, Lambda, API Gateway), CI/CD (Jenkins, GitLab CI), Agile Methodologies, Scrum, System Design, Microservices, Web Performance Optimization, Accessibility (WCAG).
@@ -131,31 +129,29 @@ Certifications:
 
 interface JobDetails extends Omit<typeof MOCK_JOB_DETAILS, 'fullDescriptionForAI'> {
   aiMatch: CandidateJobMatcherOutput | null;
-  displayDescription: string; // Parsed from fullDescriptionForAI for rendering
+  displayDescription: string;
 }
 
 async function getJobDetails(id: string): Promise<JobDetails | null> {
-  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate API call
+  await new Promise(resolve => setTimeout(resolve, 50));
   if (id === MOCK_JOB_DETAILS.id) {
     let aiMatchResult: CandidateJobMatcherOutput | null = null;
     try {
         aiMatchResult = await candidateJobMatcher({ 
             candidateProfile: MOCK_CANDIDATE_PROFILE, 
-            jobDescription: MOCK_JOB_DETAILS.fullDescriptionForAI // Use the full, detailed description for AI
+            jobDescription: MOCK_JOB_DETAILS.fullDescriptionForAI,
+            companyInformation: MOCK_JOB_DETAILS.companyDescription // Pass company description here
         });
     } catch (error) {
         console.error("AI Matching Error:", error);
-        // Keep aiMatchResult as null, so the UI can handle it gracefully
     }
     
-    // Extract relevant parts from fullDescriptionForAI for UI display if needed, or use pre-defined sections
-    // For this demo, we use pre-defined sections and the full description for AI.
     const { fullDescriptionForAI, ...restOfJobDetails } = MOCK_JOB_DETAILS;
 
     return { 
         ...restOfJobDetails, 
         aiMatch: aiMatchResult,
-        displayDescription: fullDescriptionForAI // Or a summarized version for display
+        displayDescription: fullDescriptionForAI 
     };
   }
   return null;
@@ -183,7 +179,6 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
   return (
     <Container className="max-w-5xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Main Job Details Column */}
         <div className="md:col-span-2 space-y-8">
           <Card className="shadow-lg">
             <CardHeader className="border-b">
@@ -202,7 +197,6 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              {/* Using prose to style HTML from AI or markdown */}
               <div className="prose prose-sm max-w-none text-foreground/90 dark:prose-invert">
                 <h2 className="text-xl font-semibold mb-3 text-foreground">About {job.company}</h2>
                 <p className="mb-6">{job.companyDescription}</p>
@@ -224,14 +218,11 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                 <ul className="list-disc pl-5 space-y-1">
                   {job.benefits.map((item, index) => <li key={index}>{item}</li>)}
                 </ul>
-                
-                {/* This could be replaced by a richer display of the job.displayDescription if it's HTML/Markdown */}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar with Apply Button and AI Match */}
         <div className="space-y-6">
           <Card className="shadow-lg sticky top-24">
             <CardHeader>
@@ -250,7 +241,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                   <Brain className="h-6 w-6 mr-2" /> AI Match Analysis
                 </CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  For: <span className="font-medium">Mock Candidate (Alice W.)</span>. Actual match may vary for other candidates.
+                  For: <span className="font-medium">Mock Candidate (Alice W.)</span>.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -271,7 +262,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                 </div>
               </CardContent>
               <CardFooter>
-                 <p className="text-xs text-muted-foreground/70 italic">This is an AI-generated assessment for demonstration purposes.</p>
+                 <p className="text-xs text-muted-foreground/70 italic">AI assessment for demo. Actual match may vary.</p>
               </CardFooter>
             </Card>
           ) : (
@@ -282,7 +273,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground">AI matching analysis could not be performed for this job at the moment.</p>
+                    <p className="text-sm text-muted-foreground">AI matching analysis could not be performed for this job.</p>
                 </CardContent>
              </Card>
           )}
@@ -312,4 +303,3 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
     </Container>
   );
 }
-

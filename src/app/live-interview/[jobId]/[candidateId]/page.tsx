@@ -111,7 +111,7 @@ const LiveInterviewPage: NextPage = () => {
         setInterviewContext(contextData as CandidateContext); 
       } else {
         toast({ variant: "destructive", title: "Error", description: `Interview context not found for Job ID: ${jobId}, Candidate ID: ${candidateId}.`});
-        router.push('/candidates/my-interviews'); // Redirect to a more relevant page
+        router.push('/candidates/my-interviews'); 
       }
       setIsLoadingContext(false);
     };
@@ -129,7 +129,7 @@ const LiveInterviewPage: NextPage = () => {
         recordedVideoBlobs.current = [];
         let videoOptions = { mimeType: 'video/webm;codecs=vp9,opus' };
         if (!MediaRecorder.isTypeSupported(videoOptions.mimeType)) {
-            videoOptions = { mimeType: 'video/webm' }; // Fallback
+            videoOptions = { mimeType: 'video/webm' }; 
         }
 
         const videoRecorder = new MediaRecorder(stream, videoOptions);
@@ -137,7 +137,7 @@ const LiveInterviewPage: NextPage = () => {
         videoRecorder.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) recordedVideoBlobs.current.push(event.data);
         };
-        videoRecorder.start(1000); // Record in 1-second chunks
+        videoRecorder.start(1000); 
         return true;
       } catch (err) {
         console.error("Error accessing media devices:", err);
@@ -155,26 +155,61 @@ const LiveInterviewPage: NextPage = () => {
     }
   }, []);
 
+
+  const startUserAudioRecording = useCallback(() => {
+    if (!userVideoStreamRef.current || !isInterviewActive || isUserSpeaking || isAiSpeaking) return;
+    userAudioChunksRef.current = [];
+    try {
+      const streamToRecord = new MediaStream(userVideoStreamRef.current.getAudioTracks());
+      mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType: 'audio/webm;codecs=opus' });
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) userAudioChunksRef.current.push(event.data);
+      };
+      mediaRecorderRef.current.onstop = async () => {
+        setIsUserSpeaking(false); 
+        if (userAudioChunksRef.current.length > 0 && genAiSessionRef.current) {
+          const audioBlob = new Blob(userAudioChunksRef.current, { type: 'audio/webm;codecs=opus' });
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = () => {
+            const base64AudioData = reader.result?.toString().split(',')[1];
+            if (base64AudioData) {
+              const clientContent : Content = { audio: { data: base64AudioData, mimeType: 'audio/webm;codecs=opus' } };
+              genAiSessionRef.current?.sendClientContent({ turns: [clientContent]});
+            }
+          };
+        }
+        userAudioChunksRef.current = []; 
+      };
+      mediaRecorderRef.current.start();
+      setIsUserSpeaking(true);
+      toast({title: "Your turn", description: "AI is listening. Speak clearly.", duration: 3000});
+    } catch (error) {
+        console.error("Error starting user audio recording:", error);
+        toast({variant: "destructive", title: "Mic Error", description: "Could not start microphone."});
+        setIsUserSpeaking(false);
+    }
+  }, [isInterviewActive, toast, isUserSpeaking, isAiSpeaking]);
+
   const playNextAiAudio = useCallback(() => {
     if (aiAudioQueueRef.current.length > 0 && !isAiSpeaking) {
-        const audioEl = aiAudioQueueRef.current[0]; // Get the first audio element
+        const audioEl = aiAudioQueueRef.current[0]; 
         setIsAiSpeaking(true);
         audioEl.play().catch(e => {
             console.error("Error playing AI audio from queue:", e);
             setIsAiSpeaking(false);
-            aiAudioQueueRef.current.shift(); // Remove problematic audio
-            playNextAiAudio(); // Try next
+            aiAudioQueueRef.current.shift(); 
+            playNextAiAudio(); 
         });
         audioEl.onended = () => {
             setIsAiSpeaking(false);
-            aiAudioQueueRef.current.shift(); // Remove played audio
-            playNextAiAudio(); // Play next if any
+            aiAudioQueueRef.current.shift(); 
+            playNextAiAudio(); 
         };
     } else if (aiAudioQueueRef.current.length === 0 && !isAiSpeaking) {
-        // If queue is empty and AI is not speaking, it's user's turn
         startUserAudioRecording();
     }
-  }, [isAiSpeaking, startUserAudioRecording]); // Added startUserAudioRecording
+  }, [isAiSpeaking, startUserAudioRecording]);
 
 
   const processResponseQueue = useCallback(async () => {
@@ -209,12 +244,11 @@ const LiveInterviewPage: NextPage = () => {
       }
 
       if (message.serverContent?.turnComplete) {
-        setCurrentAiText(null); // Clear current AI text bubble when turn is fully complete
-        // playNextAiAudio will handle transitioning to user speaking or next AI audio
+        setCurrentAiText(null); 
       }
     }
     processingQueueRef.current = false;
-    playNextAiAudio(); // Check if AI should speak or if it's user's turn
+    playNextAiAudio(); 
     if (responseQueueRef.current.length > 0) {
       processResponseQueue(); 
     }
@@ -225,7 +259,7 @@ const LiveInterviewPage: NextPage = () => {
     if (responseQueueRef.current.length > 0 && !processingQueueRef.current) {
       processResponseQueue();
     }
-  }, [processResponseQueue]); // Dependency on responseQueueRef.current.length can be tricky, processResponseQueue itself is better.
+  }, [processResponseQueue]); 
 
 
   const initializeGenAiSession = useCallback(async () => {
@@ -237,7 +271,7 @@ const LiveInterviewPage: NextPage = () => {
 
     const ai = new GoogleGenAI({ apiKey });
     const modelConfig = {
-      responseModalities: [Modality.AUDIO, Modality.TEXT_TRANSCRIPT], // Request both
+      responseModalities: [Modality.AUDIO, Modality.TEXT_TRANSCRIPT], 
       mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
       speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' }}}, 
       contextWindowCompression: { triggerTokens: '25600', slidingWindow: { targetTokens: '12800' }},
@@ -251,14 +285,13 @@ const LiveInterviewPage: NextPage = () => {
           onopen: () => { 
             console.debug('Gemini Live Session Opened');
             toast({title: "AI Interviewer Connected", description: "Alex is ready to start."});
-            // Defer the initial message slightly to ensure session methods are available
             setTimeout(() => {
                 if(genAiSessionRef.current && genAiSessionRef.current.sendClientContent) {
-                    genAiSessionRef.current.sendClientContent({ turns: [ { text: "Hello" } ] }); // Initial greeting
+                    genAiSessionRef.current.sendClientContent({ turns: [ { text: "Hello" } ] }); 
                 } else {
-                    console.error("sendClientContent still not available on session shortly after onopen");
+                    console.error("sendClientContent not available on session during onopen");
                 }
-            }, 0); // setTimeout with 0ms delay
+            }, 0); 
           },
           onmessage: (message: LiveServerMessage) => {
             responseQueueRef.current.push(message);
@@ -298,49 +331,11 @@ const LiveInterviewPage: NextPage = () => {
     toast({ title: "Interview Starting...", description: "Connecting to AI interviewer."});
     await initializeGenAiSession();
   };
-
-  const startUserAudioRecording = useCallback(() => {
-    if (!userVideoStreamRef.current || !isInterviewActive || isUserSpeaking || isAiSpeaking) return;
-    userAudioChunksRef.current = [];
-    try {
-      const streamToRecord = new MediaStream(userVideoStreamRef.current.getAudioTracks());
-      mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType: 'audio/webm;codecs=opus' }); // Opus is good for speech
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) userAudioChunksRef.current.push(event.data);
-      };
-      mediaRecorderRef.current.onstop = async () => {
-        setIsUserSpeaking(false); 
-        if (userAudioChunksRef.current.length > 0 && genAiSessionRef.current) {
-          const audioBlob = new Blob(userAudioChunksRef.current, { type: 'audio/webm;codecs=opus' });
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = () => {
-            const base64AudioData = reader.result?.toString().split(',')[1];
-            if (base64AudioData) {
-              // Log only after successful send or when text transcript is available
-              const clientContent : Content = { audio: { data: base64AudioData, mimeType: 'audio/webm;codecs=opus' } };
-              genAiSessionRef.current?.sendClientContent({ turns: [clientContent]});
-              // User text will be logged when AI's response comes back with transcript if model provides it
-            }
-          };
-        }
-        userAudioChunksRef.current = []; 
-      };
-      mediaRecorderRef.current.start();
-      setIsUserSpeaking(true);
-      toast({title: "Your turn", description: "AI is listening. Speak clearly.", duration: 3000});
-    } catch (error) {
-        console.error("Error starting user audio recording:", error);
-        toast({variant: "destructive", title: "Mic Error", description: "Could not start microphone."});
-        setIsUserSpeaking(false);
-    }
-  }, [isInterviewActive, toast, isUserSpeaking, isAiSpeaking]);
   
   const stopUserAudioRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop(); // onstop will handle sending data
+      mediaRecorderRef.current.stop(); 
     }
-    // setIsUserSpeaking will be set in onstop or by AI starting to speak
   }, []);
 
 
@@ -371,7 +366,6 @@ const LiveInterviewPage: NextPage = () => {
     if (recordedVideoBlobs.current.length > 0) {
         const videoBlob = new Blob(recordedVideoBlobs.current, { type: 'video/webm' });
         console.log("Final video blob for upload:", videoBlob);
-        // In a real app, you would upload this videoBlob along with `conversationLog`
     } else {
         console.log("No video data recorded.");
     }
@@ -384,7 +378,6 @@ const LiveInterviewPage: NextPage = () => {
   };
   
   useEffect(() => {
-    // Cleanup on unmount
     return () => { 
       genAiSessionRef.current?.close();
       if (userVideoStreamRef.current) {
@@ -409,7 +402,6 @@ const LiveInterviewPage: NextPage = () => {
   }
 
   if (!interviewContext) {
-    // Error toast is shown in useEffect, this is a fallback or if navigation fails
     return (
       <Container className="text-center py-20">
         <AlertTriangle className="mx-auto h-16 w-16 text-destructive mb-4" />

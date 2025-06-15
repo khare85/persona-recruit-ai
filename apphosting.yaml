@@ -6,10 +6,7 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
 
-# Explicitly specify build and start commands for Next.js
-buildConfig:
+# Custom build and run commands for Next.js
+scripts:
   buildCommand: "npm run build"
-  nodeVersion: 18
-
-startupConfig:
-  startCommand: "npm start"
+  runCommand: "npm start"

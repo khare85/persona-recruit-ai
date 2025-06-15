@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Building, Briefcase, Settings, Users, ExternalLink, MessageSquarePlus } from 'lucide-react';
+import { Building, Briefcase, Settings, Users, ExternalLink, MessageSquarePlus, SearchCode } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,23 @@ export default function CompanyDashboardPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center text-xl">
+              <SearchCode className="mr-3 h-6 w-6 text-primary" />
+              AI Talent Search (Premium)
+            </CardTitle>
+            <CardDescription>
+              Proactively discover candidates from our extensive talent pool using AI.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/company/ai-talent-search" passHref>
+              <Button className="w-full">Access Talent Search</Button>
+            </Link>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl">
               <ExternalLink className="mr-3 h-6 w-6 text-primary" />
               Your Company Job Board
             </CardTitle>
@@ -59,7 +76,7 @@ export default function CompanyDashboardPage() {
           </CardHeader>
           <CardContent>
             <Link href="/company/portal" passHref>
-              <Button className="w-full">View Your Job Board</Button>
+              <Button variant="outline" className="w-full">View Your Job Board</Button>
             </Link>
           </CardContent>
         </Card>
@@ -99,7 +116,7 @@ export default function CompanyDashboardPage() {
                         <Card key={recruiter.id} className="flex items-center justify-between p-4 bg-muted/30">
                             <div className="flex items-center space-x-3">
                                 <Avatar className="h-12 w-12">
-                                    <AvatarImage src={recruiter.avatar} alt={recruiter.name} data-ai-hint="recruiter avatar" />
+                                    <AvatarImage src={recruiter.avatar} alt={recruiter.name} data-ai-hint="recruiter avatar"/>
                                     <AvatarFallback>{recruiter.name.substring(0,1)}</AvatarFallback>
                                 </Avatar>
                                 <div>

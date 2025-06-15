@@ -200,6 +200,8 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
     );
   }
 
+  const hasApplicants = (job.numberOfApplicants || 0) > 0;
+
   return (
     <Container className="max-w-5xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -218,6 +220,13 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                 <span className="flex items-center"><Briefcase className="h-4 w-4 mr-1 text-primary/80" /> {job.type}</span>
                 <span className="flex items-center"><DollarSign className="h-4 w-4 mr-1 text-primary/80" /> {job.salary}</span>
                 <span className="flex items-center"><CalendarDays className="h-4 w-4 mr-1 text-primary/80" /> Posted: {new Date(job.postedDate).toLocaleDateString()}</span>
+              </div>
+               {/* Number of Applicants display */}
+              <div className="pt-2 mt-2 border-t">
+                <span className={`flex items-center text-sm font-medium ${hasApplicants ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <UsersRound className="h-4 w-4 mr-1.5" /> 
+                  {hasApplicants ? `${job.numberOfApplicants} Applicant(s)` : 'No Applicants Yet'}
+                </span>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
@@ -250,13 +259,13 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
         <div className="space-y-6">
           <Card className="shadow-lg sticky top-24">
             <CardHeader>
-              <CardTitle className="text-xl">Ready to Apply?</CardTitle>
+              <CardTitle className="text-xl">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button size="lg" className="w-full"> <ThumbsUp className="mr-2"/> Apply Now</Button>
               {/* Conditional "View Applicants" button for recruiters/company users */}
               {/* For demo, we'll show it if there are applicants. In real app, this would be role-based. */}
-              {(job.numberOfApplicants || 0) > 0 ? (
+              {hasApplicants ? (
                 <Link href={`/jobs/${job.id}/applicants`} passHref className="block">
                   <Button variant="secondary" className="w-full">
                     <UsersRound className="mr-2" /> View Applicants ({job.numberOfApplicants})

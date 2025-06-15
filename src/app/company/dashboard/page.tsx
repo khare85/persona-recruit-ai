@@ -113,7 +113,7 @@ export default function CompanyDashboardPage() {
             <CardContent>
                 <div className="space-y-4">
                     {mockRecruiters.map(recruiter => (
-                        <Card key={recruiter.id} className="flex items-center justify-between p-4 bg-muted/30">
+                        <Card key={recruiter.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 gap-4">
                             <div className="flex items-center space-x-3">
                                 <Avatar className="h-12 w-12">
                                     <AvatarImage src={recruiter.avatar} alt={recruiter.name} data-ai-hint="recruiter avatar"/>
@@ -125,7 +125,7 @@ export default function CompanyDashboardPage() {
                                      <Badge variant="secondary" className="text-xs mt-1">Success: {recruiter.successRate}%</Badge>
                                 </div>
                             </div>
-                            <Button variant="default" size="sm">
+                            <Button variant="default" size="sm" className="w-full sm:w-auto">
                                 <MessageSquarePlus className="mr-2 h-4 w-4" />
                                 Invite to Job
                             </Button>
@@ -135,7 +135,7 @@ export default function CompanyDashboardPage() {
             </CardContent>
             <CardFooter>
                 <p className="text-xs text-muted-foreground italic">
-                    This feature helps you tap into a wider network of specialized recruiters. AI will help identify the best matches for your specific needs.
+                    This feature helps you tap into a wider network of specialized recruiters. AI will help identify the best matches for your specific needs. (Invite functionality is conceptual for demo).
                 </p>
             </CardFooter>
         </Card>

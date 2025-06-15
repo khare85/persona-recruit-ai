@@ -13,14 +13,14 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
+  // SidebarFooter, // Removed as per request
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
-  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, Home, FileText, Bell, PlusCircle
+  ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle, FileText, Bell, Home
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,7 +36,7 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Assuming demo candidate ID 1
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
@@ -49,14 +49,13 @@ const recruiterNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
   { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
-  // Add more recruiter specific links like earnings, settings etc. if needed
 ];
 
 const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
   { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo)', icon: UsersRound }, // Example for a specific job
+  { href: '/jobs/1/applicants', label: 'Applicants (Demo)', icon: UsersRound }, 
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
@@ -64,12 +63,12 @@ const companyNavItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, // Conceptual anchor
-  { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building }, // Conceptual anchor
-  { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig }, // Conceptual anchor
-  { href: '/admin/dashboard#system', label: 'System Health', icon: Server }, // Conceptual anchor
-  { href: '/admin/dashboard#billing', label: 'Billing & Subs', icon: DollarSign }, // Conceptual anchor
-  { href: '/admin/dashboard#settings', label: 'Platform Settings', icon: Settings }, // Conceptual anchor
+  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, 
+  { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building }, 
+  { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig }, 
+  { href: '/admin/dashboard#system', label: 'System Health', icon: Server }, 
+  { href: '/admin/dashboard#billing', label: 'Billing & Subs', icon: DollarSign }, 
+  { href: '/admin/dashboard#settings', label: 'Platform Settings', icon: Settings }, 
 ];
 
 
@@ -79,10 +78,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Zap; // Ensure this is PascalCase
+  let CurrentPersonaIcon: React.ElementType = Zap; 
   let currentDashboardHome = "/jobs";
 
-  // Determine persona based on path
+  
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
@@ -96,7 +95,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   } else if (pathname.startsWith('/recruiter')) {
     currentNavItems = recruiterNavItems;
     currentPersona = "Recruiter Hub";
-    CurrentPersonaIcon = LayoutDashboard; // Default to LayoutDashboard for Recruiter
+    CurrentPersonaIcon = LayoutDashboard; 
     currentDashboardHome = "/recruiter/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
@@ -109,17 +108,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     CurrentPersonaIcon = ShieldCheck;
     currentDashboardHome = "/admin/dashboard";
   } else if (pathname.startsWith('/live-interview')) {
-    currentNavItems = []; // No sidebar for live interview focus mode
+    currentNavItems = []; 
     currentPersona = "Live Interview";
     CurrentPersonaIcon = Video;
-    currentDashboardHome = "/"; // Or perhaps a relevant dashboard if they exit
+    currentDashboardHome = "/"; 
   } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') ||
-             pathname === '/candidates' || pathname.startsWith('/candidates/new') || // Keep /candidates/new in default view
+             pathname === '/candidates' || pathname.startsWith('/candidates/new') || 
              pathname === '/referrals' || pathname === '/interviews') {
      currentNavItems = defaultNavItems;
      currentPersona = "Persona Recruit AI";
      CurrentPersonaIcon = Zap;
-     currentDashboardHome = "/jobs"; // Default landing for general app sections
+     currentDashboardHome = "/jobs"; 
   }
 
 
@@ -133,7 +132,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 "flex items-center gap-2.5 p-1 rounded-md transition-colors"
               )}>
                 <CurrentPersonaIcon className="h-7 w-7 text-sidebar-primary" />
-                <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
+                <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:group-data-[state=collapsed]:hidden group-data-[collapsible=offcanvas]:hidden truncate">
                   {currentPersona}
                 </span>
               </Link>
@@ -149,6 +148,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     >
                       <Link href={item.href}>
                         <item.icon />
+                        {/* This span should be correctly shown/hidden by sidebar.tsx CVA rules */}
                         <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -156,47 +156,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </SidebarMenu>
             </SidebarContent>
-             <SidebarFooter className="p-3 border-t">
-                {/* Expanded View for Footer */}
-                <div className="flex items-center justify-between group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden">
-                    <div className="flex items-center gap-2 truncate">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
-                            <AvatarFallback className="text-xs">DU</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col truncate">
-                            <span className="text-xs font-medium text-sidebar-foreground truncate">Demo User</span>
-                            <span className="text-xs text-sidebar-foreground/70 truncate">demo@example.com</span>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="icon" asChild className="text-sidebar-foreground/70 hover:text-sidebar-foreground">
-                        <Link href="/auth"><LogOut /></Link>
-                    </Button>
-                </div>
-                {/* Collapsed (Icon-Only) View for Footer */}
-                <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center space-y-2">
-                     <Avatar className="h-7 w-7">
-                        <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
-                        <AvatarFallback className="text-xs">DU</AvatarFallback>
-                    </Avatar>
-                    <Button variant="ghost" size="icon" asChild className="text-sidebar-foreground/70 hover:text-sidebar-foreground w-full h-8">
-                        <Link href="/auth"><LogOut className="h-4 w-4" /></Link>
-                    </Button>
-                </div>
-            </SidebarFooter>
+            {/* SidebarFooter removed */}
           </Sidebar>
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Top bar in content area */}
+          
           <header className="p-3 border-b border-border/30 bg-card/80 backdrop-blur-md flex items-center sticky top-0 z-30 h-14">
             {isMobile && currentNavItems.length > 0 && (
               <SidebarTrigger className="text-foreground mr-2">
-                <Menu className="h-6 w-6" />
+                 <Menu className="h-6 w-6" />
               </SidebarTrigger>
             )}
+            {/* Keep Persona Name in top bar for context, or remove if preferred */}
             <Link href={currentDashboardHome} className={cn("flex items-center gap-2")}>
-              <CurrentPersonaIcon className="h-6 w-6 text-primary" />
+               <CurrentPersonaIcon className="h-6 w-6 text-primary md:hidden" /> {/* Show icon on mobile if sidebar is hidden */}
               <span className="font-semibold text-md text-foreground truncate">
                 {currentPersona}
               </span>

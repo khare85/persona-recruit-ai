@@ -10,8 +10,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Container } from '@/components/shared/Container';
-import { Brain, Briefcase, CalendarDays, FileText, Loader2, Mail, MapPin, User, UsersRound, XSquare, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Brain, Briefcase, CalendarDays, FileText, Loader2, Mail, MapPin, User, UsersRound, XSquare, CheckCircle, AlertTriangle, ExternalLink, ListChecks, ListX, Sparkles } from 'lucide-react';
 import { candidateJobMatcher, CandidateJobMatcherInput, CandidateJobMatcherOutput } from '@/ai/flows/candidate-job-matcher';
+import { screenCandidateSkills, CandidateScreeningInput, CandidateScreeningOutput } from '@/ai/flows/candidate-screener-flow'; // New import
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -42,6 +43,8 @@ const MOCK_JOB_LISTINGS_DATA = {
       Benefits:
       - Competitive salary and stock options...
     `,
+    requiredSkills: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'HTML5', 'CSS3'],
+    preferredSkills: ['AWS', 'GraphQL', 'Node.js', 'System Design'],
   },
   '2': {
     id: '2',
@@ -69,6 +72,8 @@ const MOCK_JOB_LISTINGS_DATA = {
         - Highly competitive salary and equity.
         - Opportunity to shape the future of AI...
     `,
+    requiredSkills: ['Product Management', 'AI/ML', 'Agile'],
+    preferredSkills: ['Roadmap Planning', 'User Research', 'Data Analysis'],
   }
 };
 
@@ -82,7 +87,7 @@ const MOCK_APPLICANTS_DATA = [
     applicationDate: '2024-08-03',
     status: 'AI Matched',
     profileSummaryForAI: `Alice Wonderland - Senior Software Engineer. 8+ years experience in web applications. Expertise in React, Next.js, TypeScript, Node.js, Python, AWS, Docker, Kubernetes, GraphQL. Led projects, mentored developers. Seeking remote roles.`,
-    skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 'AWS'],
+    skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 'AWS', 'GraphQL'], // Added GraphQL to Alice's skills
     source: 'AI Talent Search',
     referredBy: null,
   },
@@ -95,7 +100,7 @@ const MOCK_APPLICANTS_DATA = [
     applicationDate: '2024-08-01',
     status: 'New',
     profileSummaryForAI: `Bob The Builder - Software Engineer. 3 years experience with React, Vue.js, and some Node.js. Interested in frontend roles. Good team player. Basic understanding of TypeScript. Completed several freelance projects.`,
-    skills: ['React', 'Vue.js', 'JavaScript', 'HTML', 'CSS'],
+    skills: ['React', 'Vue.js', 'JavaScript', 'HTML', 'CSS', 'Node.js'],
     source: 'Company Job Board',
     referredBy: null,
   },
@@ -108,7 +113,7 @@ const MOCK_APPLICANTS_DATA = [
     applicationDate: '2024-08-02',
     status: 'Under Review',
     profileSummaryForAI: `Charlie Chaplin - Senior Developer. 7 years of full-stack experience with strong expertise in Next.js, TypeScript, GraphQL, and Python. Led small teams on several projects. AWS certified. Excellent problem-solver.`,
-    skills: ['Next.js', 'TypeScript', 'GraphQL', 'Python', 'AWS', 'Team Lead'],
+    skills: ['Next.js', 'TypeScript', 'GraphQL', 'Python', 'AWS', 'Team Lead', 'JavaScript', 'HTML5', 'CSS3'], // Added core web skills
     source: 'LinkedIn',
     referredBy: 'Diana P. (Recruiter)',
   },
@@ -121,19 +126,24 @@ const MOCK_APPLICANTS_DATA = [
     applicationDate: '2024-07-30',
     status: 'Interview Scheduled',
     profileSummaryForAI: `Diana Prince - Frontend Developer. 4 years experience focused on UI/UX driven development. Proficient in React, Next.js, and Figma. Strong eye for detail and user experience. Some experience with TypeScript.`,
-    skills: ['React', 'Next.js', 'UI/UX', 'Figma', 'JavaScript'],
+    skills: ['React', 'Next.js', 'UI/UX', 'Figma', 'JavaScript', 'HTML5', 'CSS3'], // Added core web skills
     source: 'Referred',
     referredBy: 'Bruce W. (Employee)',
   },
 ];
 // --- End Mock Data ---
 
-interface Applicant extends Omit<(typeof MOCK_APPLICANTS_DATA)[0], 'jobId'> {
+interface Applicant extends Omit<(typeof MOCK_APPLICANTS_DATA)[0], 'jobId' | 'skills'> {
   aiMatch?: CandidateJobMatcherOutput;
-  isMatching?: boolean;
+  skillScreening?: CandidateScreeningOutput; // New field for screening results
+  isMatching?: boolean; // For AI match loading state
+  isScreening?: boolean; // For skill screening loading state
   profileSummaryForAI: string;
+  skills: string[]; // Ensure skills is always an array of strings
   source: string;
   referredBy: string | null;
+  matchError?: boolean;
+  screenError?: boolean;
 }
 
 interface JobInfo {
@@ -142,17 +152,31 @@ interface JobInfo {
   company: string;
   companyDescription: string;
   fullDescriptionForAI: string;
+  requiredSkills: string[]; // Added
+  preferredSkills: string[]; // Added
 }
 
 async function getJobAndApplicants(jobId: string): Promise<{ job: JobInfo | null; applicants: Applicant[] }> {
   await new Promise(resolve => setTimeout(resolve, 500));
-  const job = MOCK_JOB_LISTINGS_DATA[jobId as keyof typeof MOCK_JOB_LISTINGS_DATA] || null;
-  if (!job) {
+  const jobData = MOCK_JOB_LISTINGS_DATA[jobId as keyof typeof MOCK_JOB_LISTINGS_DATA] || null;
+  if (!jobData) {
     return { job: null, applicants: [] };
   }
+  // Cast jobData to JobInfo, ensuring requiredSkills and preferredSkills are included
+  const job: JobInfo = {
+    ...jobData,
+    requiredSkills: jobData.requiredSkills || [],
+    preferredSkills: jobData.preferredSkills || [],
+  };
+
   const jobApplicants = MOCK_APPLICANTS_DATA
     .filter(app => app.jobId === jobId)
-    .map(({ jobId, ...rest }) => ({ ...rest, isMatching: false } as Applicant));
+    .map(({ jobId, ...rest }) => ({ 
+        ...rest, 
+        skills: rest.skills || [], // Ensure skills is an array
+        isMatching: false, 
+        isScreening: false 
+    } as Applicant));
   return { job, applicants: jobApplicants };
 }
 
@@ -182,25 +206,51 @@ export default function JobApplicantsPage() {
             return;
           }
           setJob(fetchedJob);
-          // Set initial applicants state, mark them for AI matching
-          setApplicants(fetchedApplicants.map(app => ({ ...app, isMatching: true })));
+          setApplicants(fetchedApplicants.map(app => ({ ...app, isMatching: true, isScreening: true }))); // Set both loading states
           setIsLoading(false);
 
-          // Perform AI matching for each applicant
-          const matchPromises = fetchedApplicants.map(applicant =>
-            candidateJobMatcher({
-              candidateProfile: applicant.profileSummaryForAI,
-              jobDescription: fetchedJob.fullDescriptionForAI,
-              companyInformation: fetchedJob.companyDescription,
-            }).then(aiMatch => ({ ...applicant, aiMatch, isMatching: false }))
-              .catch(e => {
-                console.error(`Error matching candidate ${applicant.id}:`, e);
-                return { ...applicant, aiMatch: undefined, isMatching: false, matchError: true };
-              })
-          );
+          // Perform AI matching and skill screening
+          const updatedApplicantsPromises = fetchedApplicants.map(async (applicant) => {
+            let aiMatch: CandidateJobMatcherOutput | undefined = undefined;
+            let skillScreening: CandidateScreeningOutput | undefined = undefined;
+            let matchError = false;
+            let screenError = false;
 
-          const applicantsWithMatches = await Promise.all(matchPromises);
-          setApplicants(applicantsWithMatches);
+            try {
+              aiMatch = await candidateJobMatcher({
+                candidateProfile: applicant.profileSummaryForAI,
+                jobDescription: fetchedJob.fullDescriptionForAI,
+                companyInformation: fetchedJob.companyDescription,
+              });
+            } catch (e) {
+              console.error(`Error matching candidate ${applicant.id}:`, e);
+              matchError = true;
+            }
+
+            try {
+              skillScreening = await screenCandidateSkills({
+                candidateSkills: applicant.skills,
+                requiredJobSkills: fetchedJob.requiredSkills,
+                preferredJobSkills: fetchedJob.preferredSkills,
+              });
+            } catch (e) {
+              console.error(`Error screening candidate ${applicant.id}:`, e);
+              screenError = true;
+            }
+            
+            return { 
+              ...applicant, 
+              aiMatch, 
+              skillScreening, 
+              isMatching: false, 
+              isScreening: false,
+              matchError,
+              screenError
+            };
+          });
+
+          const applicantsWithInsights = await Promise.all(updatedApplicantsPromises);
+          setApplicants(applicantsWithInsights);
 
         } catch (err) {
           console.error("Failed to fetch job and applicants:", err);
@@ -212,7 +262,22 @@ export default function JobApplicantsPage() {
     }
   }, [jobId]);
 
-  if (isLoading && !job && applicants.length === 0) { // Show initial loading only
+  const getScreeningAssessmentBadge = (assessment?: CandidateScreeningOutput['assessment']) => {
+    if (!assessment) return null;
+    let variant: "default" | "secondary" | "outline" | "destructive" = "outline";
+    let icon = <Sparkles className="h-3 w-3 mr-1" />;
+
+    switch (assessment) {
+        case "Strong Match": variant = "default"; icon = <CheckCircle className="h-3 w-3 mr-1 text-green-500"/>; break;
+        case "Potential Match": variant = "secondary"; icon = <Sparkles className="h-3 w-3 mr-1 text-blue-500"/>; break;
+        case "Missing Requirements": variant = "destructive"; icon = <ListX className="h-3 w-3 mr-1"/>; break;
+        case "Review Recommended": variant = "outline"; icon = <FileText className="h-3 w-3 mr-1 text-amber-500"/>; break;
+    }
+    return <Badge variant={variant} className="whitespace-nowrap text-xs flex items-center">{icon} {assessment}</Badge>;
+  };
+
+
+  if (isLoading && !job && applicants.length === 0) { 
     return (
       <Container className="flex flex-col items-center justify-center min-h-[70vh]">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -305,42 +370,97 @@ export default function JobApplicantsPage() {
             </CardHeader>
             <CardContent className="space-y-4 pt-0">
               <Separator />
-              <div className="pt-4">
-                <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                  <Brain className="h-4 w-4 mr-2 text-primary" /> AI Match Analysis
-                </h4>
-                {applicant.isMatching ? (
-                  <div className="flex items-center text-sm text-muted-foreground py-4">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2 text-primary" /> Analyzing fit...
-                  </div>
-                ) : applicant.aiMatch ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Progress value={applicant.aiMatch.matchScore * 100} className="h-2.5 flex-1" />
-                      <span className="text-sm font-bold text-primary">
-                        {(applicant.aiMatch.matchScore * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-md border italic leading-relaxed">
-                      {applicant.aiMatch.justification}
-                    </p>
-                  </div>
-                ) : (
-                  <Alert variant="default" className="mt-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>AI Analysis Not Available</AlertTitle>
-                    <AlertDescription className="text-xs">
-                      Could not generate AI matching insights for this candidate at the moment.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-              {applicant.skills && applicant.skills.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4">
+                {/* AI Match Analysis Section */}
                 <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                    <Brain className="h-4 w-4 mr-2 text-primary" /> AI Match Analysis
+                  </h4>
+                  {applicant.isMatching ? (
+                    <div className="flex items-center text-sm text-muted-foreground py-4">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2 text-primary" /> Analyzing fit...
+                    </div>
+                  ) : applicant.aiMatch ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Progress value={applicant.aiMatch.matchScore * 100} className="h-2.5 flex-1" />
+                        <span className="text-sm font-bold text-primary">
+                          {(applicant.aiMatch.matchScore * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-md border italic leading-relaxed">
+                        {applicant.aiMatch.justification}
+                      </p>
+                    </div>
+                  ) : applicant.matchError ? (
+                    <Alert variant="destructive" className="mt-2 text-xs">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle className="text-xs">AI Match Error</AlertTitle>
+                      <AlertDescription className="text-xs">Could not generate AI matching insights.</AlertDescription>
+                    </Alert>
+                  ): (
+                     <Alert variant="default" className="mt-2 text-xs">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle className="text-xs">AI Analysis Not Available</AlertTitle>
+                     </Alert>
+                  )}
+                </div>
+
+                {/* AI Skill Screening Section */}
+                 <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
+                    <ListChecks className="h-4 w-4 mr-2 text-primary" /> AI Skill Screening
+                  </h4>
+                  {applicant.isScreening ? (
+                    <div className="flex items-center text-sm text-muted-foreground py-4">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2 text-primary" /> Screening skills...
+                    </div>
+                  ) : applicant.skillScreening ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        {getScreeningAssessmentBadge(applicant.skillScreening.assessment)}
+                      </div>
+                      <p className="text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-md border italic leading-relaxed">
+                        {applicant.skillScreening.summary}
+                      </p>
+                      {applicant.skillScreening.missingRequiredSkills.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-destructive mt-1.5">Missing Required:</p>
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {applicant.skillScreening.missingRequiredSkills.map(skill => <Badge key={`missing-${skill}`} variant="outline" className="text-xs border-destructive text-destructive">{skill}</Badge>)}
+                          </div>
+                        </div>
+                      )}
+                      {applicant.skillScreening.matchedPreferredSkills.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-green-600 mt-1.5">Matched Preferred:</p>
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {applicant.skillScreening.matchedPreferredSkills.map(skill => <Badge key={`matched-pref-${skill}`} variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-300">{skill}</Badge>)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : applicant.screenError ? (
+                     <Alert variant="destructive" className="mt-2 text-xs">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle className="text-xs">Skill Screen Error</AlertTitle>
+                        <AlertDescription className="text-xs">Could not perform skill screening.</AlertDescription>
+                    </Alert>
+                  ) : (
+                     <Alert variant="default" className="mt-2 text-xs">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle className="text-xs">Screening Not Available</AlertTitle>
+                     </Alert>
+                  )}
+                </div>
+              </div>
+
+              {applicant.skills && applicant.skills.length > 0 && (
+                <div className="pt-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-1">Candidate Skills:</h4>
                     <div className="flex flex-wrap gap-1.5">
-                        {applicant.skills.slice(0,5).map(skill => <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>)}
-                        {applicant.skills.length > 5 && <Badge variant="outline" className="text-xs">+{applicant.skills.length - 5} more</Badge>}
+                        {applicant.skills.slice(0,7).map(skill => <Badge key={skill} variant="outline" className="text-xs">{skill}</Badge>)}
+                        {applicant.skills.length > 7 && <Badge variant="outline" className="text-xs">+{applicant.skills.length - 7} more</Badge>}
                     </div>
                 </div>
               )}

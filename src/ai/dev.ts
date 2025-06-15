@@ -16,5 +16,6 @@ import '@/ai/flows/ai-talent-semantic-search-flow.ts'; // Added semantic talent 
 import '@/ai/flows/job-recommendation-semantic-flow.ts'; // Added semantic job recommendation
 import '@/ai/flows/generate-resume-summary-flow.ts'; // Added resume summary generation
 import '@/ai/flows/advanced-candidate-job-matching-flow.ts'; // Added advanced candidate-job matching
+import '@/ai/flows/candidate-screener-flow.ts'; // Added candidate screening flow
 
 

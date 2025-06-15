@@ -174,7 +174,7 @@ export default function AuthenticationPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 px-0">
-                <Button onClick={() => handlePersonaSelection('/candidates/1')} className="w-full justify-start" variant="outline" size="lg">
+                <Button onClick={() => handlePersonaSelection('/candidates/dashboard')} className="w-full justify-start" variant="outline" size="lg">
                   <Users className="mr-3 h-5 w-5 text-primary" /> View as Candidate
                 </Button>
                 <Button onClick={() => handlePersonaSelection('/recruiter/dashboard')} className="w-full justify-start" variant="outline" size="lg">

@@ -14,49 +14,100 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
-  // SidebarFooter, // Example if needed
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, UserCircle, Menu, Zap } from 'lucide-react'; // Added Zap
+import { Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, UserCircle, Menu, Zap, FileText, Settings, UserCog, CalendarClock, FileUp, Award, BarChart3, MailQuestion, DollarSign, PlusCircle } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile"; // To handle mobile sidebar behavior
+import { useIsMobile } from "@/hooks/use-mobile";
 
-const appNavItems = [
-  { href: '/jobs', label: 'Jobs', icon: Briefcase },
-  { href: '/candidates', label: 'Candidates', icon: Users },
-  { href: '/recruiter/dashboard', label: 'Recruiter Hub', icon: LayoutDashboard },
-  { href: '/company/dashboard', label: 'Company Hub', icon: Building },
-  { href: '/referrals', label: 'Referrals', icon: Gift },
-  { href: '/interviews', label: 'Interview AI', icon: Video },
-  { href: '/admin/dashboard', label: 'Admin', icon: ShieldCheck },
+const defaultNavItems = [
+  { href: '/jobs', label: 'All Jobs', icon: Briefcase },
+  { href: '/candidates', label: 'All Candidates', icon: Users },
+  { href: '/referrals', label: 'Referrals Program', icon: Gift },
 ];
+
+const candidateNavItems = [
+  { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
+  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, // Assuming '1' is the demo candidate ID
+  { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
+  { href: '/candidates/my-documents', label: 'My Documents', icon: FileText },
+  { href: '/referrals', label: 'My Referrals', icon: Gift },
+  { href: '/candidates/settings', label: 'Settings', icon: Settings },
+];
+
+const recruiterNavItems = [
+  { href: '/recruiter/dashboard', label: 'Recruiter Hub', icon: LayoutDashboard },
+  { href: '/jobs', label: 'Manage Jobs', icon: Briefcase }, // Links to all jobs, conceptually they'd filter/manage theirs
+  { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
+  { href: '/candidates', label: 'Browse Candidates', icon: Users }, // For sourcing
+  { href: '/interviews', label: 'Interview AI Reports', icon: Video }, // Analyze submitted interviews
+  { href: '/recruiter/dashboard', label: 'Earnings & Payouts', icon: DollarSign }, // Placeholder section on dashboard
+  // { href: '/recruiter/settings', label: 'Settings', icon: Settings }, // Future setting page
+];
+
+const companyNavItems = [
+  { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
+  { href: '/jobs', label: 'Manage Company Jobs', icon: Briefcase },
+  { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
+  { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: Zap },
+  { href: '/company/portal', label: 'Company Job Board', icon: Building },
+  { href: '/company/settings', label: 'Company Settings', icon: Settings },
+];
+
+const adminNavItems = [
+  { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
+  // Add more admin specific links here if needed
+];
+
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMobile = useIsMobile(); // Hook to detect mobile state
+  const isMobile = useIsMobile();
+
+  let currentNavItems = defaultNavItems; // Default
+  let currentPersona = "Persona Recruit AI";
+
+  if (pathname.startsWith('/candidates/dashboard') || pathname.startsWith('/candidates/my-') || pathname.startsWith('/candidates/settings') || pathname === '/candidates/1') {
+    currentNavItems = candidateNavItems;
+    currentPersona = "Candidate Portal";
+  } else if (pathname.startsWith('/recruiter')) {
+    currentNavItems = recruiterNavItems;
+    currentPersona = "Recruiter Hub";
+  } else if (pathname.startsWith('/company')) {
+    currentNavItems = companyNavItems;
+    currentPersona = "Company Hub";
+  } else if (pathname.startsWith('/admin')) {
+    currentNavItems = adminNavItems;
+    currentPersona = "Admin Panel";
+  } else if (pathname === '/jobs' || pathname.startsWith('/jobs/') || pathname === '/candidates' || pathname.startsWith('/candidates/') && !pathname.startsWith('/candidates/dashboard') && !pathname.startsWith('/candidates/my-') && !pathname.startsWith('/candidates/settings') || pathname === '/referrals' || pathname === '/interviews' || pathname.startsWith('/live-interview')) {
+    // For generic app pages not under a specific persona dashboard, use default and allow broader persona name
+     currentPersona = "Persona Recruit AI"; // Or keep it generic
+     // defaultNavItems already assigned
+  }
+
 
   return (
     <SidebarProvider defaultOpen={!isMobile} open={isMobile ? false : undefined}>
-      <div className="flex h-screen bg-background"> {/* Ensure full height */}
+      <div className="flex h-screen bg-background">
         <Sidebar collapsible={isMobile ? "offcanvas" : "icon"} side="left" className="border-r">
           <SidebarHeader className="p-2">
-            <Link href="/jobs" className={cn(
+            <Link href="/" className={cn( // Link to home if not in a specific persona, else to persona dashboard
               "flex items-center gap-2.5 p-2 rounded-md transition-colors",
               "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}>
-              <Zap className="h-7 w-7 text-sidebar-primary" /> 
+              <Zap className="h-7 w-7 text-sidebar-primary" />
               <span className="font-semibold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden group-data-[collapsible=offcanvas]:hidden">
-                Persona Recruit AI
+                {currentPersona}
               </span>
             </Link>
           </SidebarHeader>
-          <SidebarContent className="p-2"> {/* Added padding to content */}
+          <SidebarContent className="p-2">
             <SidebarMenu>
-              {appNavItems.map((item) => (
+              {currentNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
+                    isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/' && currentNavItems.some(nav => nav.href === item.href && pathname.includes(nav.href)) )}
                     tooltip={item.label}
                   >
                     <Link href={item.href}>
@@ -68,20 +119,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          {/* 
-          <SidebarFooter className="p-2 mt-auto"> 
-            <SidebarMenu>
-                <SidebarMenuItem>
-                     <SidebarMenuButton asChild>
-                        <Link href="/settings"> 
-                            <Settings className="h-4 w-4" />
-                            <span>Settings</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter> 
-          */}
         </Sidebar>
         
         <div className="flex flex-col flex-1 overflow-hidden">
@@ -90,14 +127,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
             <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground hidden sm:inline">Demo User</span> {/* Placeholder */}
+                <span className="text-sm text-muted-foreground hidden sm:inline">Demo User</span>
                 <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
                     <UserCircle className="h-5 w-5 text-foreground" />
                 </Button>
             </div>
           </header>
-          <SidebarInset className="flex-1 overflow-y-auto p-0"> {/* Ensure content area scrolls */}
-             {/* Container removed from individual pages and applied here for consistent padding */}
+          <SidebarInset className="flex-1 overflow-y-auto p-0">
             <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
                  {children}
             </div>

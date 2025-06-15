@@ -1,3 +1,4 @@
+
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -6,9 +7,13 @@ interface ContainerProps {
   className?: string;
 }
 
+// This component might be simplified or removed if padding is handled by DashboardLayout or individual pages.
+// For now, keeping its definition but usage might change.
 export function Container({ children, className }: ContainerProps) {
   return (
-    <div className={cn('container mx-auto px-4 py-8 sm:px-6 lg:px-8', className)}>
+    // Removed default padding as it will be handled by DashboardLayout for app pages
+    // and can be added specifically for public pages if needed.
+    <div className={cn('mx-auto w-full', className)}>
       {children}
     </div>
   );

@@ -9,24 +9,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, LogIn, UserPlus } from 'lucide-react';
+import { ArrowRight, LogIn, UserPlus, PlayCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function AuthenticationPage() {
   const [activeTab, setActiveTab] = useState("login");
+  const router = useRouter();
 
   // In a real app, these would handle actual form submissions
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Login submitted");
     // Simulate login and redirect to a dashboard (conceptual)
-    // router.push('/dashboard'); 
+    router.push('/jobs'); // Or a role-specific dashboard
   };
 
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Sign Up submitted");
     // Simulate sign up and redirect (conceptual)
-    // router.push('/welcome');
+    router.push('/jobs'); // Or a welcome/onboarding page
+  };
+
+  const handleDemoContinue = () => {
+    // For demo purposes, directly navigate to a core app page
+    // This page will then be rendered within the DashboardLayout
+    router.push('/jobs'); 
   };
 
   return (
@@ -143,7 +151,15 @@ export default function AuthenticationPage() {
               </Card>
             </TabsContent>
           </Tabs>
-           <p className="mt-6 text-center text-xs text-muted-foreground">
+          
+          <div className="mt-6 border-t pt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-3">Or explore the platform with sample data:</p>
+            <Button variant="secondary" className="w-full" onClick={handleDemoContinue}>
+                <PlayCircle className="mr-2 h-5 w-5" /> Continue to Demo
+            </Button>
+          </div>
+
+           <p className="mt-8 text-center text-xs text-muted-foreground">
             By continuing, you agree to our <Link href="#" className="underline hover:text-primary">Terms of Service</Link> and <Link href="#" className="underline hover:text-primary">Privacy Policy</Link>.
           </p>
         </div>

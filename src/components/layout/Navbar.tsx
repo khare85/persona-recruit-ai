@@ -2,32 +2,14 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Briefcase, Users, FileText, Gift, Video, Zap, LayoutDashboard, Building, ShieldCheck, LogIn, UserPlus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { FileText, LogIn, UserPlus } from 'lucide-react';
 
-const navItems = [
-  { href: '/', label: 'Home', icon: Zap },
-  { href: '/jobs', label: 'Jobs', icon: Briefcase },
-  { href: '/candidates', label: 'Candidates', icon: Users },
-  { href: '/recruiter/dashboard', label: 'Recruiter Hub', icon: LayoutDashboard },
-  { href: '/company/dashboard', label: 'Company Hub', icon: Building },
-  { href: '/referrals', label: 'Referrals', icon: Gift },
-  { href: '/interviews', label: 'Interview AI', icon: Video },
-  { href: '/admin/dashboard', label: 'Admin', icon: ShieldCheck },
-];
-
+// This Navbar is now simplified for public-facing pages like Home and Auth.
+// The main application navigation will be handled by DashboardLayout's sidebar.
 export function Navbar() {
-  const pathname = usePathname();
-
-  // Hide navbar on the new /auth page
-  if (pathname === '/auth') {
-    return null;
-  }
-
   return (
-    <header className="bg-card shadow-md sticky top-0 z-50">
+    <header className="bg-card shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" passHref>
@@ -38,44 +20,19 @@ export function Navbar() {
               </span>
             </div>
           </Link>
-          <nav className="hidden md:flex space-x-1 lg:space-x-2">
-            {navItems.map((item) => {
-              // Do not show "Home" in the main nav if already on homepage, unless it's the only way back
-              if (item.href === '/' && pathname === '/') return null;
-              
-              return (
-                <Link key={item.href} href={item.href} passHref>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "font-medium text-foreground/70 hover:text-primary hover:bg-primary/10 px-3 py-2 text-sm",
-                      (pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/')) && "text-primary bg-primary/10",
-                      "transition-all duration-200 ease-out"
-                    )}
-                    aria-current={pathname === item.href ? "page" : undefined}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.label}
-                  </Button>
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="hidden md:flex items-center space-x-2">
-             <Link href="/auth" passHref> {/* Updated */}
+          
+          <div className="flex items-center space-x-2">
+             <Link href="/auth" passHref>
                 <Button variant="default" size="sm">
                    <LogIn className="mr-2 h-4 w-4" /> Login
                 </Button>
               </Link>
-              <Link href="/auth" passHref> {/* Updated */}
+              <Link href="/auth" passHref>
                 <Button variant="outline" size="sm">
                     <UserPlus className="mr-2 h-4 w-4" /> Sign Up
                 </Button>
               </Link>
           </div>
-          {/* Mobile Menu Button (optional, can be added later) */}
-          {/* <div className="md:hidden">...</div> */}
         </div>
       </div>
     </header>

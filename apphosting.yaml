@@ -24,3 +24,8 @@ env:
   
   # Next.js configuration
   NEXT_TELEMETRY_DISABLED: "1"
+  
+  # Document AI configuration
+  GCLOUD_PROJECT_ID: "persona-recruit-ai"
+  DOCAI_LOCATION: "us"
+  DOCAI_PROCESSOR_ID: "ba9227b7beec6d38"

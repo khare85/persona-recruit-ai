@@ -17,10 +17,11 @@ import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home, SearchCheck,
+  Home, SearchCheck, Sparkles, Info,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge"; // Added for Demo User badge
 
 // Navigation item definitions
 const defaultNavItems = [
@@ -53,9 +54,9 @@ const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
   { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo)', icon: UsersRound },
+  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
   { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
-  { href: '/company/advanced-match', label: 'Advanced Match', icon: SearchCheck }, // New Link
+  { href: '/company/advanced-match', label: 'Advanced Match', icon: SearchCheck }, 
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
 ];
@@ -74,7 +75,7 @@ const adminNavItems = [
 function determineNavigation(pathname: string) {
   let currentNavItems = defaultNavItems;
   let currentPersona = "Persona Recruit AI";
-  let CurrentPersonaIcon: React.ElementType = Home;
+  let CurrentPersonaIcon: React.ElementType = Sparkles; // Changed default icon
   let currentDashboardHome = "/";
 
   if (pathname.startsWith('/candidates/dashboard') ||
@@ -168,6 +169,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="ml-auto flex items-center space-x-3">
+              <Badge variant="outline" className="border-primary/50 text-primary text-xs hidden sm:flex items-center">
+                <Info className="h-3.5 w-3.5 mr-1.5" /> Demo Environment
+              </Badge>
               <Avatar className="h-8 w-8">
                   <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
                   <AvatarFallback>DU</AvatarFallback>
@@ -179,10 +183,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          
-          <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-               {children}
-          </div>
+          {/* Page content will use <Container /> internally for padding */}
+          {children}
         </main>
       </div>
     </div>

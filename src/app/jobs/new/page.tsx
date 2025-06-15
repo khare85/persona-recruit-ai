@@ -55,13 +55,13 @@ export default function NewJobPage() {
     const values = form.getValues();
     const validationResult = await form.trigger([
         "jobTitle", "jobLevel", "department", "location", 
-        "responsibilities", "qualifications"
+        "responsibilities", "qualifications" // CompanyName is not strictly needed for JD generation itself.
     ]); 
     if (!validationResult) {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please fill in all required fields accurately before generating the description.",
+        description: "Please fill in all core job fields accurately before generating the description.",
       });
       return;
     }
@@ -103,39 +103,39 @@ export default function NewJobPage() {
 
     let jobTextForEmbedding = generatedDescription;
     if (!jobTextForEmbedding) {
-        jobTextForEmbedding = `${data.jobTitle}\n\nCompany: ${data.companyName}\n\nLocation: ${data.location}\n\nLevel: ${data.jobLevel}\n\nDepartment: ${data.department}\n\nResponsibilities:\n${data.responsibilities}\n\nQualifications:\n${data.qualifications}`;
+        // Fallback to constructing text from form fields if AI description wasn't generated or was cleared
+        jobTextForEmbedding = `Job Title: ${data.jobTitle}\nCompany: ${data.companyName}\nLocation: ${data.location}\nLevel: ${data.jobLevel}\nDepartment: ${data.department}\n\nResponsibilities:\n${data.responsibilities}\n\nQualifications:\n${data.qualifications}`;
     }
 
     let currentJobEmbedding: number[] | null = null;
 
     try {
-      toast({ title: "Generating Job Embedding...", description: "AI is processing the job text."});
+      toast({ title: "Generating Job Embedding...", description: "AI is processing the job text for semantic search capabilities."});
       const embeddingInput: GenerateTextEmbeddingInput = { text: jobTextForEmbedding };
       const embeddingOutput = await generateTextEmbedding(embeddingInput);
       currentJobEmbedding = embeddingOutput.embedding;
       setJobEmbeddingResult(embeddingOutput);
       toast({ title: "Job Embedding Generated", description: `Embedding created using ${embeddingOutput.modelUsed}.`, action: <Brain className="text-purple-500"/> });
 
-      const jobId = `job_${Date.now().toString()}`; 
+      const jobId = `job_${Date.now().toString(36)}_${Math.random().toString(36).substring(2,7)}`; 
       
       if (currentJobEmbedding) {
         const firestoreJobData = {
             title: data.jobTitle,
             companyName: data.companyName,
-            fullJobDescriptionText: jobTextForEmbedding,
+            fullJobDescriptionText: jobTextForEmbedding, // Use the text that was embedded
             jobEmbedding: currentJobEmbedding,
             location: data.location,
             jobLevel: data.jobLevel, 
             department: data.department,
-            // For summary fields, we might use a snippet or leave them for more complex AI processing later
             responsibilitiesSummary: data.responsibilities.substring(0, 200) + (data.responsibilities.length > 200 ? "..." : ""),
             qualificationsSummary: data.qualifications.substring(0, 200) + (data.qualifications.length > 200 ? "..." : ""),
         };
         
-        toast({ title: "Saving Job Data...", description: "Sending job details and embedding to storage." });
+        toast({ title: "Saving Job Data...", description: "Sending job details and embedding to database." });
         const saveResult = await saveJobWithEmbedding(jobId, firestoreJobData);
         if (saveResult.success) {
-            toast({ title: "Job Posted & Processed! (Simulated)", description: `The job "${data.jobTitle}" is now active. ${saveResult.message}`, action: <PlusCircle className="text-primary" />});
+            toast({ title: "Job Posted & Processed!", description: `The job "${data.jobTitle}" is now active. (ID: ${saveResult.jobId})`, action: <PlusCircle className="text-primary" />});
             form.reset();
             setGeneratedDescription(null);
             setJobEmbeddingResult(null);
@@ -157,7 +157,7 @@ export default function NewJobPage() {
 
 
   return (
-    <Container>
+    <Container> {/* Ensures consistent padding */}
       <Card className="max-w-3xl mx-auto shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Create New Job Posting</CardTitle>
@@ -335,7 +335,7 @@ export default function NewJobPage() {
             <CardFooter className="flex justify-end pt-6">
               <Button type="submit" disabled={isSubmitting || isAiLoading} size="lg">
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                Post Job & Generate Embedding
+                Post Job & Process with AI
               </Button>
             </CardFooter>
           </form>

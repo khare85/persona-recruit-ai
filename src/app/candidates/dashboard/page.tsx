@@ -22,14 +22,14 @@ const mockCandidateDashboardData = {
 };
 
 const mockRecommendedJobs = [
-    { id: "jobRec1", title: "Lead Frontend Developer", company: "Innovate Solutions" },
-    { id: "jobRec2", title: "UI/UX Specialist (React)", company: "Creative Minds Inc." },
-    { id: "jobRec3", title: "Full-Stack Engineer (Remote)", company: "Global Tech Co." },
+    { id: "jobRec1", title: "Lead Frontend Developer", company: "Innovate Solutions" , jobIdForLink: "1"},
+    { id: "jobRec2", title: "UI/UX Specialist (React)", company: "Creative Minds Inc.", jobIdForLink: "3" },
+    { id: "jobRec3", title: "Full-Stack Engineer (Remote)", company: "Global Tech Co.", jobIdForLink: "2" },
 ];
 
 export default function CandidateDashboardPage() {
   return (
-    <Container>
+    <Container> {/* Ensures consistent padding */}
       <div className="mb-8">
         <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
           <LayoutDashboardIcon className="mr-3 h-8 w-8 text-primary" />
@@ -136,7 +136,7 @@ export default function CandidateDashboardPage() {
                     <div key={job.id} className="p-3 border rounded-md hover:bg-muted/50 transition-colors">
                         <div className="flex justify-between items-start">
                             <h4 className="font-semibold text-md">{job.title}</h4>
-                            <Link href={`/jobs/${job.id}`} passHref>
+                            <Link href={`/jobs/${job.jobIdForLink || job.id}`} passHref>
                                 <Button variant="link" size="sm" className="p-0 h-auto text-xs">View Job</Button>
                             </Link>
                         </div>

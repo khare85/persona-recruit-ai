@@ -7,13 +7,11 @@ interface ContainerProps {
   className?: string;
 }
 
-// This component might be simplified or removed if padding is handled by DashboardLayout or individual pages.
-// For now, keeping its definition but usage might change.
 export function Container({ children, className }: ContainerProps) {
   return (
-    // Removed default padding as it will be handled by DashboardLayout for app pages
-    // and can be added specifically for public pages if needed.
-    <div className={cn('mx-auto w-full', className)}>
+    // Added default padding for consistent spacing on all pages using this container.
+    // DashboardLayout's main content area will rely on pages using this Container.
+    <div className={cn('mx-auto w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8', className)}>
       {children}
     </div>
   );

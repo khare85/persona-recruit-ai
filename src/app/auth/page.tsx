@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert
 
 export default function AuthenticationPage() {
   const [activeTab, setActiveTab] = useState("login");
@@ -159,7 +160,7 @@ export default function AuthenticationPage() {
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-3">Or explore the platform with sample data:</p>
                 <Button variant="secondary" className="w-full" onClick={() => setShowPersonaSelector(true)}>
-                    <PlayCircle className="mr-2 h-5 w-5" /> Explore Demo
+                    <PlayCircle className="mr-2 h-5 w-5" /> Explore Demo Personas
                 </Button>
               </div>
             </>
@@ -172,6 +173,13 @@ export default function AuthenticationPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 px-0">
+                 <Alert variant="default" className="mb-4">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Demo Mode</AlertTitle>
+                  <AlertDescription>
+                    You are about to enter a demonstration environment. No actual user account will be created.
+                  </AlertDescription>
+                </Alert>
                 <Button onClick={() => handlePersonaSelection('/candidates/dashboard')} className="w-full justify-start" variant="outline" size="lg">
                   <Users className="mr-3 h-5 w-5 text-primary" /> View as Candidate
                 </Button>

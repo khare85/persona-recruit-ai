@@ -44,12 +44,12 @@ export default function RootLayout({
           <>
             <Navbar /> {/* Public navbar for home, auth */}
             <main className="flex-grow">
-              {children}
+              {children} {/* Pages like Home or Auth will use Container directly */}
             </main>
           </>
         ) : (
           <DashboardLayout> {/* DashboardLayout wraps all authenticated app content */}
-            {children}
+            {children} {/* Pages inside DashboardLayout will use Container */}
           </DashboardLayout>
         )}
         <Footer />

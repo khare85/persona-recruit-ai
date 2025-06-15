@@ -10,8 +10,8 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative w-full py-20 md:py-32 lg:py-40 flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
-        <Container className="z-10 text-center">
+      <section className="relative w-full pt-20 pb-10 md:pt-32 md:pb-20 lg:pt-40 lg:pb-28 flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
+        <Container className="z-10 text-center"> {/* Container will provide padding */}
           <Zap className="mx-auto h-16 w-16 text-primary mb-6 animate-bounce" />
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-headline font-bold tracking-tight text-foreground">
             Revolutionize Your Hiring with <span className="text-primary">Persona Recruit AI</span>
@@ -27,7 +27,7 @@ export default function HomePage() {
             </Link>
             <Link href="/auth" passHref>
               <Button size="lg" variant="outline" className="w-full sm:w-auto shadow-lg hover:shadow-accent/30 transition-shadow">
-                <LogIn className="mr-2 h-5 w-5" /> Login / View Demo
+                <LogIn className="mr-2 h-5 w-5" /> Login / View Demo Personas
               </Button>
             </Link>
           </div>
@@ -46,8 +46,8 @@ export default function HomePage() {
       </section>
 
       {/* Key Features Section */}
-      <section className="py-16 lg:py-24 bg-background">
-        <Container>
+      <section className="bg-background"> {/* No extra py, Container handles it */}
+        <Container> {/* Container handles padding */}
           <div className="text-center mb-12">
             <h2 className="text-3xl font-headline font-semibold text-foreground">Why Persona Recruit AI?</h2>
             <p className="mt-3 text-md text-muted-foreground max-w-xl mx-auto">
@@ -114,8 +114,8 @@ export default function HomePage() {
       </section>
 
       {/* Conceptual Subscription Tiers */}
-      <section className="py-16 lg:py-24 bg-muted/40">
-        <Container>
+      <section className="bg-muted/40"> {/* No extra py, Container handles it */}
+        <Container> {/* Container handles padding */}
           <div className="text-center mb-12">
             <h2 className="text-3xl font-headline font-semibold text-foreground">Flexible Plans for Every Need</h2>
             <p className="mt-3 text-md text-muted-foreground max-w-xl mx-auto">
@@ -173,8 +173,8 @@ export default function HomePage() {
       </section>
       
       {/* About Us Teaser */}
-       <section className="py-16 lg:py-24 bg-background">
-        <Container className="text-center">
+       <section className="bg-background"> {/* No extra py, Container handles it */}
+        <Container className="text-center"> {/* Container handles padding */}
            <Image 
                 src="https://placehold.co/150x150.png" 
                 data-ai-hint="diverse team working" 

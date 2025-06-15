@@ -5,55 +5,73 @@
  */
 
 import admin from 'firebase-admin';
-import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import type { App } from 'firebase-admin/app'; // Import App type
+import type { Timestamp, FieldValue, Firestore } from 'firebase-admin/firestore';
 import type { Bucket } from '@google-cloud/storage'; // Bucket type for Firebase Storage
-import { randomUUID } from 'crypto'; // For generating unique filenames
 
 // --- Firebase Admin SDK Setup ---
-// The Firebase Admin SDK needs to be initialized to interact with Firebase services.
+let app: App | undefined;
+
 if (!admin.apps.length) {
   try {
-    console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK...');
+    console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...');
     // For deployment to Firebase App Hosting (and other GCP managed environments like Cloud Functions, Cloud Run):
     // `applicationDefault()` automatically finds the credentials provided by the environment.
     // Ensure the service account associated with your App Hosting backend has the necessary IAM permissions.
     admin.initializeApp({
        credential: admin.credential.applicationDefault(),
     });
+    app = admin.app(); // Get the default app instance
     console.log('[FirestoreService] Firebase Admin SDK initialized successfully using Application Default Credentials.');
   } catch (error) {
     console.error('[FirestoreService] Error initializing Firebase Admin SDK with Application Default Credentials. This method is expected to work in GCP managed environments (like Firebase App Hosting). Error details:', error);
     // For local development, if Application Default Credentials are not set up (e.g., via `gcloud auth application-default login`),
-    // you might need to use a service account key file. Example (DO NOT commit service account keys to your repository):
-    //
-    // try {
-    //   const serviceAccount = require('/path/to/your/serviceAccountKey.json'); // Replace with the actual path
-    //   admin.initializeApp({
-    //     credential: admin.credential.cert(serviceAccount)
-    //   });
-    //   console.log('[FirestoreService] Firebase Admin SDK initialized successfully using a service account key file (local development).');
-    // } catch (localError) {
-    //   console.error('[FirestoreService] Failed to initialize with service account key file as well. Local error:', localError);
-    //   console.error('[FirestoreService] Please ensure Firebase Admin SDK is correctly configured for your environment.');
-    // }
+    // you might need to use a service account key file. This is NOT recommended for deployed environments.
+    // Example (DO NOT commit service account keys to your repository):
+    /*
+    try {
+      // Ensure the path to your service account key is correct and the file is present.
+      // const serviceAccount = require('/path/to/your/serviceAccountKey.json'); // Replace with the actual path
+      // admin.initializeApp({
+      //   credential: admin.credential.cert(serviceAccount)
+      // });
+      // app = admin.app();
+      // console.log('[FirestoreService] Firebase Admin SDK initialized successfully using a service account key file (local development fallback).');
+    } catch (localError) {
+      console.error('[FirestoreService] Failed to initialize with service account key file as well (local development fallback). Local error:', localError);
+    }
+    */
+     console.error('[FirestoreService] Firebase Admin SDK initialization failed. Ensure credentials (Application Default Credentials for deployed environments, or a service account key for specific local setups) are correctly configured and the service account has necessary permissions.');
   }
+} else {
+  app = admin.app(); // Get the default app instance if already initialized
+  console.log('[FirestoreService] Firebase Admin SDK was already initialized.');
 }
 
-let db: admin.firestore.Firestore;
-let storageBucket: Bucket;
+let db: Firestore | undefined;
+let storageBucket: Bucket | undefined;
 
-try {
-  db = admin.firestore();
-  console.log('[FirestoreService] Firestore DB instance acquired.');
+if (app) {
+  try {
+    db = admin.firestore(app); // Pass app instance
+    console.log('[FirestoreService] Firestore DB instance acquired.');
+  } catch (error) {
+    console.error('[FirestoreService] Failed to acquire Firestore DB instance after SDK init. Details:', error);
+    db = undefined;
+  }
 
-  storageBucket = admin.storage().bucket(); // Uses default bucket from project
-  console.log(`[FirestoreService] Firebase Storage bucket '${storageBucket.name}' instance acquired.`);
-
-} catch (error) {
-  console.error('[FirestoreService] Failed to acquire Firestore DB or Storage instance. Details:', error);
-  // This error might occur if admin.initializeApp() failed earlier.
+  try {
+    storageBucket = admin.storage(app).bucket(); // Pass app instance and get default bucket
+    console.log(`[FirestoreService] Firebase Storage bucket '${storageBucket.name}' instance acquired.`);
+  } catch (error) {
+    console.error('[FirestoreService] Failed to acquire Firebase Storage bucket instance after SDK init. Details:', error);
+    storageBucket = undefined;
+  }
+} else {
+  console.error('[FirestoreService] Firebase Admin SDK app instance is not available. Firestore and Storage cannot be initialized.');
 }
 // --- End Firebase Admin SDK Setup ---
+
 
 const CANDIDATES_COLLECTION = 'candidates_with_embeddings';
 const JOBS_COLLECTION = 'jobs_with_embeddings';
@@ -108,7 +126,7 @@ export interface JobWithEmbeddingFirestore {
 export async function uploadFileToStorage(fileBuffer: Buffer, destinationPath: string, contentType: string): Promise<string> {
   console.log(`[StorageService] Attempting to upload file to: ${destinationPath} with type: ${contentType}`);
   if (!storageBucket) {
-    const errorMsg = "[StorageService] Firebase Storage bucket not available. Ensure Firebase Admin SDK initialized correctly.";
+    const errorMsg = "[StorageService] Firebase Storage bucket not available. Ensure Firebase Admin SDK initialized correctly and GCLOUD_PROJECT_ID is set if using a specific bucket name.";
     console.error(errorMsg);
     throw new Error(errorMsg);
   }
@@ -120,9 +138,11 @@ export async function uploadFileToStorage(fileBuffer: Buffer, destinationPath: s
       metadata: {
         contentType: contentType,
       },
-      public: true,
+      public: true, // Make file publicly readable
     });
 
+    // Construct the public URL. Format can vary slightly based on bucket/project settings.
+    // This is a common format for default buckets.
     const publicUrl = `https://storage.googleapis.com/${storageBucket.name}/${destinationPath}`;
 
     console.log(`[StorageService] File uploaded successfully. Public URL: ${publicUrl}`);
@@ -214,6 +234,8 @@ export async function searchCandidatesByEmbedding(
   if (!db) {
     const errorMsg = "[FirestoreService] Firestore DB not available for search. Ensure Firebase Admin SDK initialized correctly.";
     console.error(errorMsg);
+    // Potentially throw an error or return an empty array with a specific status
+    // For now, returning empty to match previous behavior on error, but logging is key.
     return [];
   }
   try {
@@ -249,6 +271,7 @@ export async function searchCandidatesByEmbedding(
 
   } catch (error) {
     console.error('[FirestoreService] Error during candidate vector search. Ensure vector index is set up correctly on "resumeEmbedding" (dim:768, COSINE) for collection "candidates_with_embeddings". Error:', error);
+    // Potentially throw an error or return an empty array with a specific status
     return [];
   }
 }
@@ -344,13 +367,13 @@ export async function searchJobsByEmbedding(
     console.log(`[FirestoreService] Found ${results.length} jobs via vector search.`);
     return results;
 
-  } catch (error)
-{
+  } catch (error) {
     console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" (dim:768, COSINE) for collection "jobs_with_embeddings". Error:', error);
     return [];
   }
 }
 
 // Export db and storageBucket for use in other services if needed
+// However, it's generally better practice for other services to call functions from this module
+// rather than directly accessing db/storageBucket, to encapsulate logic and error handling.
 export { db, storageBucket };
-

@@ -4,8 +4,8 @@
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Container } from '@/components/shared/Container';
-import { Users, Briefcase, DollarSign, Brain, Activity, TrendingUp, FileText, Download, ShieldCheck, Layers, UsersRound, BarChartBig, LineChartIcon, Coins } from 'lucide-react';
+import { Container } from '@/components/shared/Container'; // Not typically needed if DashboardLayout handles padding
+import { Users, Briefcase, DollarSign, Brain, Activity, TrendingUp, FileText, Download, ShieldCheck, Layers, UsersRound, BarChartBig, LineChartIcon, Coins, Server, Settings } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -47,7 +47,9 @@ const chartConfig = {
 
 export default function AdminDashboardPage() {
   return (
-    <Container className="max-w-7xl">
+    // Container might be handled by DashboardLayout, remove if redundant
+    // <Container className="max-w-7xl"> 
+    <> 
       <div className="mb-8">
         <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
           <ShieldCheck className="mr-3 h-8 w-8 text-primary" />
@@ -109,9 +111,9 @@ export default function AdminDashboardPage() {
             <CardTitle className="flex items-center"><LineChartIcon className="mr-2 h-5 w-5 text-primary" /> User Growth Trends</CardTitle>
             <CardDescription>Monthly new users, companies, and recruiters.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[300px] pl-0">
             <ChartContainer config={chartConfig} className="w-full h-full">
-              <LineChart data={mockUserGrowthData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+              <LineChart data={mockUserGrowthData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                 <XAxis dataKey="month" tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
                 <YAxis tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
@@ -131,9 +133,9 @@ export default function AdminDashboardPage() {
             <CardTitle className="flex items-center"><Brain className="mr-2 h-5 w-5 text-primary" /> AI Token Consumption</CardTitle>
             <CardDescription>Tokens utilized by core AI features this month.</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[300px] pl-0">
              <ChartContainer config={chartConfig} className="w-full h-full">
-              <BarChart data={mockAiUsageData} layout="vertical" margin={{ top: 5, right: 20, left: 50, bottom: 5 }}>
+              <BarChart data={mockAiUsageData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}> {/* Adjusted left margin */}
                 <CartesianGrid horizontal={false} />
                 <XAxis type="number" dataKey="tokens" tickFormatter={(value) => `${value/1000000}M`} tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}}/>
                 <YAxis dataKey="feature" type="category" tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} width={100}/>
@@ -158,9 +160,9 @@ export default function AdminDashboardPage() {
             <CardTitle className="flex items-center"><DollarSign className="mr-2 h-5 w-5 text-primary" /> Financial Overview</CardTitle>
             <CardDescription>Monthly revenue and expenses. (Connect Stripe/Billing for real data)</CardDescription>
           </CardHeader>
-          <CardContent className="h-[250px]">
+          <CardContent className="h-[250px] pl-0">
             <ChartContainer config={chartConfig} className="w-full h-full">
-                <LineChart data={mockRevenueData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <LineChart data={mockRevenueData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                     <XAxis dataKey="month" tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
                     <YAxis tickFormatter={(value) => `$${value/1000}k`} tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
@@ -219,7 +221,7 @@ export default function AdminDashboardPage() {
         {/* Platform Health & Forecasting */}
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center"><Activity className="mr-2 h-5 w-5 text-primary" /> Platform Status & Forecast</CardTitle>
+            <CardTitle className="flex items-center"><Server className="mr-2 h-5 w-5 text-primary" /> Platform Status & Forecast</CardTitle>
             <CardDescription>System health and AI-driven growth predictions.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -239,7 +241,7 @@ export default function AdminDashboardPage() {
        <CardFooter className="mt-8 text-center text-xs text-muted-foreground">
         This Super Admin dashboard provides a conceptual overview. Real-time data would be sourced from backend services, databases, and integrated analytics platforms.
       </CardFooter>
-    </Container>
+    {/* </Container> */}
+    </>
   );
 }
-

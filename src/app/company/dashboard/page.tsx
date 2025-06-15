@@ -2,16 +2,47 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Building, Briefcase, Settings, Users, ExternalLink, MessageSquarePlus, SearchCode } from 'lucide-react';
+import { Building, Briefcase, Settings2, Users, ExternalLink, MessageSquarePlus, SearchCode, PlusCircle, BarChartBig, UsersRound, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend, Line, LineChart, Tooltip as RechartsTooltip } from 'recharts';
+
 
 const mockRecruiters = [
   { id: 'rec1', name: 'TechRecruit Pro', specialty: 'Software Engineering, AI/ML', successRate: 92, avatar: 'https://placehold.co/50x50.png?text=TR' },
   { id: 'rec2', name: 'SalesGurus Inc.', specialty: 'Sales, Business Development', successRate: 88, avatar: 'https://placehold.co/50x50.png?text=SG' },
   { id: 'rec3', name: 'DesignFinders', specialty: 'UX/UI Design, Creative Roles', successRate: 95, avatar: 'https://placehold.co/50x50.png?text=DF' },
 ];
+
+const mockKpiData = {
+    activeJobs: 12,
+    totalApplicants: 235,
+    avgTimeToHireDays: 28,
+    aiSearchesThisMonth: 45,
+};
+
+const mockApplicantFunnelData = [
+  { stage: 'Applications', count: 235, fill: "hsl(var(--chart-1))" },
+  { stage: 'Screened', count: 150, fill: "hsl(var(--chart-2))" },
+  { stage: 'Interviewed', count: 65, fill: "hsl(var(--chart-3))" },
+  { stage: 'Offers', count: 15, fill: "hsl(var(--chart-4))" },
+  { stage: 'Hired', count: 8, fill: "hsl(var(--chart-5))" },
+];
+
+const mockJobsPerformanceData = [
+  { name: 'Snr. Frontend Eng.', applicants: 45, daysOpen: 20 },
+  { name: 'Cloud Architect', applicants: 30, daysOpen: 15 },
+  { name: 'AI/ML PM', applicants: 60, daysOpen: 35 },
+  { name: 'UX Designer', applicants: 25, daysOpen: 22 },
+];
+
+const chartConfig = {
+  applicants: { label: "Applicants", color: "hsl(var(--chart-1))" },
+  daysOpen: { label: "Days Open", color: "hsl(var(--chart-2))" },
+  count: { label: "Count", color: "hsl(var(--primary))"},
+};
 
 export default function CompanyDashboardPage() {
   return (
@@ -22,82 +53,125 @@ export default function CompanyDashboardPage() {
           Company Hub
         </h1>
         <p className="text-muted-foreground mt-1">
-          Manage your company's recruitment activities, branding, and talent pipeline.
+          Oversee your recruitment activities, manage talent pipeline, and leverage AI tools.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Briefcase className="mr-3 h-6 w-6 text-primary" />
-              Manage Job Postings
-            </CardTitle>
-            <CardDescription>
-              View, edit, or create new job postings for your company. Track applicants.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Link href="/jobs" passHref>
-              <Button className="w-full">View All Company Jobs</Button>
-            </Link>
-            <Link href="/jobs/new" passHref>
-              <Button variant="outline" className="w-full">Post a New Job</Button>
-            </Link>
-          </CardContent>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="shadow-md">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    Active Job Postings <Briefcase className="h-4 w-4 text-muted-foreground" />
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{mockKpiData.activeJobs}</div>
+                <Link href="/jobs" className="text-xs text-primary hover:underline">View & Manage Jobs</Link>
+            </CardContent>
         </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <SearchCode className="mr-3 h-6 w-6 text-primary" />
-              AI Talent Search (Premium)
-            </CardTitle>
-            <CardDescription>
-              Proactively discover candidates from our extensive talent pool using AI.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/company/ai-talent-search" passHref>
-              <Button className="w-full">Access Talent Search</Button>
-            </Link>
-          </CardContent>
+         <Card className="shadow-md">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    Total Applicants <UsersRound className="h-4 w-4 text-muted-foreground" />
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{mockKpiData.totalApplicants}</div>
+                 <p className="text-xs text-muted-foreground">Across all active jobs</p>
+            </CardContent>
         </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <ExternalLink className="mr-3 h-6 w-6 text-primary" />
-              Your Company Job Board
-            </CardTitle>
-            <CardDescription>
-              Access and share your dedicated job board featuring only your company's vacancies.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/company/portal" passHref>
-              <Button variant="outline" className="w-full">View Your Job Board</Button>
-            </Link>
-          </CardContent>
+        <Card className="shadow-md">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    Avg. Time to Hire <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{mockKpiData.avgTimeToHireDays} <span className="text-sm font-normal">days</span></div>
+                <p className="text-xs text-muted-foreground">Mock data - Last 90 days</p>
+            </CardContent>
         </Card>
-        
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Settings className="mr-3 h-6 w-6 text-primary" />
-              Branding & Settings
-            </CardTitle>
-            <CardDescription>
-              Customize the look and feel, integrate with your systems, and manage company users.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/company/settings" passHref>
-              <Button variant="outline" className="w-full">Go to Company Settings</Button>
-            </Link>
-          </CardContent>
+        <Card className="shadow-md">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    AI Talent Searches <SearchCode className="h-4 w-4 text-muted-foreground" />
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{mockKpiData.aiSearchesThisMonth}</div>
+                <p className="text-xs text-muted-foreground">This month (Premium)</p>
+            </CardContent>
         </Card>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Quick Actions Card */}
+        <Card className="lg:col-span-1 shadow-md">
+            <CardHeader>
+                <CardTitle className="text-xl">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                <Link href="/jobs/new" passHref className="block">
+                    <Button className="w-full justify-start" variant="default"><PlusCircle className="mr-2 h-5 w-5" /> Post a New Job</Button>
+                </Link>
+                <Link href="/company/ai-talent-search" passHref className="block">
+                    <Button className="w-full justify-start" variant="outline"><SearchCode className="mr-2 h-5 w-5" /> AI Talent Search</Button>
+                </Link>
+                 <Link href="/company/portal" passHref className="block">
+                    <Button className="w-full justify-start" variant="outline"><ExternalLink className="mr-2 h-5 w-5" /> View Company Job Board</Button>
+                </Link>
+                <Link href="/company/settings" passHref className="block">
+                    <Button className="w-full justify-start" variant="outline"><Settings2 className="mr-2 h-5 w-5" /> Company Settings</Button>
+                </Link>
+            </CardContent>
+        </Card>
+
+        {/* Applicant Funnel Chart */}
+        <Card className="lg:col-span-2 shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center"><BarChartBig className="mr-2 h-5 w-5 text-primary" /> Applicant Funnel</CardTitle>
+                <CardDescription>Overview of candidate progression (mock data).</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px] pl-0">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                    <BarChart data={mockApplicantFunnelData} layout="vertical" margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
+                        <CartesianGrid horizontal={false} />
+                        <XAxis type="number" dataKey="count" tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
+                        <YAxis dataKey="stage" type="category" tickLine={false} axisLine={false} width={100} style={{fontSize: '0.75rem'}}/>
+                        <RechartsTooltip 
+                            content={<ChartTooltipContent indicator="dot" />}
+                            formatter={(value, name, props) => [`${value} candidates`, props.payload.stage]}
+                        />
+                        <Bar dataKey="count" radius={4} />
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+      </div>
+      
+      {/* Top Performing Jobs / Recruiters Section */}
+      <Card className="shadow-lg mb-8">
+        <CardHeader>
+            <CardTitle className="text-xl">Jobs Performance Overview</CardTitle>
+            <CardDescription>Applicant count and days open for key roles (mock data).</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[250px] pr-0">
+            <ChartContainer config={chartConfig} className="w-full h-full">
+                <LineChart data={mockJobsPerformanceData} margin={{ left: 0, right: 30, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                    <XAxis dataKey="name" tickLine={false} axisLine={false} angle={-30} textAnchor="end" height={50} style={{fontSize: '0.75rem'}} />
+                    <YAxis yAxisId="left" orientation="left" stroke="var(--color-applicants)" tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--color-daysOpen)" tickLine={false} axisLine={false} style={{fontSize: '0.75rem'}} />
+                    <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
+                    <Legend verticalAlign="top" height={36}/>
+                    <Line yAxisId="left" type="monotone" dataKey="applicants" stroke="var(--color-applicants)" strokeWidth={2} name="Applicants" dot={false}/>
+                    <Line yAxisId="right" type="monotone" dataKey="daysOpen" stroke="var(--color-daysOpen)" strokeWidth={2} name="Days Open" dot={false}/>
+                </LineChart>
+            </ChartContainer>
+        </CardContent>
+      </Card>
+
 
       <div className="mt-10">
         <Card className="shadow-lg">
@@ -116,7 +190,7 @@ export default function CompanyDashboardPage() {
                         <Card key={recruiter.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 gap-4">
                             <div className="flex items-center space-x-3">
                                 <Avatar className="h-12 w-12">
-                                    <AvatarImage src={recruiter.avatar} alt={recruiter.name} data-ai-hint="recruiter avatar"/>
+                                    <AvatarImage src={recruiter.avatar} alt={recruiter.name} data-ai-hint="recruiter profile" />
                                     <AvatarFallback>{recruiter.name.substring(0,1)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -143,4 +217,3 @@ export default function CompanyDashboardPage() {
     </Container>
   );
 }
-

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, Users, FileText, Gift, Video, Zap, LayoutDashboard, Building } from 'lucide-react';
+import { Briefcase, Users, FileText, Gift, Video, Zap, LayoutDashboard, Building, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: Building },
   { href: '/referrals', label: 'Referrals', icon: Gift },
   { href: '/interviews', label: 'Interview AI', icon: Video },
+  { href: '/admin/dashboard', label: 'Admin', icon: ShieldCheck },
 ];
 
 export function Navbar() {
@@ -70,3 +71,4 @@ export function Navbar() {
     </header>
   );
 }
+

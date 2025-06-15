@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download } from 'lucide-react';
+import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Brain, Lightbulb } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
+import { jobRecommendationEngine, JobRecommendationOutput } from '@/ai/flows/job-recommendation-engine';
 
 // Mock candidate data - in a real app, this would come from a database or API
 const MOCK_CANDIDATE = {
@@ -53,15 +54,40 @@ const MOCK_CANDIDATE = {
     { name: 'AWS Certified Solutions Architect – Associate', issuer: 'Amazon Web Services', date: '2021' },
     { name: 'Certified Kubernetes Administrator (CKA)', issuer: 'Cloud Native Computing Foundation', date: '2022' },
   ],
-  videoIntroUrl: 'https://placehold.co/320x180.mp4', // Placeholder for video,
-  resumeUrl: '#', // Placeholder for resume download
+  videoIntroUrl: 'https://placehold.co/320x180.mp4', 
+  resumeUrl: '#', 
 };
 
-async function getCandidateDetails(id: string) {
+interface EnrichedCandidate extends Omit<typeof MOCK_CANDIDATE, 'skills'> {
+  skills: string[]; // Ensure skills is always string array
+  jobRecommendations: JobRecommendationOutput | null;
+}
+
+
+async function getCandidateDetails(id: string): Promise<EnrichedCandidate | null> {
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 50));
   if (id === MOCK_CANDIDATE.id) {
-    return MOCK_CANDIDATE;
+    let recommendations: JobRecommendationOutput | null = null;
+    try {
+      const candidateProfileForAI = `${MOCK_CANDIDATE.currentTitle}. ${MOCK_CANDIDATE.experienceSummary}`;
+      const jobMarketDataForAI = "Current high demand for Senior Software Engineers with React/Next.js, Cloud (AWS/Azure), and Python experience. Many remote-first companies are hiring. Also growing need for AI/ML specialists and Product Managers with tech backgrounds.";
+      
+      recommendations = await jobRecommendationEngine({
+        candidateProfile: candidateProfileForAI,
+        candidateSkills: MOCK_CANDIDATE.skills,
+        jobMarketData: jobMarketDataForAI,
+      });
+    } catch (error) {
+      console.error("Error fetching job recommendations:", error);
+      // Keep recommendations as null, UI will handle it
+    }
+
+    return { 
+      ...MOCK_CANDIDATE,
+      skills: MOCK_CANDIDATE.skills || [], // Ensure skills is an array
+      jobRecommendations: recommendations 
+    };
   }
   return null;
 }
@@ -139,10 +165,11 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-lg">AI Generated Skills</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg flex items-center"><Brain className="h-5 w-5 mr-2 text-primary" />AI Generated Skills</CardTitle></CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {candidate.skills.map(skill => <Badge key={skill} variant="default">{skill}</Badge>)}
                 </CardContent>
+                 <CardFooter className="text-xs text-muted-foreground pt-2">Skills extracted from your resume.</CardFooter>
               </Card>
               
               <Card>
@@ -164,6 +191,36 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
                 <CardHeader><CardTitle className="text-xl">Summary</CardTitle></CardHeader>
                 <CardContent><p className="text-foreground/80 leading-relaxed">{candidate.experienceSummary}</p></CardContent>
               </Card>
+
+              {candidate.jobRecommendations && candidate.jobRecommendations.recommendedJobs.length > 0 && (
+                <Card className="bg-gradient-to-br from-accent/5 to-primary/5 border-primary/30">
+                  <CardHeader>
+                    <CardTitle className="text-xl flex items-center">
+                      <Lightbulb className="h-6 w-6 mr-2 text-primary" />
+                      AI-Powered Job Recommendations
+                    </CardTitle>
+                    <CardDescription>Based on your profile and current market trends.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <ul className="space-y-2 list-disc list-inside">
+                      {candidate.jobRecommendations.recommendedJobs.map((jobTitle, index) => (
+                        <li key={index} className="font-medium text-foreground">{jobTitle}</li>
+                      ))}
+                    </ul>
+                    {candidate.jobRecommendations.reasoning && (
+                      <div>
+                        <h4 className="font-semibold text-sm mt-3 mb-1">Why these roles?</h4>
+                        <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md border">
+                          {candidate.jobRecommendations.reasoning}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                   <CardFooter className="text-xs text-muted-foreground italic">
+                    These AI recommendations can help guide your job search. Explore <Link href="/jobs" className="text-primary hover:underline">all jobs</Link> for more options.
+                  </CardFooter>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader><CardTitle className="text-xl">Video Introduction (10s)</CardTitle></CardHeader>
@@ -230,11 +287,14 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
           </div>
         </CardContent>
         <CardFooter className="p-6 md:p-8 border-t flex justify-end">
-            <Button variant="default" size="lg">
-                <Star className="h-4 w-4 mr-2" /> Consider for Job
-            </Button>
+            <Link href="/jobs">
+                 <Button variant="default" size="lg">
+                    <Search className="h-4 w-4 mr-2" /> Find Matching Jobs
+                </Button>
+            </Link>
         </CardFooter>
       </Card>
     </Container>
   );
 }
+

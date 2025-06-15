@@ -205,7 +205,7 @@ export async function saveCandidateWithEmbedding(
  * 3. Fields to index:
  *    - `resumeEmbedding`:
  *      - Index Type: Vector
- *      - Vector dimension: `768` (for 'text-embedding-004' model from Google AI Studio)
+ *      - Vector dimension: `768` (for 'textembedding-gecko-multilingual' model)
  *      - Distance measure: `COSINE` (recommended for text embeddings)
  * 4. Firestore will take some time to build this index. Ensure it's active before relying on search.
  *
@@ -256,7 +256,7 @@ export async function searchCandidatesByEmbedding(
     return results;
 
   } catch (error) {
-    console.error('[FirestoreService] Error during candidate vector search. Ensure vector index is set up correctly on "resumeEmbedding" (dim:768, COSINE) for collection "candidates_with_embeddings". Error:', error);
+    console.error('[FirestoreService] Error during candidate vector search. Ensure vector index is set up correctly on "resumeEmbedding" (dim:768, COSINE) for collection "candidates_with_embeddings" using textembedding-gecko-multilingual model. Error:', error);
     return [];
   }
 }
@@ -305,7 +305,7 @@ export async function saveJobWithEmbedding(
  * 3. Fields to index:
  *    - `jobEmbedding`:
  *      - Index Type: Vector
- *      - Vector dimension: `768` (for 'text-embedding-004' model)
+ *      - Vector dimension: `768` (for 'textembedding-gecko-multilingual' model)
  *      - Distance measure: `COSINE`
  * 4. Firestore will take some time to build this index. Ensure it's active.
  *
@@ -353,7 +353,7 @@ export async function searchJobsByEmbedding(
     return results;
 
   } catch (error) {
-    console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" (dim:768, COSINE) for collection "jobs_with_embeddings". Error:', error);
+    console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" (dim:768, COSINE) for collection "jobs_with_embeddings" using textembedding-gecko-multilingual model. Error:', error);
     return [];
   }
 }

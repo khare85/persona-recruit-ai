@@ -11,10 +11,9 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 // Define the specific embedding model to be used.
-// 'text-embedding-004' is Google's latest generation text embedding model as of early 2024.
-// Other models like 'textembedding-gecko@003' (older) or 'embedding-001' (general purpose) could also be used if supported.
-// The user mentioned "text-embedding-005" or "textembedding-gecko", so we are choosing a modern equivalent.
-const EMBEDDING_MODEL_ID = 'text-embedding-004';
+// 'textembedding-gecko-multilingual' is Google's multilingual text embedding model.
+// This model supports multiple languages and is suitable for international talent matching.
+const EMBEDDING_MODEL_ID = 'textembedding-gecko-multilingual';
 
 const GenerateTextEmbeddingInputSchema = z.object({
   text: z.string().min(1).describe("The text content to be embedded."),
@@ -44,10 +43,11 @@ const generateTextEmbeddingFlow = ai.defineFlow(
 
     try {
       console.log(`[generateTextEmbeddingFlow] - Generating embedding for text (length: ${text.length}) using model: ${modelToUse}`);
-      const {embedding} = await ai.embed({
+      const result = await ai.embed({
         content: text,
-        model: modelToUse,
+        embedder: modelToUse,
       });
+      const embedding = result[0]?.embedding;
 
       if (!embedding || embedding.length === 0) {
         console.error(`[generateTextEmbeddingFlow] - ai.embed() did not return a valid embedding for text (length: ${text.length}) using model ${modelToUse}.`);

@@ -8,6 +8,7 @@ import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 // Mock candidate data - in a real app, this would come from a database or API
 const MOCK_CANDIDATE = {
   id: '1',
@@ -179,46 +180,61 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-xl">Experience</CardTitle></CardHeader>
-                <CardContent className="space-y-6">
-                  {candidate.experience.map((exp, index) => (
-                    <div key={index} className="flex gap-4">
-                      <Avatar className="mt-1 h-10 w-10 border">
-                        <AvatarImage src={exp.logo} alt={`${exp.company} logo`} data-ai-hint="company logo" />
-                        <AvatarFallback>{exp.company.substring(0,1)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold text-md">{exp.title}</h3>
-                        <p className="text-sm text-primary">{exp.company}</p>
-                        <p className="text-xs text-muted-foreground">{exp.period}</p>
-                        <p className="mt-1 text-sm text-foreground/80">{exp.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
                 <CardHeader><CardTitle className="text-xl">Education</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {candidate.education.map((edu, index) => (
-                    <div key={index}>
-                      <h3 className="font-semibold text-md">{edu.degree}</h3>
-                      <p className="text-sm text-muted-foreground">{edu.institution}</p>
-                      <p className="text-xs text-muted-foreground">{edu.period}</p>
-                    </div>
-                  ))}
+ <Table>
+ <TableHeader>
+ <TableRow>
+ <TableHead className="w-[200px]">Degree</TableHead>
+ <TableHead>Institution</TableHead>
+ <TableHead className="w-[150px]">Period</TableHead>
+ </TableRow>
+ </TableHeader>
+ <TableBody>
+ {candidate.education.map((edu, index) => (
+ <TableRow key={index}>
+ <TableCell className="font-medium">{edu.degree}</TableCell>
+ <TableCell>{edu.institution}</TableCell>
+ <TableCell>{edu.period}</TableCell>
+ </TableRow>
+ ))}
+ </TableBody>
+ </Table>
                 </CardContent>
               </Card>
 
               {candidate.certifications.length > 0 && (
                 <Card>
                   <CardHeader><CardTitle className="text-xl">Certifications</CardTitle></CardHeader>
-                  <CardContent className="space-y-3">
-                    {candidate.certifications.map((cert, index) => (
-                      <div key={index}>
-                        <h3 className="font-semibold text-md">{cert.name}</h3>
-                        <p className="text-sm text-muted-foreground">{cert.issuer} - {cert.date}</p>
+                  <CardContent>
+ <Table>
+ <TableHeader>
+ <TableRow>
+ <TableHead className="w-[200px]">Name</TableHead>
+ <TableHead>Issuer</TableHead>
+ <TableHead className="w-[100px]">Date</TableHead>
+ </TableRow>
+ </TableHeader>
+ <TableBody>
+ {candidate.certifications.map((cert, index) => (
+ <TableRow key={index}>
+ <TableCell className="font-medium">{cert.name}</TableCell>
+ <TableCell>{cert.issuer}</TableCell>
+ <TableCell>{cert.date}</TableCell>
+ </TableRow>
+ ))}
+ </TableBody>
+ </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader><CardTitle className="text-xl">Experience</CardTitle></CardHeader>
+                <CardContent>
+                  {candidate.experience.map((exp, index) => (
+ <div key={index}>
+                        {/* Table for Experience */}
                       </div>
                     ))}
                   </CardContent>

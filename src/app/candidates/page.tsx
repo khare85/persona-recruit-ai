@@ -1,14 +1,17 @@
 
 'use client';
 
-import { Container } from '@/components/shared/Container';
+import { useState } from 'react';
 import Link from 'next/link';
+import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Container } from '@/components/shared/Container';
+import { Badge } from '@/components/ui/badge';
+import { PlusCircle, Search, Briefcase, Star, List, Grid3X3 } from 'lucide-react';
 import { getMockCandidates } from '@/services/mockDataService';
+
 // Get mock candidates data
 const candidateListings = getMockCandidates().map(candidate => ({
   id: candidate.id,
@@ -21,10 +24,6 @@ const candidateListings = getMockCandidates().map(candidate => ({
   matchScore: candidate.aiMatchScore || 85,
   location: candidate.location
 }));
-
-import { Badge } from '@/components/ui/badge';
-import { Users, PlusCircle, Search, Briefcase, Star, List, Grid3X3 } from 'lucide-react';
-import { useState } from 'react';
 
 export default function CandidatesPage() {
   const [isGridView, setIsGridView] = useState(true);
@@ -123,16 +122,16 @@ export default function CandidatesPage() {
                    <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500" /> AI Match: <span className="font-semibold ml-1 text-foreground">{candidate.matchScore}%</span>
                 </div>
               </div>
-              <CardFooter className={`${isGridView ? 'flex-col items-stretch space-y-2' : 'flex-row items-center space-x-4 mt-0 p-0'}`}>
-                 <Badge variant={candidate.availability === 'Immediate' ? 'default' : 'outline'} className={`${isGridView ? 'self-center' : ''} py-1 text-xs`}>
-                  {candidate.availability === 'Immediate' ? `Available Now` : `Available: ${candidate.availability}`}
-                </Badge>
-                <Link href={`/candidates/${candidate.id}`} passHref className={isGridView ? "w-full" : ""}>
-                  <Button variant="outline" className={isGridView ? "w-full" : ""}>
-                    View Profile
-                  </Button>
-                </Link>
-              </div>
+            </CardContent>
+            <CardFooter className={`${isGridView ? 'flex-col items-stretch space-y-2' : 'flex-row items-center space-x-4 mt-0 p-0'}`}>
+              <Badge variant={candidate.availability === 'Immediate' ? 'default' : 'outline'} className={`${isGridView ? 'self-center' : ''} py-1 text-xs`}>
+                {candidate.availability === 'Immediate' ? `Available Now` : `Available: ${candidate.availability}`}
+              </Badge>
+              <Link href={`/candidates/${candidate.id}`} passHref className={isGridView ? "w-full" : ""}>
+                <Button variant="outline" className={isGridView ? "w-full" : ""}>
+                  View Profile
+                </Button>
+              </Link>
             </CardFooter>
           </Card>
         ))}

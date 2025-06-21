@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { candidateJobMatcher } from '@/ai/flows/candidate-job-matcher';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 
 // Mock job data - in a real app, this would come from a database or API
 const MOCK_JOB = {
@@ -159,6 +160,12 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
             <CardContent>
               <Button size="lg" className="w-full">Apply Now</Button>
               <Button variant="outline" className="w-full mt-3">Save Job</Button>
+              <Link href={`/jobs/${job.id}/applicants`} passHref>
+                <Button variant="secondary" className="w-full mt-3">
+                  <Users className="mr-2 h-4 w-4" />
+                  View Applicants
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 

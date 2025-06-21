@@ -548,6 +548,20 @@ export const getMockInterviewAnalysis = (id: string): MockInterviewAnalysis | un
 export const getMockDocumentsForCandidate = (candidateId: string): MockDocument[] =>
   mockDocuments.filter(document => document.candidateId === candidateId);
 
+// Simulate job applications - in a real app, this would be stored in the database
+export const getMockApplicantsForJob = (jobId: string): MockCandidate[] => {
+  // For demo purposes, return a subset of candidates based on job ID
+  // In reality, this would be candidates who actually applied to the specific job
+  const jobApplicantMap: Record<string, string[]> = {
+    '1': ['1', '2', '4'], // Senior Frontend Developer
+    '2': ['2', '5'],      // DevOps Engineer  
+    '3': ['1', '3', '5']  // UX Designer
+  };
+  
+  const applicantIds = jobApplicantMap[jobId] || [];
+  return mockCandidates.filter(candidate => applicantIds.includes(candidate.id));
+};
+
 
 // Dashboard metrics
 export const getMockDashboardMetrics = () => ({

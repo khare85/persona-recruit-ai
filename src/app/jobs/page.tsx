@@ -117,13 +117,21 @@ export default function JobsPage() {
             </CardContent>
             <CardFooter className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">
-                Posted: {new Date(job.postedDate).toLocaleDateString()}
+                Posted: {new Date(job.postedDate).toLocaleDateString()}<br />
+                <span className="text-primary font-medium">{job.applicants} applicants</span>
               </p>
-              <Link href={`/jobs/${job.id}`} passHref>
-                <Button variant="link" className="text-primary p-0 h-auto">
-                  View Details &rarr;
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Link href={`/jobs/${job.id}/applicants`} passHref>
+                  <Button variant="outline" size="sm">
+                    Applicants ({job.applicants})
+                  </Button>
+                </Link>
+                <Link href={`/jobs/${job.id}`} passHref>
+                  <Button variant="link" className="text-primary p-0 h-auto">
+                    View Details &rarr;
+                  </Button>
+                </Link>
+              </div>
             </CardFooter>
           </Card>
         ))}

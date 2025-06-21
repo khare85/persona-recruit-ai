@@ -25,6 +25,26 @@ export interface MockCandidate {
   aiMatchScore?: number;
 }
 
+export interface MockInterview {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  date: string; // ISO 8601 string
+  status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Pending';
+  analysisId?: string; // Link to interview analysis if completed
+}
+
+export interface MockDocument {
+  id: string;
+  candidateId: string;
+  name: string;
+  uploadDate: string; // ISO 8601 string
+  fileType: string;
+  url: string;
+}
+
 export interface MockJob {
   id: string;
   title: string;
@@ -464,6 +484,57 @@ export const mockInterviewAnalyses: MockInterviewAnalysis[] = [
   }
 ];
 
+export const mockInterviews: MockInterview[] = [
+  {
+    id: 'int1',
+    candidateId: '1',
+    jobId: '1',
+    jobTitle: 'Senior Frontend Developer',
+    companyName: 'TechCorp Inc.',
+    date: '2024-07-01T10:00:00Z',
+    status: 'Completed',
+    analysisId: '1'
+  },
+  {
+    id: 'int2',
+    candidateId: '1',
+    jobId: '3',
+    jobTitle: 'UX Designer',
+    companyName: 'DesignFirst Studio',
+    date: '2024-07-05T14:30:00Z',
+    status: 'Scheduled'
+  },
+  {
+    id: 'int3',
+    candidateId: '2',
+    jobId: '2',
+    jobTitle: 'DevOps Engineer',
+    companyName: 'CloudScale Solutions',
+    date: '2024-06-28T11:00:00Z',
+    status: 'Completed',
+    analysisId: '2'
+  }
+];
+
+export const mockDocuments: MockDocument[] = [
+  {
+    id: 'doc1',
+    candidateId: '1',
+    name: 'SarahJohnson_Resume.pdf',
+    uploadDate: '2024-06-10T09:00:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/sarahjohnson_resume.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc2',
+    candidateId: '1',
+    name: 'SarahJohnson_CoverLetter.docx',
+    uploadDate: '2024-06-10T09:05:00Z',
+    fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    url: 'https://example.com/documents/sarahjohnson_coverletter.docx' // Placeholder URL
+  }
+];
+
 // Helper functions for getting mock data
 export const getMockCandidates = (): MockCandidate[] => mockCandidates;
 export const getMockJobs = (): MockJob[] => mockJobs;
@@ -471,7 +542,12 @@ export const getMockCandidate = (id: string): MockCandidate | undefined => mockC
 export const getMockJob = (id: string): MockJob | undefined => mockJobs.find(j => j.id === id);
 export const getMockInterviewAnalyses = (): MockInterviewAnalysis[] => mockInterviewAnalyses;
 export const getMockInterviewAnalysis = (id: string): MockInterviewAnalysis | undefined => 
-  mockInterviewAnalyses.find(a => a.id === id);
+  mockInterviewAnalyses.find(a => a.id === id);export const getMockInterviewsForCandidate = (candidateId: string): MockInterview[] =>
+  mockInterviews.filter(interview => interview.candidateId === candidateId);
+
+export const getMockDocumentsForCandidate = (candidateId: string): MockDocument[] =>
+  mockDocuments.filter(document => document.candidateId === candidateId);
+
 
 // Dashboard metrics
 export const getMockDashboardMetrics = () => ({

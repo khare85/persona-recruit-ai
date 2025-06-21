@@ -1,6 +1,7 @@
 
 'use client';
 
+import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/shared/Container';
 import { getMockCandidates } from '@/services/mockDataService';
-
 // Get mock candidates data
 const candidateListings = getMockCandidates().map(candidate => ({
   id: candidate.id,

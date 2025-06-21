@@ -91,7 +91,7 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
         <div className="bg-gradient-to-r from-primary/80 to-accent/80 p-8 relative">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background shadow-lg">
-              <AvatarImage src={candidate.avatarUrl} alt={candidate.fullName} data-ai-hint="profile person" />
+              <AvatarImage src={candidate.avatarUrl || undefined} alt={candidate.fullName} data-ai-hint="profile person" />
               <AvatarFallback className="text-5xl bg-background text-primary">
                 {candidate.fullName.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>

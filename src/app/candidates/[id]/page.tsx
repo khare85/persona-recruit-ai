@@ -68,7 +68,8 @@ async function getCandidateDetails(id: string) {
 }
 
 export default async function CandidateProfilePage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateDetails(params.id);
+  const { id } = await params;
+  const candidate = await getCandidateDetails(id);
 
   if (!candidate) {
     return (

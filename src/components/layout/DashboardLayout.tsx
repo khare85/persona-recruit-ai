@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -111,7 +112,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-background">
       {currentNavItems.length > 0 && (
-        <div className="w-64 bg-card border-r border-border flex flex-col">
+        <div className="w-64 bg-card border-r border-border flex-col hidden md:flex">
           <div className="p-4 border-b border-border">
             <Link href={currentDashboardHome} className={cn(
               "flex items-center gap-2.5 p-2 rounded-md transition-colors hover:bg-accent/10 w-full"

@@ -513,6 +513,51 @@ export const mockInterviews: MockInterview[] = [
     date: '2024-06-28T11:00:00Z',
     status: 'Completed',
     analysisId: '2'
+  },
+  {
+    id: 'int4',
+    candidateId: '3',
+    jobId: '3',
+    jobTitle: 'UX Designer',
+    companyName: 'DesignFirst Studio',
+    date: '2024-06-25T09:00:00Z',
+    status: 'Completed'
+  },
+  {
+    id: 'int5',
+    candidateId: '4',
+    jobId: '1',
+    jobTitle: 'Senior Frontend Developer',
+    companyName: 'TechCorp Inc.',
+    date: '2024-07-08T15:00:00Z',
+    status: 'Scheduled'
+  },
+  {
+    id: 'int6',
+    candidateId: '5',
+    jobId: '2',
+    jobTitle: 'DevOps Engineer',
+    companyName: 'CloudScale Solutions',
+    date: '2024-06-20T13:00:00Z',
+    status: 'Cancelled'
+  },
+  {
+    id: 'int7',
+    candidateId: '1',
+    jobId: '2',
+    jobTitle: 'DevOps Engineer',
+    companyName: 'CloudScale Solutions',
+    date: '2024-07-10T11:00:00Z',
+    status: 'Pending'
+  },
+  {
+    id: 'int8',
+    candidateId: '2',
+    jobId: '1',
+    jobTitle: 'Senior Frontend Developer',
+    companyName: 'TechCorp Inc.',
+    date: '2024-06-15T10:00:00Z',
+    status: 'Completed'
   }
 ];
 
@@ -532,6 +577,78 @@ export const mockDocuments: MockDocument[] = [
     uploadDate: '2024-06-10T09:05:00Z',
     fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     url: 'https://example.com/documents/sarahjohnson_coverletter.docx' // Placeholder URL
+  },
+  {
+    id: 'doc3',
+    candidateId: '1',
+    name: 'AWS_Certification.pdf',
+    uploadDate: '2024-06-12T14:30:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/aws_cert.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc4',
+    candidateId: '2',
+    name: 'MarcusChen_Resume.pdf',
+    uploadDate: '2024-06-08T10:00:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/marcuschen_resume.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc5',
+    candidateId: '2',
+    name: 'Kubernetes_CKA_Certificate.pdf',
+    uploadDate: '2024-06-09T11:00:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/cka_cert.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc6',
+    candidateId: '3',
+    name: 'EmilyRodriguez_Portfolio.pdf',
+    uploadDate: '2024-06-11T09:30:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/emily_portfolio.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc7',
+    candidateId: '3',
+    name: 'UX_Design_Certificate.pdf',
+    uploadDate: '2024-06-11T09:45:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/ux_cert.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc8',
+    candidateId: '4',
+    name: 'DavidKim_Resume.pdf',
+    uploadDate: '2024-06-07T13:00:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/davidkim_resume.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc9',
+    candidateId: '4',
+    name: 'ML_Research_Papers.zip',
+    uploadDate: '2024-06-07T13:15:00Z',
+    fileType: 'application/zip',
+    url: 'https://example.com/documents/ml_papers.zip' // Placeholder URL
+  },
+  {
+    id: 'doc10',
+    candidateId: '5',
+    name: 'JenniferWalsh_Resume.pdf',
+    uploadDate: '2024-06-06T08:00:00Z',
+    fileType: 'application/pdf',
+    url: 'https://example.com/documents/jenniferwalsh_resume.pdf' // Placeholder URL
+  },
+  {
+    id: 'doc11',
+    candidateId: '5',
+    name: 'Product_Management_Portfolio.pptx',
+    uploadDate: '2024-06-06T08:30:00Z',
+    fileType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    url: 'https://example.com/documents/pm_portfolio.pptx' // Placeholder URL
   }
 ];
 

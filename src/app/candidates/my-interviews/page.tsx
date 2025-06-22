@@ -1,0 +1,315 @@
+'use client';
+
+import { Container } from '@/components/shared/Container';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar, Clock, MapPin, Building2, Video, CheckCircle, XCircle, AlertCircle, ExternalLink, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { getMockInterviewsForCandidate, getMockInterviewAnalysis } from '@/services/mockDataService';
+import { format } from 'date-fns';
+
+// For demo, assume we're viewing candidate ID 1 (Sarah Johnson)
+const DEMO_CANDIDATE_ID = '1';
+
+export default function MyInterviewsPage() {
+  const interviews = getMockInterviewsForCandidate(DEMO_CANDIDATE_ID);
+  
+  // Group interviews by status
+  const upcomingInterviews = interviews.filter(i => i.status === 'Scheduled' || i.status === 'Pending');
+  const completedInterviews = interviews.filter(i => i.status === 'Completed');
+  const cancelledInterviews = interviews.filter(i => i.status === 'Cancelled');
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'Scheduled':
+        return <Calendar className="h-4 w-4" />;
+      case 'Completed':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'Cancelled':
+        return <XCircle className="h-4 w-4" />;
+      case 'Pending':
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'Scheduled':
+        return 'default';
+      case 'Completed':
+        return 'secondary';
+      case 'Cancelled':
+        return 'destructive';
+      case 'Pending':
+        return 'outline';
+      default:
+        return 'default';
+    }
+  };
+
+  return (
+    <Container className="max-w-6xl">
+      <div className="mb-8">
+        <Link href="/candidates/dashboard" passHref>
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
+        <h1 className="text-3xl font-headline font-bold text-foreground">My Interviews</h1>
+        <p className="text-muted-foreground">Track and manage all your interview schedules and results</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Interviews</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{interviews.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{upcomingInterviews.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{completedInterviews.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">With Analysis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-accent">
+              {completedInterviews.filter(i => i.analysisId).length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Upcoming Interviews */}
+      {upcomingInterviews.length > 0 && (
+        <Card className="mb-8 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <Calendar className="mr-2 h-5 w-5 text-primary" />
+              Upcoming Interviews
+            </CardTitle>
+            <CardDescription>Your scheduled interviews</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company & Position</TableHead>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {upcomingInterviews.map((interview) => (
+                  <TableRow key={interview.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{interview.jobTitle}</div>
+                        <div className="text-sm text-muted-foreground flex items-center">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          {interview.companyName}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                          {format(new Date(interview.date), 'MMM d, yyyy')}
+                        </div>
+                        <div className="text-sm text-muted-foreground flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {format(new Date(interview.date), 'h:mm a')}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(interview.status) as any} className="flex items-center gap-1 w-fit">
+                        {getStatusIcon(interview.status)}
+                        {interview.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Video className="h-4 w-4 mr-1" />
+                          Join
+                        </Button>
+                        <Link href={`/jobs/${interview.jobId}`} passHref>
+                          <Button variant="ghost" size="sm">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Completed Interviews */}
+      {completedInterviews.length > 0 && (
+        <Card className="mb-8 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
+              Completed Interviews
+            </CardTitle>
+            <CardDescription>View your interview history and analysis</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company & Position</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Analysis</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {completedInterviews.map((interview) => {
+                  const analysis = interview.analysisId ? getMockInterviewAnalysis(interview.analysisId) : undefined;
+                  return (
+                    <TableRow key={interview.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{interview.jobTitle}</div>
+                          <div className="text-sm text-muted-foreground flex items-center">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            {interview.companyName}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                          {format(new Date(interview.date), 'MMM d, yyyy')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                          <CheckCircle className="h-3 w-3" />
+                          Completed
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {analysis ? (
+                          <div>
+                            <Badge className="bg-green-100 text-green-800">
+                              Score: {analysis.overallScore}/100
+                            </Badge>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {analysis.recommendation}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">No analysis</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {analysis ? (
+                          <Link href={`/interviews/analysis/${interview.analysisId}`} passHref>
+                            <Button variant="outline" size="sm">
+                              View Analysis
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button variant="ghost" size="sm" disabled>
+                            No Analysis
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cancelled Interviews */}
+      {cancelledInterviews.length > 0 && (
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <XCircle className="mr-2 h-5 w-5 text-destructive" />
+              Cancelled Interviews
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company & Position</TableHead>
+                  <TableHead>Original Date</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cancelledInterviews.map((interview) => (
+                  <TableRow key={interview.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{interview.jobTitle}</div>
+                        <div className="text-sm text-muted-foreground">{interview.companyName}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(interview.date), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                        <XCircle className="h-3 w-3" />
+                        Cancelled
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {interviews.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">No interviews scheduled yet.</p>
+            <Link href="/jobs" passHref>
+              <Button className="mt-4">Browse Jobs</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+    </Container>
+  );
+}

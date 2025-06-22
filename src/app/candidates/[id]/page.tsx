@@ -1,81 +1,57 @@
+'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download } from 'lucide-react';
+import { Briefcase, CalendarDays, GraduationCap, Linkedin, Link as LinkIcon, Mail, MapPin, Phone, Star, Video, FileText, Edit3, Download, Clock, History } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
-
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-// Mock candidate data - in a real app, this would come from a database or API
-const MOCK_CANDIDATE = {
-  id: '1',
-  fullName: 'Alice Wonderland',
-  avatarUrl: 'https://placehold.co/150x150.png?a=1',
-  currentTitle: 'Senior Software Engineer',
-  location: 'Remote (Wonderland, CA)',
-  email: 'alice.w@example.com',
-  phone: '(555) 123-4567',
-  linkedinProfile: 'https://linkedin.com/in/alicewonderland',
-  portfolioUrl: 'https://alicew.dev',
-  experienceSummary: "Highly skilled and innovative Senior Software Engineer with 8+ years of experience in developing and implementing cutting-edge web applications. Proven ability to lead projects, mentor junior developers, and collaborate effectively in agile environments. Passionate about creating intuitive user experiences and leveraging new technologies to solve complex problems. Seeking a challenging remote role where I can contribute to meaningful projects and continue to grow professionally.",
-  skills: ['React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 'AWS', 'Docker', 'Kubernetes', 'GraphQL', 'System Design', 'Agile Methodologies'],
-  experience: [
-    {
-      title: 'Senior Software Engineer',
-      company: 'Tech Solutions Inc.',
-      period: 'Jan 2020 - Present',
-      description: 'Led a team of 5 engineers in developing a new SaaS platform using Next.js and AWS. Implemented CI/CD pipelines, reducing deployment time by 40%. Mentored junior developers and conducted code reviews.',
-      logo: 'https://placehold.co/50x50.png?c=tech'
-    },
-    {
-      title: 'Software Engineer',
-      company: 'Innovate LLC',
-      period: 'Jun 2016 - Dec 2019',
-      description: 'Developed and maintained features for a large-scale e-commerce application. Contributed to migrating legacy code to a modern React-based architecture.',
-      logo: 'https://placehold.co/50x50.png?c=innovate'
-    },
-  ],
-  education: [
-    {
-      degree: 'M.S. in Computer Science',
-      institution: 'Wonderland University',
-      period: '2014 - 2016',
-    },
-    {
-      degree: 'B.S. in Software Engineering',
-      institution: 'Tech State College',
-      period: '2010 - 2014',
-    },
-  ],
-  certifications: [
-    { name: 'AWS Certified Solutions Architect – Associate', issuer: 'Amazon Web Services', date: '2021' },
-    { name: 'Certified Kubernetes Administrator (CKA)', issuer: 'Cloud Native Computing Foundation', date: '2022' },
-  ],
-  videoIntroUrl: 'https://placehold.co/320x180.mp4', // Placeholder for video,
-  resumeUrl: '#', // Placeholder for resume download
-};
+import { InterviewTimeline, type InterviewTimelineItem } from '@/components/interviews/InterviewTimeline';
+import { getMockCandidate, getMockInterviewsForCandidate, type MockCandidate, type MockInterview } from '@/services/mockDataService';
+import { Loader2 } from 'lucide-react';
 
-async function getCandidateDetails(id: string) {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 50));
-  if (id === MOCK_CANDIDATE.id) {
-    return MOCK_CANDIDATE;
+export default function CandidateProfilePage({ params }: { params: { id: string } }) {
+  const [candidate, setCandidate] = useState<MockCandidate | null>(null);
+  const [interviews, setInterviews] = useState<MockInterview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCandidateData = async () => {
+      setIsLoading(true);
+      
+      // Get the candidate data
+      const candidateData = getMockCandidate(params.id);
+      if (candidateData) {
+        setCandidate(candidateData);
+        
+        // Get the candidate's interview history
+        const candidateInterviews = getMockInterviewsForCandidate(params.id);
+        setInterviews(candidateInterviews);
+      }
+      
+      setIsLoading(false);
+    };
+
+    loadCandidateData();
+  }, [params.id]);
+
+  if (isLoading) {
+    return (
+      <Container className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </Container>
+    );
   }
-  return null;
-}
-
-export default async function CandidateProfilePage({ params }: { params: { id: string } }) {
-  const { id } = await params;
-  const candidate = await getCandidateDetails(id);
 
   if (!candidate) {
     return (
       <Container className="text-center py-20">
-        <h1 className="text-3xl font-bold text-destructive">Candidate Not Found</h1>
-        <p className="text-muted-foreground mt-2">The candidate profile you are looking for does not exist.</p>
+        <h1 className="text-3xl font-bold">Candidate Not Found</h1>
+        <p className="text-muted-foreground mt-2">The candidate you are looking for does not exist.</p>
         <Link href="/candidates" passHref>
           <Button variant="outline" className="mt-6">
             Back to Candidates
@@ -85,6 +61,18 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
     );
   }
 
+  // Transform interviews to timeline items
+  const timelineItems: InterviewTimelineItem[] = interviews.map(interview => ({
+    id: interview.id,
+    date: interview.date,
+    jobTitle: interview.jobTitle,
+    companyName: interview.companyName,
+    status: interview.status,
+    analysisId: interview.analysisId,
+    type: interview.type,
+    duration: interview.duration
+  }));
+
   return (
     <Container className="max-w-5xl mx-auto">
       <Card className="shadow-xl overflow-hidden">
@@ -92,7 +80,7 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
         <div className="bg-gradient-to-r from-primary/80 to-accent/80 p-8 relative">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-background shadow-lg">
-              <AvatarImage src={candidate.avatarUrl || undefined} alt={candidate.fullName} data-ai-hint="profile person" />
+              <AvatarImage src={candidate.profilePictureUrl || undefined} alt={candidate.fullName} />
               <AvatarFallback className="text-5xl bg-background text-primary">
                 {candidate.fullName.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
@@ -122,131 +110,178 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
             </div>
           </div>
           <div className="absolute top-4 right-4">
-             <Button variant="secondary" size="sm"><Edit3 className="h-4 w-4 mr-2" /> Edit Profile</Button>
+            <Button variant="secondary" size="sm"><Edit3 className="h-4 w-4 mr-2" /> Edit Profile</Button>
           </div>
         </div>
 
         <CardContent className="p-6 md:p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Left Sidebar / Contact Info */}
-            <div className="md:col-span-1 space-y-6">
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Contact Information</CardTitle></CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex items-center"><Mail className="h-4 w-4 mr-2 text-primary" /> {candidate.email}</div>
-                  {candidate.phone && <div className="flex items-center"><Phone className="h-4 w-4 mr-2 text-primary" /> {candidate.phone}</div>}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-lg">AI Generated Skills</CardTitle></CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                  {candidate.skills.map(skill => <Badge key={skill} variant="default">{skill}</Badge>)}
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Resume</CardTitle></CardHeader>
-                <CardContent>
-                  <Button asChild variant="outline" className="w-full">
-                    <a href={candidate.resumeUrl} download={`${candidate.fullName}_Resume.pdf`}>
-                      <Download className="h-4 w-4 mr-2" /> Download Resume
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-
+          {/* Contact Information */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm">{candidate.email}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm">{candidate.phone}</span>
+              </div>
             </div>
+          </div>
 
-            {/* Main Content Area */}
-            <div className="md:col-span-2 space-y-8">
-              <Card>
-                <CardHeader><CardTitle className="text-xl">Summary</CardTitle></CardHeader>
-                <CardContent><p className="text-foreground/80 leading-relaxed">{candidate.experienceSummary}</p></CardContent>
-              </Card>
+          <Separator />
 
-              <Card>
-                <CardHeader><CardTitle className="text-xl">Video Introduction (10s)</CardTitle></CardHeader>
-                <CardContent>
-                  {candidate.videoIntroUrl ? (
-                     <div className="aspect-video bg-muted rounded-md overflow-hidden">
-                        <video controls src={candidate.videoIntroUrl} className="w-full h-full object-cover" poster="https://placehold.co/320x180.png?text=Video+Preview" data-ai-hint="video placeholder">
-                            Your browser does not support the video tag.
-                        </video>
-                     </div>
-                  ) : (
-                    <p className="text-muted-foreground">No video introduction uploaded.</p>
-                  )}
-                </CardContent>
-              </Card>
+          {/* Summary */}
+          <div className="my-8">
+            <h2 className="text-xl font-semibold mb-4">Professional Summary</h2>
+            <p className="text-muted-foreground leading-relaxed">{candidate.summary}</p>
+          </div>
 
-              <Card>
-                <CardHeader><CardTitle className="text-xl">Education</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead className="w-[200px]">Degree</TableHead>
- <TableHead>Institution</TableHead>
- <TableHead className="w-[150px]">Period</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {candidate.education.map((edu, index) => (
- <TableRow key={index}>
- <TableCell className="font-medium">{edu.degree}</TableCell>
- <TableCell>{edu.institution}</TableCell>
- <TableCell>{edu.period}</TableCell>
- </TableRow>
- ))}
- </TableBody>
- </Table>
-                </CardContent>
-              </Card>
+          <Separator />
 
+          {/* Interview Timeline */}
+          <div className="my-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Interview History
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {interviews.length} interview{interviews.length !== 1 ? 's' : ''} on record
+                </p>
+              </div>
+              <Badge variant="outline" className="gap-1">
+                <Clock className="h-3 w-3" />
+                {interviews.filter(i => i.status === 'Scheduled').length} upcoming
+              </Badge>
+            </div>
+            <InterviewTimeline interviews={timelineItems} />
+          </div>
+
+          <Separator />
+
+          {/* Skills */}
+          <div className="my-8">
+            <h2 className="text-xl font-semibold mb-4">Skills & Expertise</h2>
+            <div className="flex flex-wrap gap-2">
+              {candidate.skills.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="text-sm">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Experience */}
+          <div className="my-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Work Experience
+            </h2>
+            <div className="space-y-4">
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold">{candidate.currentTitle}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {candidate.previousCompanies[0] || 'Current Company'} • {candidate.experience} years total experience
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm font-medium mb-2">Previous Companies:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {candidate.previousCompanies.map((company, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {company}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Education & Certifications */}
+          <div className="my-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Education & Certifications
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <p className="font-medium">{candidate.education}</p>
+              </div>
               {candidate.certifications.length > 0 && (
-                <Card>
-                  <CardHeader><CardTitle className="text-xl">Certifications</CardTitle></CardHeader>
-                  <CardContent>
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead className="w-[200px]">Name</TableHead>
- <TableHead>Issuer</TableHead>
- <TableHead className="w-[100px]">Date</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {candidate.certifications.map((cert, index) => (
- <TableRow key={index}>
- <TableCell className="font-medium">{cert.name}</TableCell>
- <TableCell>{cert.issuer}</TableCell>
- <TableCell>{cert.date}</TableCell>
- </TableRow>
- ))}
- </TableBody>
- </Table>
-                  </CardContent>
-                </Card>
+                <div>
+                  <p className="text-sm font-medium mb-2">Certifications:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {candidate.certifications.map((cert, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {cert}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
+            </div>
+          </div>
 
-              <Card>
-                <CardHeader><CardTitle className="text-xl">Experience</CardTitle></CardHeader>
-                <CardContent>
-                  {candidate.experience.map((exp, index) => (
-                    <div key={index}>
-                      {/* Table for Experience */}
-                    </div>
+          <Separator />
+
+          {/* Additional Information */}
+          <div className="my-8">
+            <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Expected Salary</p>
+                <p className="font-medium">{candidate.expectedSalary}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Availability</p>
+                <p className="font-medium">{candidate.availability}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Languages</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {candidate.languages.map((lang, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {lang}
+                    </Badge>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">AI Match Score</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 bg-secondary rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${(candidate.aiMatchScore || 0) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium">
+                    {Math.round((candidate.aiMatchScore || 0) * 100)}%
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="p-6 md:p-8 border-t flex justify-end">
-            <Button variant="default" size="lg">
-                <Star className="h-4 w-4 mr-2" /> Consider for Job
-            </Button>
+        
+        <CardFooter className="p-6 md:p-8 border-t flex justify-end gap-3">
+          <Button variant="outline" size="lg">
+            <Download className="h-4 w-4 mr-2" /> Download Resume
+          </Button>
+          <Button variant="default" size="lg">
+            <Star className="h-4 w-4 mr-2" /> Consider for Job
+          </Button>
         </CardFooter>
       </Card>
     </Container>

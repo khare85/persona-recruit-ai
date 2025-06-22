@@ -117,10 +117,27 @@ export function ScheduleInterviewDialog({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [duration, setDuration] = useState<string>('60');
+  const [selectedTimezone, setSelectedTimezone] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
 
   const handleSchedule = async () => {
-    if (!selectedDate || !selectedTime || !selectedAgent) {
+    if (!selectedDate || !selectedTime || !selectedAgent || !selectedTimezone) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill in all required fields, including timezone',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Combine date and time with timezone
+    const [hours, minutes] = selectedTime.replace(/( AM| PM)/, '').split(':').map(Number);
+    const adjustedHours = selectedTime.includes('PM') && hours !== 12 ? hours + 12 : hours;
+    const finalHours = selectedTime.includes('AM') && hours === 12 ? 0 : adjustedHours;
+    const combinedDateTime = new Date(selectedDate);
+    combinedDateTime.setHours(finalHours, minutes, 0, 0);
+
+    if (isNaN(combinedDateTime.getTime())) {
       toast({
         title: 'Missing Information',
         description: 'Please fill in all required fields',
@@ -142,9 +159,10 @@ export function ScheduleInterviewDialog({
         jobTitle,
         type: interviewType,
         agentId: selectedAgent,
-        agentName: selectedAgentData?.name || 'Unknown Agent',
-        date: selectedDate,
+ agentName: selectedAgentData?.name || 'Unknown Agent',
+        date: combinedDateTime.toISOString(), // Send ISO string with timezone
         time: selectedTime,
+        timezone: selectedTimezone, // Include the selected timezone
         duration: parseInt(duration),
         notes,
       };
@@ -166,6 +184,7 @@ export function ScheduleInterviewDialog({
       setSelectedAgent('');
       setSelectedDate(undefined);
       setSelectedTime('');
+      setSelectedTimezone(''); // Reset timezone as well
       setDuration('60');
       setNotes('');
       
@@ -310,6 +329,28 @@ export function ScheduleInterviewDialog({
                 />
               </PopoverContent>
             </Popover>
+          </div>
+
+          {/* Timezone Selection */}
+          <div className="space-y-3">
+            <Label>Timezone</Label>
+            <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Add more timezones as needed */}
+                <SelectItem value="UTC">UTC</SelectItem>
+                <SelectItem value="America/New_York">America/New_York (EST/EDT)</SelectItem>
+                <SelectItem value="Europe/London">Europe/London (GMT/BST)</SelectItem>
+                <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
+                <SelectItem value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</SelectItem>
+                {/* You might want to use a library to get a comprehensive list of timezones */}
+              </SelectContent>
+            </Select>
+            {selectedTimezone && (
+              <p className="text-sm text-muted-foreground">Selected Timezone: {selectedTimezone}</p>
+            )}
           </div>
 
           {/* Time Selection */}

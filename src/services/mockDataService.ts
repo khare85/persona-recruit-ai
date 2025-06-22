@@ -34,6 +34,11 @@ export interface MockInterview {
   date: string; // ISO 8601 string
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Pending';
   analysisId?: string; // Link to interview analysis if completed
+  type?: 'ai' | 'realtime'; // Interview type
+  agentId?: string; // Agent/Interviewer ID
+  agentName?: string; // Agent/Interviewer Name
+  duration?: number; // Duration in minutes
+  notes?: string; // Additional notes
 }
 
 export interface MockDocument {
@@ -715,3 +720,56 @@ export const getMockDashboardMetrics = () => ({
     activeJobs: 342
   }
 });
+
+// Interview scheduling function
+export const scheduleInterview = (interviewData: {
+  candidateId: string;
+  candidateName: string;
+  jobId: string;
+  jobTitle: string;
+  type: 'ai' | 'realtime';
+  agentId: string;
+  agentName: string;
+  date: Date;
+  time: string;
+  duration: number;
+  notes?: string;
+}): MockInterview => {
+  const job = getMockJob(interviewData.jobId);
+  const newInterview: MockInterview = {
+    id: `int${Date.now()}`,
+    candidateId: interviewData.candidateId,
+    jobId: interviewData.jobId,
+    jobTitle: interviewData.jobTitle,
+    companyName: job?.companyName || 'Unknown Company',
+    date: (() => {
+      const datePart = interviewData.date.toISOString().split('T')[0];
+      const timePart = interviewData.time;
+      
+      // Parse time (e.g., "09:30 AM" or "02:00 PM")
+      const [time, period] = timePart.split(' ');
+      let [hours, minutes] = time.split(':');
+      let hour = parseInt(hours);
+      
+      if (period === 'PM' && hour !== 12) {
+        hour += 12;
+      } else if (period === 'AM' && hour === 12) {
+        hour = 0;
+      }
+      
+      // Create ISO string
+      return new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minutes}:00Z`).toISOString();
+    })(),
+    status: 'Scheduled',
+    type: interviewData.type,
+    agentId: interviewData.agentId,
+    agentName: interviewData.agentName,
+    duration: interviewData.duration,
+    notes: interviewData.notes
+  };
+  
+  // In a real app, this would save to database
+  mockInterviews.push(newInterview);
+  
+  return newInterview;
+};

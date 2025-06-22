@@ -234,13 +234,12 @@ export default async function CandidateProfilePage({ params }: { params: { id: s
                 <CardHeader><CardTitle className="text-xl">Experience</CardTitle></CardHeader>
                 <CardContent>
                   {candidate.experience.map((exp, index) => (
- <div key={index}>
-                        {/* Table for Experience */}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
+                    <div key={index}>
+                      {/* Table for Experience */}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </CardContent>

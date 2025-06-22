@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Since we're using Turbopack, configure it properly
+  turbopack: {
+    resolveAlias: {
+      '@': './src',
+    },
+  },
 };
 
 export default nextConfig;

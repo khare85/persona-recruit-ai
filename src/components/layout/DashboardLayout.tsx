@@ -47,8 +47,8 @@ const companyNavItems = [
   { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
-  { href: '/company/ai-talent-search', label: 'AI Talent Search', icon: SearchCode },
-  { href: '/company/advanced-match', label: 'Advanced Match', icon: SearchCheck }, 
+  { href: '/company/talent-search', label: 'AI Talent Search', icon: SearchCode },
+  { href: '/company/advanced-matching', label: 'Advanced Match', icon: SearchCheck }, 
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
 ];

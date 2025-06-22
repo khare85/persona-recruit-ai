@@ -91,7 +91,7 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
 
           applicantsWithScores.push({
             ...candidate,
-            matchScore: matchResult.matchScore,
+            matchScore: Math.round(matchResult.matchScore * 100),
             matchJustification: matchResult.justification
           });
         } catch (error) {
@@ -99,7 +99,7 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
           // Fallback to pre-calculated score or default
           applicantsWithScores.push({
             ...candidate,
-            matchScore: candidate.aiMatchScore || 0.75,
+            matchScore: candidate.aiMatchScore || 75,
             matchJustification: "AI matching temporarily unavailable - showing estimated score based on skills and experience."
           });
         }
@@ -229,24 +229,24 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Progress 
-                            value={applicant.matchScore * 100} 
+                            value={applicant.matchScore} 
                             className="flex-1 h-2"
                           />
                           <span className="text-sm font-medium">
-                            {Math.round(applicant.matchScore * 100)}%
+                            {applicant.matchScore}%
                           </span>
                         </div>
                         <div className="flex items-center">
-                          {applicant.matchScore >= 0.9 && (
+                          {applicant.matchScore >= 90 && (
                             <Badge variant="default" className="text-xs">Excellent Match</Badge>
                           )}
-                          {applicant.matchScore >= 0.8 && applicant.matchScore < 0.9 && (
+                          {applicant.matchScore >= 80 && applicant.matchScore < 90 && (
                             <Badge variant="secondary" className="text-xs">Good Match</Badge>
                           )}
-                          {applicant.matchScore >= 0.7 && applicant.matchScore < 0.8 && (
+                          {applicant.matchScore >= 70 && applicant.matchScore < 80 && (
                             <Badge variant="outline" className="text-xs">Fair Match</Badge>
                           )}
-                          {applicant.matchScore < 0.7 && (
+                          {applicant.matchScore < 70 && (
                             <Badge variant="destructive" className="text-xs">Poor Match</Badge>
                           )}
                         </div>
@@ -337,9 +337,9 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
                       <h3 className="font-semibold text-lg">{applicants[0].fullName}</h3>
                       <p className="text-muted-foreground">{applicants[0].currentTitle}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Progress value={applicants[0].matchScore * 100} className="w-32 h-2" />
+                        <Progress value={applicants[0].matchScore} className="w-32 h-2" />
                         <span className="text-sm font-medium">
-                          {Math.round(applicants[0].matchScore * 100)}% match
+                          {applicants[0].matchScore}% match
                         </span>
                       </div>
                     </div>

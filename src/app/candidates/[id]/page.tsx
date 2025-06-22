@@ -183,11 +183,11 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                     <div className="flex-1 bg-secondary rounded-full h-1.5 w-16 overflow-hidden">
                       <div 
                         className="h-full bg-primary transition-all"
-                        style={{ width: `${(candidate.aiMatchScore || 0) * 100}%` }}
+                        style={{ width: `${candidate.aiMatchScore || 0}%` }}
                       />
                     </div>
                     <span className="text-sm font-medium">
-                      {Math.round((candidate.aiMatchScore || 0) * 100)}%
+                      {candidate.aiMatchScore || 0}%
                     </span>
                   </div>
                 </div>
@@ -439,7 +439,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                     />
                     <path
                       className="text-primary stroke-current"
-                      strokeDasharray={`${(candidate.aiMatchScore || 0) * 100}, 100`}
+                      strokeDasharray={`${candidate.aiMatchScore || 0}, 100`}
                       strokeWidth="2"
                       strokeLinecap="round"
                       fill="none"
@@ -447,7 +447,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                     />
                   </svg>
                   <span className="absolute text-lg font-bold">
-                    {Math.round((candidate.aiMatchScore || 0) * 100)}%
+                    {candidate.aiMatchScore || 0}%
                   </span>
                 </div>
                 <div>

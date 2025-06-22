@@ -17,15 +17,44 @@ import { generateTextEmbedding } from '@/ai/flows/generate-text-embedding-flow';
 import { searchCandidatesByEmbedding, CandidateWithEmbeddingFirestore } from '@/services/firestoreService';
 import { candidateJobMatcher, CandidateJobMatcherInput, CandidateJobMatcherOutput } from '@/ai/flows/candidate-job-matcher';
 
-// Mock Job Data (for when jobId is provided - replace with actual Firestore lookup in a real app)
-const MOCK_JOB_DETAILS_FOR_FLOW: Record<string, { description: string; companyInfo: string; title: string }> = {
-  'job1': {
-    title: 'Senior Software Engineer (Example)',
-    description: `We are seeking a highly skilled Senior Software Engineer with expertise in cloud technologies, distributed systems, and modern JavaScript frameworks. The ideal candidate will have a strong background in designing scalable solutions and a passion for innovation. Responsibilities include leading development projects, mentoring junior engineers, and collaborating with cross-functional teams to deliver high-quality software products. Required skills: Node.js, React, AWS, Kubernetes, Microservices.`,
-    companyInfo: `Innovative tech company focused on SaaS solutions. Values collaboration, continuous learning, and impact. Offers competitive salary and benefits. Known for a fast-paced environment and cutting-edge projects.`,
-  },
-  // Add more mock jobs if needed for testing
-};
+// Function to fetch job details from API or mock data
+async function getJobDetails(jobId?: string): Promise<{ description: string; companyInfo: string; title: string } | null> {
+  if (!jobId) return null;
+  
+  try {
+    // First try to fetch from API (in production)
+    if (typeof window !== 'undefined') {
+      const response = await fetch(`/api/jobs/${jobId}`);
+      if (response.ok) {
+        const result = await response.json();
+        return {
+          description: result.data.description,
+          companyInfo: result.data.company + (result.data.benefits ? ` Benefits: ${result.data.benefits.join(', ')}` : ''),
+          title: result.data.title
+        };
+      }
+    }
+    
+    // Fallback to mock data for development
+    const MOCK_JOB_DETAILS: Record<string, { description: string; companyInfo: string; title: string }> = {
+      'job1': {
+        title: 'Senior Software Engineer',
+        description: `We are seeking a highly skilled Senior Software Engineer with expertise in cloud technologies, distributed systems, and modern JavaScript frameworks. The ideal candidate will have a strong background in designing scalable solutions and a passion for innovation. Responsibilities include leading development projects, mentoring junior engineers, and collaborating with cross-functional teams to deliver high-quality software products. Required skills: Node.js, React, AWS, Kubernetes, Microservices.`,
+        companyInfo: `Innovative tech company focused on SaaS solutions. Values collaboration, continuous learning, and impact. Offers competitive salary and benefits. Known for a fast-paced environment and cutting-edge projects.`,
+      },
+      'job2': {
+        title: 'Senior Frontend Developer',
+        description: `Looking for an experienced Frontend Developer to join our team building cutting-edge web applications. You'll work with React, TypeScript, and modern CSS frameworks to create exceptional user experiences. Responsibilities include developing responsive UIs, optimizing performance, and collaborating with designers and backend engineers.`,
+        companyInfo: `Fast-growing startup focused on user experience and design excellence. Remote-friendly culture with emphasis on work-life balance.`,
+      }
+    };
+    
+    return MOCK_JOB_DETAILS[jobId] || null;
+  } catch (error) {
+    console.error('Error fetching job details:', error);
+    return null;
+  }
+}
 
 
 const AdvancedCandidateJobMatchingInputSchema = z.object({
@@ -75,13 +104,23 @@ const advancedCandidateJobMatchingFlow = ai.defineFlow(
     let companyInfoToUse: string;
     let jobTitleUsed: string | undefined;
 
-    if (jobId && MOCK_JOB_DETAILS_FOR_FLOW[jobId]) {
-        // In a real app, fetch job details from Firestore here using jobId
-        const mockJob = MOCK_JOB_DETAILS_FOR_FLOW[jobId];
-        jobDescToUse = mockJob.description;
-        companyInfoToUse = mockJob.companyInfo;
-        jobTitleUsed = mockJob.title;
-        console.log(`[advancedCandidateJobMatchingFlow] - Using mock job details for ID: ${jobId}`);
+    // Try to fetch job details from API or mock data if jobId is provided
+    if (jobId) {
+        const jobDetails = await getJobDetails(jobId);
+        if (jobDetails) {
+            jobDescToUse = jobDetails.description;
+            companyInfoToUse = jobDetails.companyInfo;
+            jobTitleUsed = jobDetails.title;
+            console.log(`[advancedCandidateJobMatchingFlow] - Using job details for ID: ${jobId}`);
+        } else if (inputJobDesc && inputCompanyInfo) {
+            // Fallback to provided data if job not found
+            jobDescToUse = inputJobDesc;
+            companyInfoToUse = inputCompanyInfo;
+            jobTitleUsed = "Job (Details Provided)";
+            console.log(`[advancedCandidateJobMatchingFlow] - Job ID ${jobId} not found, using provided job description and company info.`);
+        } else {
+            throw new Error(`Job with ID ${jobId} not found and no fallback job description/company information provided.`);
+        }
     } else if (inputJobDesc && inputCompanyInfo) {
         jobDescToUse = inputJobDesc;
         companyInfoToUse = inputCompanyInfo;

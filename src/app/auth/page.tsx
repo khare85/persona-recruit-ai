@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info } from 'lucide-react';
+import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info, Loader2, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -16,16 +16,108 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export default function AuthenticationPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/jobs');
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Login failed');
+      }
+
+      setSuccess('Login successful! Redirecting...');
+      
+      // Store user data in localStorage for client-side access
+      localStorage.setItem('user', JSON.stringify(result.data.user));
+      
+      // Redirect based on user role
+      const user = result.data.user;
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (user.role === 'recruiter') {
+        router.push('/company/dashboard');
+      } else {
+        router.push('/candidates/dashboard');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/jobs');
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const fullName = formData.get('fullName') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const confirmPassword = formData.get('confirmPassword') as string;
+    const role = formData.get('role') as string;
+
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          fullName, 
+          email, 
+          password, 
+          confirmPassword, 
+          role: role || 'candidate' 
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Signup failed');
+      }
+
+      setSuccess('Account created successfully! Redirecting...');
+      
+      // Store user data in localStorage for client-side access
+      localStorage.setItem('user', JSON.stringify(result.data.user));
+      
+      // Redirect based on user role
+      const user = result.data.user;
+      if (user.role === 'recruiter') {
+        router.push('/company/dashboard');
+      } else {
+        router.push('/candidates/dashboard');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Signup failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePersonaSelection = (personaPath: string) => {
@@ -78,10 +170,28 @@ export default function AuthenticationPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 px-0">
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                      {success && (
+                        <Alert className="border-green-200 bg-green-50 text-green-800">
+                          <AlertDescription>{success}</AlertDescription>
+                        </Alert>
+                      )}
                       <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="login-email">Email</Label>
-                          <Input id="login-email" type="email" placeholder="m@example.com" required />
+                          <Input 
+                            id="login-email" 
+                            name="email"
+                            type="email" 
+                            placeholder="admin@techcorp.com" 
+                            required 
+                            disabled={isLoading}
+                          />
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
@@ -93,10 +203,22 @@ export default function AuthenticationPage() {
                               Forgot password?
                             </Link>
                           </div>
-                          <Input id="login-password" type="password" required />
+                          <Input 
+                            id="login-password" 
+                            name="password"
+                            type="password" 
+                            placeholder="admin123"
+                            required 
+                            disabled={isLoading}
+                          />
                         </div>
-                        <Button type="submit" className="w-full" size="lg">
-                          <LogIn className="mr-2 h-5 w-5" /> Login
+                        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                          {isLoading ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          ) : (
+                            <LogIn className="mr-2 h-5 w-5" />
+                          )}
+                          {isLoading ? 'Signing in...' : 'Login'}
                         </Button>
                       </form>
                       <p className="text-center text-sm text-muted-foreground">
@@ -117,25 +239,70 @@ export default function AuthenticationPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 px-0">
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                      {success && (
+                        <Alert className="border-green-200 bg-green-50 text-green-800">
+                          <AlertDescription>{success}</AlertDescription>
+                        </Alert>
+                      )}
                       <form onSubmit={handleSignUp} className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="signup-name">Full Name</Label>
-                          <Input id="signup-name" placeholder="Your Name" required />
+                          <Input 
+                            id="signup-name" 
+                            name="fullName"
+                            placeholder="Your Name" 
+                            required 
+                            disabled={isLoading}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-email">Email</Label>
-                          <Input id="signup-email" type="email" placeholder="you@example.com" required />
+                          <Input 
+                            id="signup-email" 
+                            name="email"
+                            type="email" 
+                            placeholder="you@example.com" 
+                            required 
+                            disabled={isLoading}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-password">Password</Label>
-                          <Input id="signup-password" type="password" required />
+                          <Input 
+                            id="signup-password" 
+                            name="password"
+                            type="password" 
+                            placeholder="At least 6 characters"
+                            minLength={6}
+                            required 
+                            disabled={isLoading}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                          <Input id="signup-confirm-password" type="password" required />
+                          <Input 
+                            id="signup-confirm-password" 
+                            name="confirmPassword"
+                            type="password" 
+                            placeholder="Confirm your password"
+                            required 
+                            disabled={isLoading}
+                          />
                         </div>
-                        <Button type="submit" className="w-full" size="lg">
-                          <UserPlus className="mr-2 h-5 w-5" /> Sign Up
+                        <input type="hidden" name="role" value="candidate" />
+                        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                          {isLoading ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          ) : (
+                            <UserPlus className="mr-2 h-5 w-5" />
+                          )}
+                          {isLoading ? 'Creating account...' : 'Sign Up'}
                         </Button>
                       </form>
                       <p className="text-center text-sm text-muted-foreground">

@@ -112,11 +112,7 @@ export class ElevenLabsConversationService {
 
       // Connect to ElevenLabs WebSocket
       const wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation/${this.session.sessionId}/ws`;
-      this.ws = new WebSocket(wsUrl, [], {
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`
-        }
-      } as any);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.updateState({ isConnected: true, isListening: false, isSpeaking: false });
@@ -442,3 +438,77 @@ export const getDefaultElevenLabsConfig = (): ElevenLabsConfig => ({
   voiceId: process.env.ELEVENLABS_VOICE_ID || 'default-voice',
   model: 'eleven_turbo_v2'
 });
+
+/**
+ * Demo/fallback conversation service for when ElevenLabs is not configured
+ */
+export class DemoConversationService {
+  private messageHandlers: ((message: ConversationMessage) => void)[] = [];
+  private stateHandlers: ((state: ConversationState) => void)[] = [];
+  private isActive = false;
+
+  async initializeSession(context: any): Promise<ConversationSession> {
+    return {
+      sessionId: `demo_${Date.now()}`,
+      agentId: 'demo-agent',
+      isActive: true,
+      startTime: new Date()
+    };
+  }
+
+  async startConversation(): Promise<void> {
+    this.isActive = true;
+    this.updateState({ isConnected: true, isListening: false, isSpeaking: false });
+    
+    // Simulate initial AI greeting
+    setTimeout(() => {
+      const greeting: ConversationMessage = {
+        id: `ai_${Date.now()}`,
+        speaker: 'ai',
+        text: "Hello! I'm your AI interviewer. This is a demo mode since ElevenLabs is not fully configured. I'll guide you through some questions about your experience and qualifications. Shall we begin?",
+        timestamp: new Date(),
+        confidence: 1.0
+      };
+      
+      this.notifyMessageHandlers(greeting);
+      this.updateState({ isConnected: true, isListening: true, isSpeaking: false });
+    }, 1000);
+  }
+
+  async endConversation(): Promise<void> {
+    this.isActive = false;
+    this.updateState({ isConnected: false, isListening: false, isSpeaking: false });
+  }
+
+  onMessage(handler: (message: ConversationMessage) => void): void {
+    this.messageHandlers.push(handler);
+  }
+
+  onStateChange(handler: (state: ConversationState) => void): void {
+    this.stateHandlers.push(handler);
+  }
+
+  private notifyMessageHandlers(message: ConversationMessage): void {
+    this.messageHandlers.forEach(handler => handler(message));
+  }
+
+  private updateState(newState: Partial<ConversationState>): void {
+    const currentState: ConversationState = {
+      isConnected: false,
+      isListening: false,
+      isSpeaking: false,
+      ...newState
+    };
+    
+    this.stateHandlers.forEach(handler => handler(currentState));
+  }
+
+  getCurrentSession(): ConversationSession | null {
+    return this.isActive ? {
+      sessionId: 'demo-session',
+      agentId: 'demo-agent',
+      isActive: true,
+      startTime: new Date()
+    } : null;
+  }
+}

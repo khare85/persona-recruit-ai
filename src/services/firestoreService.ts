@@ -23,6 +23,7 @@ if (!admin.apps.length) {
     console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...');
     admin.initializeApp({
        credential: admin.credential.applicationDefault(),
+       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
     });
     app = admin.app(); // Get the default app instance
     console.log('[FirestoreService] Firebase Admin SDK initialized successfully using Application Default Credentials.');

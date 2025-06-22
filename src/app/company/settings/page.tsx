@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Building, Users, CreditCard, Bell, Shield, Globe, Mail, Key, AlertCircle, Check } from 'lucide-react';
+import { Settings, Building, Users, CreditCard, Bell, Shield, Globe, Mail, Key, AlertCircle, Check, MessageSquare, UserPlus, MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useState } from 'react';
 
@@ -36,6 +36,7 @@ export default function CompanySettingsPage() {
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
+            <TabsTrigger value="interviewers">Interviewers</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
@@ -202,6 +203,203 @@ export default function CompanySettingsPage() {
               <CardFooter>
                 <Button variant="outline">Invite Team Member</Button>
               </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="interviewers" className="space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-primary" />
+                  Interviewer Management
+                </CardTitle>
+                <CardDescription>
+                  Manage interviewers who can conduct face-to-face interviews
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[
+                    { 
+                      name: 'Alex Rodriguez', 
+                      email: 'alex.rodriguez@techcorp.com', 
+                      department: 'Engineering',
+                      specializations: ['Frontend Development', 'System Design'],
+                      totalInterviews: 156,
+                      rating: 4.8,
+                      status: 'active'
+                    },
+                    { 
+                      name: 'Maria Garcia', 
+                      email: 'maria.garcia@techcorp.com', 
+                      department: 'Product',
+                      specializations: ['Product Strategy', 'User Research'],
+                      totalInterviews: 89,
+                      rating: 4.6,
+                      status: 'active'
+                    },
+                    { 
+                      name: 'David Chen', 
+                      email: 'david.chen@techcorp.com', 
+                      department: 'Engineering',
+                      specializations: ['Backend Development', 'DevOps'],
+                      totalInterviews: 203,
+                      rating: 4.9,
+                      status: 'active'
+                    },
+                  ].map((interviewer) => (
+                    <div key={interviewer.email} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-semibold text-primary">
+                              {interviewer.name.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{interviewer.name}</h4>
+                            <p className="text-sm text-muted-foreground">{interviewer.email}</p>
+                            <div className="flex items-center space-x-4 mt-1">
+                              <span className="text-xs text-muted-foreground">
+                                {interviewer.department} • {interviewer.totalInterviews} interviews
+                              </span>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-xs text-muted-foreground">Rating:</span>
+                                <span className="text-xs font-semibold text-yellow-600">{interviewer.rating}/5</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 ml-13">
+                          <div className="flex flex-wrap gap-1">
+                            {interviewer.specializations.map((spec, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {spec}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={interviewer.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          {interviewer.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="ghost">
+                          <MoreHorizontal className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite Interviewer
+                </Button>
+                <Button variant="outline">
+                  <Users className="mr-2 h-4 w-4" />
+                  Manage Permissions
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Interview Assignment Settings</CardTitle>
+                <CardDescription>
+                  Configure how interviews are assigned to interviewers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">Auto-Assignment</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically assign interviews based on availability and expertise
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">Department Matching</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Prefer interviewers from the same department as the role
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">Workload Balancing</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Distribute interviews evenly among available interviewers
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">Maximum Daily Interviews</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Limit interviews per interviewer per day
+                    </p>
+                  </div>
+                  <Input className="w-20" type="number" defaultValue="4" min="1" max="10" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Interview Performance Tracking</CardTitle>
+                <CardDescription>
+                  Monitor interviewer performance and feedback quality
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-3 border rounded-lg">
+                    <div className="text-2xl font-bold text-primary">4.7</div>
+                    <div className="text-sm text-muted-foreground">Avg Rating</div>
+                  </div>
+                  <div className="text-center p-3 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">96%</div>
+                    <div className="text-sm text-muted-foreground">On-Time Rate</div>
+                  </div>
+                  <div className="text-center p-3 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">448</div>
+                    <div className="text-sm text-muted-foreground">Total Interviews</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">Send Performance Reports</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Monthly performance summaries to interviewers
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold">Candidate Feedback Sharing</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Share anonymous candidate feedback with interviewers
+                    </p>
+                  </div>
+                  <Switch />
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 

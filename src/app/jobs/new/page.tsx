@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -6,260 +5,699 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Container } from '@/components/shared/Container';
-import { generateJobDescription } from '@/ai/flows/job-description-generator';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Loader2, CheckCircle } from 'lucide-react';
+import { Wand2, Loader2, CheckCircle, X, Plus, Sparkles, Brain } from 'lucide-react';
 
-const jobFormSchema = z.object({
-  jobTitle: z.string().min(3, { message: "Job title must be at least 3 characters." }),
-  jobLevel: z.string().min(1, { message: "Please select a job level." }),
-  department: z.string().min(2, { message: "Department must be at least 2 characters." }),
-  location: z.string().min(2, { message: "Location must be at least 2 characters." }),
-  responsibilities: z.string().min(20, { message: "Responsibilities must be at least 20 characters." }).describe("List key responsibilities, one per line."),
-  qualifications: z.string().min(20, { message: "Qualifications must be at least 20 characters." }).describe("List key qualifications, one per line."),
+// Simple initial form for AI generation
+const aiGenerationSchema = z.object({
+  jobTitle: z.string().min(3, "Job title must be at least 3 characters"),
+  yearsOfExperience: z.string().min(1, "Please specify years of experience"),
+  company: z.string().optional(),
+  department: z.string().optional(),
+  location: z.string().optional(),
+  jobType: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional()
 });
 
+// Complete job form schema
+const jobFormSchema = z.object({
+  title: z.string().min(3, "Job title must be at least 3 characters"),
+  location: z.string().min(2, "Location must be at least 2 characters"),
+  type: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']),
+  department: z.string().min(2, "Department must be at least 2 characters"),
+  experience: z.string().min(1, "Experience requirement is required"),
+  salary: z.string().optional(),
+  description: z.string().min(50, "Description must be at least 50 characters"),
+  requirements: z.array(z.string()).min(1, "At least one requirement is needed"),
+  mustHaveRequirements: z.array(z.string()).min(1, "At least one must-have requirement is needed"),
+  benefits: z.array(z.string()).min(1, "At least one benefit is needed"),
+  skills: z.array(z.string()).min(1, "At least one skill is needed"),
+  responsibilities: z.array(z.string()).optional(),
+  urgency: z.enum(['Low', 'Medium', 'High']).default('Medium')
+});
+
+type AIGenerationValues = z.infer<typeof aiGenerationSchema>;
 type JobFormValues = z.infer<typeof jobFormSchema>;
 
+interface GeneratedJobData {
+  description: string;
+  requirements: string[];
+  mustHaveRequirements: string[];
+  benefits: string[];
+  skills: string[];
+  responsibilities: string[];
+}
+
 export default function NewJobPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedDescription, setGeneratedDescription] = useState<string | null>(null);
+  const [step, setStep] = useState<'ai-generation' | 'job-form'>('ai-generation');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [generatedData, setGeneratedData] = useState<GeneratedJobData | null>(null);
   const { toast } = useToast();
 
-  const form = useForm<JobFormValues>({
-    resolver: zodResolver(jobFormSchema),
+  // AI Generation Form
+  const aiForm = useForm<AIGenerationValues>({
+    resolver: zodResolver(aiGenerationSchema),
     defaultValues: {
       jobTitle: '',
-      jobLevel: '',
+      yearsOfExperience: '',
+      company: '',
       department: '',
       location: '',
-      responsibilities: '',
-      qualifications: '',
-    },
+      jobType: undefined
+    }
   });
 
-  const handleGenerateDescription = async () => {
-    const values = form.getValues();
-    const validationResult = jobFormSchema.safeParse(values);
-    if (!validationResult.success) {
-      form.trigger(); // Manually trigger validation to show errors
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please fill in all required fields before generating the description.",
-      });
-      return;
+  // Job Creation Form
+  const jobForm = useForm<JobFormValues>({
+    resolver: zodResolver(jobFormSchema),
+    defaultValues: {
+      title: '',
+      location: '',
+      type: 'Full-time',
+      department: '',
+      experience: '',
+      salary: '',
+      description: '',
+      requirements: [],
+      mustHaveRequirements: [],
+      benefits: [],
+      skills: [],
+      responsibilities: [],
+      urgency: 'Medium'
     }
+  });
 
-    setIsLoading(true);
-    setGeneratedDescription(null);
+  const handleGenerateJobDescription = async (data: AIGenerationValues) => {
+    setIsGenerating(true);
     try {
-      const result = await generateJobDescription(values);
-      setGeneratedDescription(result.jobDescription);
+      const response = await fetch('/api/jobs/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate job description');
+      }
+
+      const result = await response.json();
+      const generated = result.data;
+
+      setGeneratedData(generated);
+
+      // Pre-populate the job form
+      jobForm.setValue('title', data.jobTitle);
+      jobForm.setValue('experience', data.yearsOfExperience);
+      jobForm.setValue('location', data.location || '');
+      jobForm.setValue('department', data.department || '');
+      jobForm.setValue('type', data.jobType || 'Full-time');
+      jobForm.setValue('description', generated.description);
+      jobForm.setValue('requirements', generated.requirements);
+      jobForm.setValue('mustHaveRequirements', generated.mustHaveRequirements);
+      jobForm.setValue('benefits', generated.benefits);
+      jobForm.setValue('skills', generated.skills);
+      jobForm.setValue('responsibilities', generated.responsibilities || []);
+
+      setStep('job-form');
+      
       toast({
-        title: "Success!",
-        description: "Job description generated by AI.",
-        action: <CheckCircle className="text-green-500" />,
+        title: "✨ Job Description Generated!",
+        description: "AI has created a comprehensive job description. You can now review and customize it.",
       });
     } catch (error) {
-      console.error("Error generating job description:", error);
       toast({
-        variant: "destructive",
-        title: "Error",
+        title: "Generation Failed",
         description: "Failed to generate job description. Please try again.",
+        variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
-  
-  async function onSubmit(data: JobFormValues) {
-    setIsLoading(true);
-    // In a real app, you would submit this data to your backend
-    console.log("Form submitted:", data);
-    console.log("Generated description to save:", generatedDescription);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    toast({
-      title: "Job Posted!",
-      description: `The job "${data.jobTitle}" has been successfully submitted.`,
-      action: <CheckCircle className="text-green-500" />,
-    });
-    form.reset();
-    setGeneratedDescription(null);
-    setIsLoading(false);
+  const handleSaveJob = async (data: JobFormValues) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          isRemote: data.type === 'Remote'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create job');
+      }
+
+      toast({
+        title: "✅ Job Created Successfully!",
+        description: "The job posting has been created and is now active.",
+      });
+
+      // Reset forms
+      aiForm.reset();
+      jobForm.reset();
+      setGeneratedData(null);
+      setStep('ai-generation');
+      
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save job. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addArrayItem = (fieldName: keyof JobFormValues, value: string) => {
+    if (!value.trim()) return;
+    const currentValues = jobForm.getValues(fieldName) as string[];
+    jobForm.setValue(fieldName, [...currentValues, value.trim()]);
+  };
+
+  const removeArrayItem = (fieldName: keyof JobFormValues, index: number) => {
+    const currentValues = jobForm.getValues(fieldName) as string[];
+    jobForm.setValue(fieldName, currentValues.filter((_, i) => i !== index));
+  };
+
+  const ArrayFieldEditor = ({ 
+    fieldName, 
+    label, 
+    placeholder,
+    description 
+  }: { 
+    fieldName: keyof JobFormValues;
+    label: string;
+    placeholder: string;
+    description?: string;
+  }) => {
+    const [inputValue, setInputValue] = useState('');
+    const values = jobForm.watch(fieldName) as string[];
+
+    return (
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">{label}</Label>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        
+        <div className="flex gap-2">
+          <Input
+            placeholder={placeholder}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addArrayItem(fieldName, inputValue);
+                setInputValue('');
+              }
+            }}
+          />
+          <Button 
+            type="button"
+            variant="outline"
+            onClick={() => {
+              addArrayItem(fieldName, inputValue);
+              setInputValue('');
+            }}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {values.map((item, index) => (
+            <Badge key={index} variant="secondary" className="text-sm py-1 px-3">
+              {item}
+              <button
+                type="button"
+                onClick={() => removeArrayItem(fieldName, index)}
+                className="ml-2 text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  if (step === 'ai-generation') {
+    return (
+      <Container>
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
+              <Brain className="h-10 w-10 text-primary" />
+              AI Job Description Generator
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Just provide the job title and experience level - our AI will create a comprehensive job description for you!
+            </p>
+          </div>
+
+          <Card className="border-2 border-primary/20">
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Generate with AI
+              </CardTitle>
+              <CardDescription>
+                Fill in the basic details and let AI create the perfect job description
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...aiForm}>
+                <form onSubmit={aiForm.handleSubmit(handleGenerateJobDescription)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={aiForm.control}
+                      name="jobTitle"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base font-semibold">Job Title *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Senior Software Engineer" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={aiForm.control}
+                      name="yearsOfExperience"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base font-semibold">Years of Experience *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., 3-5 years" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={aiForm.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your Company Name" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={aiForm.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Department (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Engineering" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={aiForm.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., San Francisco, CA" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={aiForm.control}
+                      name="jobType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Job Type (Optional)</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select job type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Full-time">Full-time</SelectItem>
+                              <SelectItem value="Part-time">Part-time</SelectItem>
+                              <SelectItem value="Contract">Contract</SelectItem>
+                              <SelectItem value="Remote">Remote</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 text-lg"
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Generating Magic...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-5 w-5" />
+                        Generate Job Description with AI
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      </Container>
+    );
   }
-
 
   return (
     <Container>
-      <Card className="max-w-3xl mx-auto shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">Create New Job Posting</CardTitle>
-          <CardDescription>
-            Fill in the details below. You can also use our AI to help generate a compelling job description.
-          </CardDescription>
-        </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+              Review & Customize Job
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              AI has generated your job description. Review and customize as needed.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setStep('ai-generation')}
+          >
+            ← Back to Generator
+          </Button>
+        </div>
+
+        <Form {...jobForm}>
+          <form onSubmit={jobForm.handleSubmit(handleSaveJob)} className="space-y-8">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={jobForm.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Title</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={jobForm.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={jobForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={jobForm.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Full-time">Full-time</SelectItem>
+                            <SelectItem value="Part-time">Part-time</SelectItem>
+                            <SelectItem value="Contract">Contract</SelectItem>
+                            <SelectItem value="Remote">Remote</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={jobForm.control}
+                    name="experience"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Experience Required</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={jobForm.control}
+                    name="salary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Salary Range (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., $80,000 - $120,000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Job Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Description</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <FormField
-                  control={form.control}
-                  name="jobTitle"
+                  control={jobForm.control}
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Senior Software Engineer" {...field} />
+                        <Textarea 
+                          {...field} 
+                          rows={6}
+                          placeholder="Comprehensive job description..."
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Skills */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Skills & Technologies</CardTitle>
+                <CardDescription>Skills will be displayed as badges on the job posting</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ArrayFieldEditor
+                  fieldName="skills"
+                  label="Skills"
+                  placeholder="Add a skill (e.g., React, Python, Leadership)"
+                  description="Press Enter or click + to add skills"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Must-Have Requirements */}
+            <Card className="border-orange-200 bg-orange-50/50">
+              <CardHeader>
+                <CardTitle className="text-orange-800">Must-Have Requirements</CardTitle>
+                <CardDescription className="text-orange-700">
+                  Critical requirements used for candidate scoring and filtering. These are non-negotiable.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ArrayFieldEditor
+                  fieldName="mustHaveRequirements"
+                  label="Must-Have Requirements"
+                  placeholder="Add a critical requirement"
+                  description="These will be used to score and filter candidates"
+                />
+              </CardContent>
+            </Card>
+
+            {/* General Requirements */}
+            <Card>
+              <CardHeader>
+                <CardTitle>General Requirements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ArrayFieldEditor
+                  fieldName="requirements"
+                  label="Requirements"
+                  placeholder="Add a requirement"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Benefits */}
+            <Card className="border-green-200 bg-green-50/50">
+              <CardHeader>
+                <CardTitle className="text-green-800">Benefits & Perks</CardTitle>
+                <CardDescription className="text-green-700">
+                  Attractive benefits to showcase your company culture and compensation package
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ArrayFieldEditor
+                  fieldName="benefits"
+                  label="Benefits"
+                  placeholder="Add a benefit or perk"
+                  description="What makes your company great to work for?"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Responsibilities */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Responsibilities</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ArrayFieldEditor
+                  fieldName="responsibilities"
+                  label="Responsibilities"
+                  placeholder="Add a key responsibility"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Urgency */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Priority</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <FormField
-                  control={form.control}
-                  name="jobLevel"
+                  control={jobForm.control}
+                  name="urgency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Level</FormLabel>
+                      <FormLabel>Urgency Level</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select job level" />
+                            <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Entry-Level">Entry-Level</SelectItem>
-                          <SelectItem value="Mid-Level">Mid-Level</SelectItem>
-                          <SelectItem value="Senior-Level">Senior-Level</SelectItem>
-                          <SelectItem value="Lead/Manager">Lead/Manager</SelectItem>
-                          <SelectItem value="Executive">Executive</SelectItem>
+                          <SelectItem value="Low">Low Priority</SelectItem>
+                          <SelectItem value="Medium">Medium Priority</SelectItem>
+                          <SelectItem value="High">High Priority</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Engineering, Marketing" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., San Francisco, CA or Remote" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              </CardContent>
+            </Card>
 
-              <FormField
-                control={form.control}
-                name="responsibilities"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Key Responsibilities</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter key responsibilities, one per line..."
-                        className="min-h-[120px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Clearly list the main tasks and duties for this role.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="qualifications"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Qualifications & Skills</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter required qualifications and skills, one per line..."
-                        className="min-h-[120px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      List essential skills, experience, and education needed.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="space-y-2">
-                <Button type="button" variant="outline" onClick={handleGenerateDescription} disabled={isLoading} className="w-full md:w-auto">
-                  {isLoading && generatedDescription === null ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-2 h-4 w-4" />
-                  )}
-                  Generate Job Description with AI
-                </Button>
-                {generatedDescription && (
-                  <Card className="mt-4 bg-muted/50">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold">AI Generated Description Preview</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Textarea
-                        value={generatedDescription}
-                        readOnly
-                        className="min-h-[200px] bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        You can copy this description or use it as inspiration. Make sure to review and edit as needed.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button type="submit" disabled={isLoading} size="lg">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Post Job
+            {/* Submit Button */}
+            <div className="flex justify-end space-x-4">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setStep('ai-generation')}
+              >
+                ← Regenerate with AI
               </Button>
-            </CardFooter>
+              <Button 
+                type="submit" 
+                size="lg"
+                disabled={isSaving}
+                className="min-w-[150px]"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Create Job Posting
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
-      </Card>
+      </div>
     </Container>
   );
 }

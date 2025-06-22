@@ -6,15 +6,20 @@ import { z } from 'zod';
 // Job schema for validation
 const jobSchema = z.object({
   title: z.string().min(1).max(200),
-  company: z.string().min(1).max(100),
+  company: z.string().min(1).max(100).optional(),
   location: z.string().min(1).max(100),
   type: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']),
   department: z.string().min(1).max(50),
   experience: z.string(),
-  salary: z.string(),
+  salary: z.string().optional(),
   description: z.string().min(50).max(5000),
   requirements: z.array(z.string()),
-  benefits: z.array(z.string()).optional(),
+  mustHaveRequirements: z.array(z.string()),
+  benefits: z.array(z.string()),
+  skills: z.array(z.string()),
+  responsibilities: z.array(z.string()).optional(),
+  isRemote: z.boolean().optional(),
+  urgency: z.enum(['Low', 'Medium', 'High']).optional(),
   status: z.enum(['Active', 'Closed', 'Draft']).default('Active'),
   postedDate: z.string().optional(),
   applicants: z.number().optional()
@@ -83,8 +88,10 @@ export async function POST(request: NextRequest) {
     const jobData = {
       ...validation.data,
       id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      company: validation.data.company || 'TechCorp Inc.', // Default company
       postedDate: new Date().toISOString(),
       applicants: 0,
+      urgency: validation.data.urgency || 'Medium',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

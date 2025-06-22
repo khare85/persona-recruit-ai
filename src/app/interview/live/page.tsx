@@ -9,6 +9,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
+  ElevenLabsConversationService, 
+  DemoConversationService,
+  ConversationMessage, 
+  ConversationState,
+  getDefaultElevenLabsConfig 
+} from '@/lib/elevenlabs';
+import { 
   Mic, 
   MicOff, 
   Video, 
@@ -30,13 +37,8 @@ import {
   Settings
 } from 'lucide-react';
 
-interface TranscriptEntry {
-  id: string;
-  speaker: 'ai' | 'candidate';
-  text: string;
-  timestamp: Date;
-  confidence?: number;
-}
+// Use ConversationMessage from ElevenLabs service
+type TranscriptEntry = ConversationMessage;
 
 interface InterviewState {
   isRecording: boolean;
@@ -53,7 +55,7 @@ function LiveInterviewContent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const conversationIdRef = useRef<string>('');
+  const elevenLabsServiceRef = useRef<ElevenLabsConversationService | DemoConversationService | null>(null);
 
   // Interview details from URL
   const interviewId = searchParams.get('id') || 'demo-interview-001';
@@ -119,31 +121,58 @@ function LiveInterviewContent() {
   // Initialize ElevenLabs conversation
   const initializeElevenLabsConversation = useCallback(async () => {
     try {
-      // This would be replaced with actual ElevenLabs API integration
-      // For now, we'll simulate the AI conversation
-      conversationIdRef.current = `conv_${Date.now()}`;
+      const config = getDefaultElevenLabsConfig();
       
-      // Add initial AI greeting
-      const greeting: TranscriptEntry = {
-        id: `ai_${Date.now()}`,
-        speaker: 'ai',
-        text: `Hello ${candidateName}! I'm your AI interviewer today. I'm excited to learn about your experience and qualifications for the ${position} role at ${company}. Shall we begin?`,
-        timestamp: new Date(),
-        confidence: 1.0
-      };
+      // Check if ElevenLabs is properly configured
+      const isConfigured = config.apiKey !== 'demo-key' && config.agentId !== 'demo-agent';
       
-      setTranscript([greeting]);
-      setCurrentAiMessage(greeting.text);
+      if (isConfigured) {
+        elevenLabsServiceRef.current = new ElevenLabsConversationService(config);
+      } else {
+        console.log('Using demo conversation service - ElevenLabs not configured');
+        elevenLabsServiceRef.current = new DemoConversationService();
+      }
       
-      // Simulate AI speaking state
-      setState(prev => ({ ...prev, aiSpeaking: true }));
-      setTimeout(() => {
-        setState(prev => ({ ...prev, aiSpeaking: false, aiListening: true }));
-      }, 3000);
+      // Set up event handlers
+      elevenLabsServiceRef.current.onMessage((message: ConversationMessage) => {
+        setTranscript(prev => [...prev, message]);
+        if (message.speaker === 'ai') {
+          setCurrentAiMessage(message.text);
+        }
+      });
+      
+      elevenLabsServiceRef.current.onStateChange((conversationState: ConversationState) => {
+        setState(prev => ({
+          ...prev,
+          isConnected: conversationState.isConnected,
+          aiSpeaking: conversationState.isSpeaking,
+          aiListening: conversationState.isListening
+        }));
+        
+        if (conversationState.error) {
+          setError(conversationState.error);
+        }
+      });
+      
+      // Initialize session
+      await elevenLabsServiceRef.current.initializeSession({
+        candidateName,
+        position,
+        company,
+        jobDescription: `Interview for ${position} position at ${company}`
+      });
+      
+      // Start conversation
+      await elevenLabsServiceRef.current.startConversation();
       
     } catch (error) {
       console.error('ElevenLabs initialization error:', error);
-      setError('Failed to initialize AI interviewer. Please try again.');
+      setError('Using demo mode - could not connect to ElevenLabs. Check configuration.');
+      
+      // Fallback to demo service
+      elevenLabsServiceRef.current = new DemoConversationService();
+      await elevenLabsServiceRef.current.initializeSession({ candidateName, position, company });
+      await elevenLabsServiceRef.current.startConversation();
     }
   }, [candidateName, position, company]);
 
@@ -183,27 +212,40 @@ function LiveInterviewContent() {
   }, [initializeElevenLabsConversation]);
 
   // End interview
-  const endInterview = useCallback(() => {
-    if (mediaRecorderRef.current && state.isRecording) {
-      mediaRecorderRef.current.stop();
-    }
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
+  const endInterview = useCallback(async () => {
+    try {
+      // Stop video recording
+      if (mediaRecorderRef.current && state.isRecording) {
+        mediaRecorderRef.current.stop();
+      }
+      
+      // Stop camera/microphone
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      
+      // End ElevenLabs conversation
+      if (elevenLabsServiceRef.current) {
+        await elevenLabsServiceRef.current.endConversation();
+      }
 
-    setState(prev => ({ 
-      ...prev, 
-      isRecording: false, 
-      isConnected: false,
-      aiSpeaking: false,
-      aiListening: false
-    }));
+      setState(prev => ({ 
+        ...prev, 
+        isRecording: false, 
+        isConnected: false,
+        aiSpeaking: false,
+        aiListening: false
+      }));
 
-    // Redirect to analysis or completion page
-    setTimeout(() => {
-      window.location.href = `/interviews/analysis/${interviewId}`;
-    }, 2000);
+      // Redirect to analysis or completion page
+      setTimeout(() => {
+        window.location.href = `/interviews/analysis/${interviewId}`;
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error ending interview:', error);
+      setError('Error ending interview. Please try again.');
+    }
   }, [state.isRecording, interviewId]);
 
   // Toggle mute
@@ -228,17 +270,13 @@ function LiveInterviewContent() {
     }
   }, [state.isVideoEnabled]);
 
-  // Simulate real-time transcription (replace with actual speech recognition)
-  const simulateTranscription = useCallback((text: string, speaker: 'ai' | 'candidate') => {
-    const entry: TranscriptEntry = {
-      id: `${speaker}_${Date.now()}`,
-      speaker,
-      text,
-      timestamp: new Date(),
-      confidence: 0.95
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (elevenLabsServiceRef.current) {
+        elevenLabsServiceRef.current.endConversation().catch(console.error);
+      }
     };
-    
-    setTranscript(prev => [...prev, entry]);
   }, []);
 
   // Initialize on component mount

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Container } from '@/components/shared/Container';
 import { ShieldCheck, Users, Building, Server, Activity, DollarSign, BarChart3, Settings, AlertTriangle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { getMockDashboardMetrics } from '@/services/mockDataService';
 
@@ -23,7 +23,7 @@ const mockAdminData = {
 
 export default function AdminDashboardPage() {
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <Container>
         <div className="mb-8">
           <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
@@ -147,27 +147,27 @@ export default function AdminDashboardPage() {
                 <CardTitle className="text-lg">Admin Tools</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Link href="/admin/dashboard#users">
+                <Link href="/admin/users">
                   <Button variant="ghost" className="w-full justify-start">
                     <Users className="mr-2 h-4 w-4 text-primary" />User Management
                   </Button>
                 </Link>
-                <Link href="/admin/dashboard#companies">
+                <Link href="/admin/companies">
                   <Button variant="ghost" className="w-full justify-start">
                     <Building className="mr-2 h-4 w-4 text-primary" />Company Management
                   </Button>
                 </Link>
-                <Link href="/admin/dashboard#analytics">
+                <Link href="/admin/analytics">
                   <Button variant="ghost" className="w-full justify-start">
                     <BarChart3 className="mr-2 h-4 w-4 text-primary" />Platform Analytics
                   </Button>
                 </Link>
-                <Link href="/admin/dashboard#system">
+                <Link href="/admin/system">
                   <Button variant="ghost" className="w-full justify-start">
                     <Server className="mr-2 h-4 w-4 text-primary" />System Health
                   </Button>
                 </Link>
-                <Link href="/admin/dashboard#settings">
+                <Link href="/admin/settings">
                   <Button variant="outline" className="w-full mt-2">
                     <Settings className="mr-2 h-4 w-4" />Platform Settings
                   </Button>
@@ -198,6 +198,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </Container>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }

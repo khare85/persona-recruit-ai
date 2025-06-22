@@ -10,7 +10,7 @@ import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home, SearchCheck, Sparkles, Info,
+  Home, SearchCheck, Sparkles, Info, MessageSquare, ClipboardCheck, Star,
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,6 +40,16 @@ const recruiterNavItems = [
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
   { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
+];
+
+const interviewerNavItems = [
+  { href: '/interviewer/dashboard', label: 'Interview Hub', icon: LayoutDashboard },
+  { href: '/interviewer/schedule', label: 'My Interview Schedule', icon: CalendarClock },
+  { href: '/interviewer/candidates', label: 'Assigned Candidates', icon: Users },
+  { href: '/interviewer/interviews', label: 'Interview History', icon: MessageSquare },
+  { href: '/interviewer/feedback', label: 'Submit Feedback', icon: ClipboardCheck },
+  { href: '/interviewer/performance', label: 'My Performance', icon: Star },
+  { href: '/interviewer/settings', label: 'Interview Settings', icon: Settings },
 ];
 
 const companyNavItems = [
@@ -85,6 +95,11 @@ function determineNavigation(pathname: string) {
     currentPersona = "Recruiter Hub";
     CurrentPersonaIcon = LayoutDashboard; 
     currentDashboardHome = "/recruiter/dashboard";
+  } else if (pathname.startsWith('/interviewer')) {
+    currentNavItems = interviewerNavItems;
+    currentPersona = "Interviewer Portal";
+    CurrentPersonaIcon = MessageSquare;
+    currentDashboardHome = "/interviewer/dashboard";
   } else if (pathname.startsWith('/company')) {
     currentNavItems = companyNavItems;
     currentPersona = "Company Hub";
@@ -108,6 +123,7 @@ function determineNavigation(pathname: string) {
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome } = determineNavigation(pathname);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
     <div className="flex h-screen bg-background">
@@ -150,14 +166,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             currentNavItems.length === 0 ? "pl-6" : "" 
         )}>
           
-           <div className={cn(
-             "flex items-center gap-2",
-             currentNavItems.length > 0 ? "md:hidden" : "" 
-           )}>
-              <CurrentPersonaIcon className="h-6 w-6 text-primary" />
-              <span className="font-semibold text-md text-foreground truncate">
-                  {currentPersona}
-              </span>
+           <div className="flex items-center gap-2">
+            {currentNavItems.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
+            <div className={cn(
+               "flex items-center gap-2",
+               currentNavItems.length > 0 ? "md:hidden" : "" 
+             )}>
+                <CurrentPersonaIcon className="h-6 w-6 text-primary" />
+                <span className="font-semibold text-md text-foreground truncate">
+                    {currentPersona}
+                </span>
+            </div>
           </div>
           
           <div className="ml-auto flex items-center space-x-3">
@@ -173,6 +201,51 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </Button>
           </div>
         </header>
+
+        {/* Mobile Navigation Overlay */}
+        {currentNavItems.length > 0 && isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div 
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <div className="fixed left-0 top-0 bottom-0 w-64 bg-card border-r border-border shadow-lg">
+              <div className="p-4 border-b border-border">
+                <Link 
+                  href={currentDashboardHome} 
+                  className="flex items-center gap-2.5 p-2 rounded-md transition-colors hover:bg-accent/10 w-full"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <CurrentPersonaIcon className="h-7 w-7 text-primary flex-shrink-0" />
+                  <span className="font-semibold text-lg text-foreground truncate">
+                    {currentPersona}
+                  </span>
+                </Link>
+              </div>
+              <nav className="flex-1 p-4">
+                <ul className="space-y-2">
+                  {currentNavItems.map((item) => (
+                    <li key={item.href}>
+                      <Link 
+                        href={item.href} 
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                          pathname === item.href || (item.href !== '/' && item.href !=='#' && item.href !== currentDashboardHome && pathname.startsWith(item.href)) 
+                            ? "bg-accent text-accent-foreground" 
+                            : "text-muted-foreground"
+                        )}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <item.icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 overflow-y-auto">
           {children}

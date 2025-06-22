@@ -154,10 +154,15 @@ export default function MyInterviewsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Video className="h-4 w-4 mr-1" />
-                          Join
-                        </Button>
+                        <Link 
+                          href={`/interview/consent?id=${interview.id}&candidate=${encodeURIComponent('Sarah Johnson')}&position=${encodeURIComponent(interview.jobTitle)}&company=${encodeURIComponent(interview.companyName)}&duration=30`}
+                          target="_blank"
+                        >
+                          <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700">
+                            <Video className="h-4 w-4 mr-1" />
+                            Join AI Interview
+                          </Button>
+                        </Link>
                         <Link href={`/jobs/${interview.jobId}`} passHref>
                           <Button variant="ghost" size="sm">
                             <ExternalLink className="h-4 w-4" />

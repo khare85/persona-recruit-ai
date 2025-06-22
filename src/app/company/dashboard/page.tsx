@@ -122,7 +122,7 @@ export default function CompanyDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Link href="/company/ai-talent-search">
+                  <Link href="/company/talent-search">
                     <Button variant="outline" className="w-full justify-start h-auto p-4">
                       <Search className="mr-2 h-5 w-5 text-primary" />
                       <div className="text-left">
@@ -131,7 +131,7 @@ export default function CompanyDashboardPage() {
                       </div>
                     </Button>
                   </Link>
-                  <Link href="/company/advanced-match">
+                  <Link href="/company/advanced-matching">
                     <Button variant="outline" className="w-full justify-start h-auto p-4">
                       <Users className="mr-2 h-5 w-5 text-primary" />
                       <div className="text-left">
@@ -156,7 +156,7 @@ export default function CompanyDashboardPage() {
                     <PlusCircle className="mr-2 h-4 w-4 text-primary" />Post New Job
                   </Button>
                 </Link>
-                <Link href="/company/ai-talent-search">
+                <Link href="/company/talent-search">
                   <Button variant="ghost" className="w-full justify-start">
                     <Search className="mr-2 h-4 w-4 text-primary" />AI Talent Search
                   </Button>

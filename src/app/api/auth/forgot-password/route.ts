@@ -1,109 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withRateLimit } from '@/middleware/security';
+import { handleApiError } from '@/lib/errors';
+import { authLogger } from '@/lib/logger';
+import { databaseService } from '@/services/database.service';
 import crypto from 'crypto';
 
-// Mock user database - in production this would be a real database
-const users = [
-  {
-    id: '1',
-    email: 'admin@techcorp.com',
-    name: 'Admin User',
-    role: 'admin'
-  },
-  {
-    id: '2',
-    email: 'recruiter@techcorp.com',
-    name: 'Recruiter User',
-    role: 'recruiter'
-  },
-  {
-    id: '3',
-    email: 'candidate@example.com',
-    name: 'Candidate User',
-    role: 'candidate'
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Please enter a valid email address')
+});
+
+/**
+ * Send password reset email
+ */
+async function sendPasswordResetEmail(email: string, resetToken: string, firstName: string): Promise<void> {
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`;
+  
+  // In development, just log the reset URL
+  if (process.env.NODE_ENV === 'development') {
+    console.log('\n🔐 PASSWORD RESET EMAIL');
+    console.log('To:', email);
+    console.log('Reset URL:', resetUrl);
+    console.log('Token expires in 1 hour\n');
+    return;
   }
-];
 
-// Mock password reset tokens - in production this would be stored in database
-const resetTokens: Record<string, {
-  userId: string;
-  token: string;
-  expiresAt: Date;
-  used: boolean;
-}> = {};
+  // TODO: Implement actual email sending using your preferred service
+  authLogger.info('Would send password reset email', { 
+    to: email, 
+    resetUrl 
+  });
+}
 
-// Mock email service
-const sendPasswordResetEmail = async (email: string, resetToken: string, userName: string) => {
-  // In production, this would use a real email service like SendGrid, AWS SES, etc.
-  console.log('Sending password reset email to:', email);
-  console.log('Reset token:', resetToken);
-  console.log('Reset URL:', `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`);
-  
-  // Simulate email sending delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return true;
-};
-
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/auth/forgot-password - Send password reset email
+ */
+export const POST = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const { email } = await request.json();
+    const body = await req.json();
+    const validation = forgotPasswordSchema.safeParse(body);
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Please provide a valid email address' },
+        {
+          error: 'Invalid email address',
+          details: validation.error.errors
+        },
         { status: 400 }
       );
     }
 
-    // Find user by email
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const { email } = validation.data;
 
-    // Always return success for security (don't reveal if email exists)
-    // But only send email if user actually exists
+    authLogger.info('Password reset requested', { email });
+
+    // Check if user exists
+    const user = await databaseService.getUserByEmail(email);
+    
+    // Always return success to prevent email enumeration attacks
+    // but only send email if user actually exists
     if (user) {
-      // Generate secure reset token
+      // Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15 minutes expiry
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
 
-      // Store reset token
-      resetTokens[resetToken] = {
+      // Save reset token to database
+      await databaseService.updateUser(user.id, {
+        resetToken,
+        resetTokenExpiry: resetTokenExpiry.toISOString()
+      } as any);
+
+      // Send reset email
+      await sendPasswordResetEmail(email, resetToken, user.firstName);
+
+      authLogger.info('Password reset email sent', { 
+        email, 
         userId: user.id,
-        token: resetToken,
-        expiresAt,
-        used: false
-      };
-
-      // Send password reset email
-      try {
-        await sendPasswordResetEmail(email, resetToken, user.name);
-      } catch (emailError) {
-        console.error('Failed to send password reset email:', emailError);
-        // Don't expose email sending failures to the client
-      }
+        tokenExpiry: resetTokenExpiry.toISOString()
+      });
+    } else {
+      authLogger.warn('Password reset requested for non-existent email', { email });
     }
 
     // Always return success response
     return NextResponse.json({
-      message: 'If an account with that email exists, you will receive a password reset link shortly.',
-      success: true
+      success: true,
+      message: 'If an account with that email exists, we\'ve sent a password reset link.'
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred. Please try again later.' },
-      { status: 500 }
-    );
+    authLogger.error('Password reset request failed', { error: String(error) });
+    return handleApiError(error);
   }
-}
+});
 
-// GET endpoint to validate reset tokens (used by reset password page)
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/auth/forgot-password?token=xxx - Validate reset token
+ */
+export const GET = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = req.nextUrl.searchParams;
     const token = searchParams.get('token');
 
     if (!token) {
@@ -113,49 +109,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const resetData = resetTokens[token];
+    authLogger.info('Validating reset token', { token: token.substring(0, 8) + '...' });
 
-    if (!resetData) {
+    // Find user with this reset token
+    const user = await databaseService.getUserByResetToken(token);
+
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      authLogger.warn('Invalid reset token provided', { token: token.substring(0, 8) + '...' });
       return NextResponse.json(
         { error: 'Invalid or expired reset token' },
         { status: 400 }
       );
     }
 
-    if (resetData.used) {
-      return NextResponse.json(
-        { error: 'Reset token has already been used' },
-        { status: 400 }
-      );
-    }
-
-    if (new Date() > resetData.expiresAt) {
+    // Check if token has expired
+    const now = new Date();
+    const expiry = new Date(user.resetTokenExpiry);
+    
+    if (now > expiry) {
+      authLogger.warn('Expired reset token used', { 
+        userId: user.id,
+        expiry: user.resetTokenExpiry
+      });
       return NextResponse.json(
         { error: 'Reset token has expired' },
         { status: 400 }
       );
     }
 
-    // Find user
-    const user = users.find(u => u.id === resetData.userId);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
+    authLogger.info('Reset token validated successfully', { userId: user.id });
 
     return NextResponse.json({
       valid: true,
       email: user.email,
-      name: user.name
+      name: `${user.firstName} ${user.lastName}`.trim()
     });
 
   } catch (error) {
-    console.error('Reset token validation error:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+    authLogger.error('Reset token validation failed', { error: String(error) });
+    return handleApiError(error);
   }
-}
+});

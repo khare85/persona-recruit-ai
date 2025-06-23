@@ -1,11 +1,26 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Area,
+  AreaChart
+} from 'recharts';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -23,65 +38,86 @@ import {
   Calendar,
   Globe,
   Zap,
-  MessageSquare
+  MessageSquare,
+  Loader2,
+  AlertCircle,
+  Building2,
+  UserCheck,
+  Award
 } from 'lucide-react';
 
-const platformMetrics = {
-  users: {
-    total: 2847,
-    growth: 12.5,
-    newThisMonth: 342,
-    activeToday: 1256
-  },
-  companies: {
-    total: 142,
-    growth: 8.3,
-    newThisMonth: 8,
-    enterprise: 23
-  },
-  jobs: {
-    total: 1847,
-    growth: 15.2,
-    activeToday: 567,
-    newThisWeek: 89
-  },
-  revenue: {
-    total: 324500,
-    growth: 18.7,
-    thisMonth: 78200,
-    avgPerCompany: 2287
-  },
-  aiUsage: {
-    totalSearches: 15670,
-    growth: 23.1,
-    avgPerDay: 521,
-    successRate: 94.2
-  },
-  interviews: {
-    total: 2156,
-    growth: 19.4,
-    aiInterviews: 1894,
-    completionRate: 87.8
-  }
-};
-
-const topPerformingCompanies = [
-  { name: 'TechCorp Inc.', revenue: 28000, hires: 45, growth: 23 },
-  { name: 'NextGen Robotics', revenue: 25600, hires: 67, growth: 18 },
-  { name: 'CloudScale Solutions', revenue: 18900, hires: 23, growth: 15 },
-  { name: 'DataDriven Analytics', revenue: 16200, hires: 34, growth: 12 },
-  { name: 'InnovateTech Solutions', revenue: 14800, hires: 29, growth: 9 }
-];
-
-const recentActivity = [
-  { type: 'user', message: '47 new user registrations today', time: '2 min ago', trend: 'up' },
-  { type: 'revenue', message: '$12,400 in new subscriptions', time: '15 min ago', trend: 'up' },
-  { type: 'ai', message: '1,250 AI searches completed', time: '30 min ago', trend: 'up' },
-  { type: 'interview', message: '23 AI interviews conducted', time: '1 hour ago', trend: 'up' },
-  { type: 'support', message: '8 support tickets resolved', time: '2 hours ago', trend: 'neutral' }
-];
+interface SystemAnalytics {
+  overview: {
+    totalCompanies: number;
+    activeCompanies: number;
+    totalUsers: number;
+    candidateCount: number;
+    recruiterCount: number;
+    totalJobs: number;
+    activeJobs: number;
+    totalApplications: number;
+    totalInterviews: number;
+    totalHires: number;
+  };
+  monthlyRegistrations: Array<{ month: string; count: number }>;
+  topCompanies: Array<{
+    id: string;
+    name: string;
+    jobs: number;
+    applications: number;
+    activity: number;
+  }>;
+  platformGrowth: {
+    companiesGrowthRate: number;
+    usersGrowthRate: number;
+    applicationsGrowthRate: number;
+  };
+}
 
 export default function AdminAnalyticsPage() {
+  const [analytics, setAnalytics] = useState<SystemAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch('/api/admin/analytics');
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics(data.analytics);
+      } else {
+        setError('Failed to load system analytics');
+      }
+    } catch (error) {
+      setError('An error occurred while loading analytics');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const exportData = () => {
+    if (!analytics) return;
+    
+    const exportData = {
+      ...analytics,
+      exportedAt: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system-analytics-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const getGrowthIcon = (growth: number) => {
     if (growth > 0) {
       return <ArrowUpRight className="h-4 w-4 text-green-600" />;
@@ -98,6 +134,38 @@ export default function AdminAnalyticsPage() {
     return 'text-gray-600';
   };
 
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <Container className="py-8">
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p>Loading system analytics...</p>
+            </div>
+          </div>
+        </Container>
+      </AdminLayout>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <AdminLayout>
+        <Container className="py-8">
+          <div className="min-h-screen flex items-center justify-center">
+            <Alert className="max-w-md">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error || 'No analytics data available'}
+              </AlertDescription>
+            </Alert>
+          </div>
+        </Container>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <Container className="py-8">
@@ -106,286 +174,487 @@ export default function AdminAnalyticsPage() {
             <div>
               <h1 className="text-3xl font-bold text-foreground flex items-center">
                 <BarChart3 className="mr-3 h-8 w-8 text-primary" />
-                Analytics & Reports
+                System Analytics
               </h1>
               <p className="text-muted-foreground mt-1">
-                Platform performance metrics, user behavior insights, and business intelligence
+                Platform-wide metrics and insights
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Calendar className="mr-2 h-4 w-4" />
-                Custom Date Range
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                Refresh
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={exportData}>
                 <Download className="mr-2 h-4 w-4" />
-                Export Report
+                Export Data
               </Button>
             </div>
           </div>
         </div>
 
         {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Companies</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.overview.totalCompanies}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600">+{analytics.platformGrowth.companiesGrowthRate}%</span> from last month
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{platformMetrics.users.total.toLocaleString()}</div>
-              <div className="flex items-center space-x-2 text-xs">
-                {getGrowthIcon(platformMetrics.users.growth)}
-                <span className={getGrowthColor(platformMetrics.users.growth)}>
-                  +{platformMetrics.users.growth}% from last month
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {platformMetrics.users.activeToday} active today • {platformMetrics.users.newThisMonth} new this month
-              </div>
+              <div className="text-2xl font-bold">{analytics.overview.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600">+{analytics.platformGrowth.usersGrowthRate}%</span> from last month
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Companies</CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{platformMetrics.companies.total}</div>
-              <div className="flex items-center space-x-2 text-xs">
-                {getGrowthIcon(platformMetrics.companies.growth)}
-                <span className={getGrowthColor(platformMetrics.companies.growth)}>
-                  +{platformMetrics.companies.growth}% from last month
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {platformMetrics.companies.enterprise} enterprise • {platformMetrics.companies.newThisMonth} new this month
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${platformMetrics.revenue.total.toLocaleString()}</div>
-              <div className="flex items-center space-x-2 text-xs">
-                {getGrowthIcon(platformMetrics.revenue.growth)}
-                <span className={getGrowthColor(platformMetrics.revenue.growth)}>
-                  +{platformMetrics.revenue.growth}% from last month
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                ${platformMetrics.revenue.avgPerCompany} avg per company
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+              <CardTitle className="text-sm font-medium">Job Postings</CardTitle>
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{platformMetrics.jobs.total.toLocaleString()}</div>
-              <div className="flex items-center space-x-2 text-xs">
-                {getGrowthIcon(platformMetrics.jobs.growth)}
-                <span className={getGrowthColor(platformMetrics.jobs.growth)}>
-                  +{platformMetrics.jobs.growth}% from last month
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {platformMetrics.jobs.activeToday} active today • {platformMetrics.jobs.newThisWeek} new this week
-              </div>
+              <div className="text-2xl font-bold">{analytics.overview.totalJobs}</div>
+              <p className="text-xs text-muted-foreground">
+                {analytics.overview.activeJobs} currently active
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">AI Usage</CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Applications</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{platformMetrics.aiUsage.totalSearches.toLocaleString()}</div>
-              <div className="flex items-center space-x-2 text-xs">
-                {getGrowthIcon(platformMetrics.aiUsage.growth)}
-                <span className={getGrowthColor(platformMetrics.aiUsage.growth)}>
-                  +{platformMetrics.aiUsage.growth}% from last month
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {platformMetrics.aiUsage.avgPerDay} avg per day • {platformMetrics.aiUsage.successRate}% success rate
-              </div>
+              <div className="text-2xl font-bold">{analytics.overview.totalApplications}</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600">+{analytics.platformGrowth.applicationsGrowthRate}%</span> from last month
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">AI Interviews</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Successful Hires</CardTitle>
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{platformMetrics.interviews.total.toLocaleString()}</div>
-              <div className="flex items-center space-x-2 text-xs">
-                {getGrowthIcon(platformMetrics.interviews.growth)}
-                <span className={getGrowthColor(platformMetrics.interviews.growth)}>
-                  +{platformMetrics.interviews.growth}% from last month
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {platformMetrics.interviews.aiInterviews} AI powered • {platformMetrics.interviews.completionRate}% completion rate
-              </div>
+              <div className="text-2xl font-bold">{analytics.overview.totalHires}</div>
+              <p className="text-xs text-muted-foreground">
+                {analytics.overview.totalApplications > 0 
+                  ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
+                  : 0}% success rate
+              </p>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="usage">Usage Analytics</TabsTrigger>
-            <TabsTrigger value="revenue">Revenue Analytics</TabsTrigger>
+            <TabsTrigger value="growth">Growth</TabsTrigger>
+            <TabsTrigger value="companies">Companies</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top Performing Companies */}
+              {/* User Registration Trends */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <TrendingUp className="mr-2 h-5 w-5 text-primary" />
-                    Top Performing Companies
-                  </CardTitle>
-                  <CardDescription>Companies by revenue and hiring activity</CardDescription>
+                  <CardTitle>User Registration Trends</CardTitle>
+                  <CardDescription>Monthly user registration over the last 12 months</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {topPerformingCompanies.map((company, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <div className="font-medium">{company.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {company.hires} hires • ${company.revenue.toLocaleString()} revenue
-                            </div>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-green-600">
-                          <TrendingUp className="mr-1 h-3 w-3" />
-                          +{company.growth}%
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={analytics.monthlyRegistrations}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="count" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </CardContent>
               </Card>
 
-              {/* Recent Activity Feed */}
+              {/* User Distribution */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Activity className="mr-2 h-5 w-5 text-primary" />
-                    Real-time Activity
-                  </CardTitle>
-                  <CardDescription>Latest platform activity and milestones</CardDescription>
+                  <CardTitle>User Distribution</CardTitle>
+                  <CardDescription>Breakdown of users by role</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          activity.type === 'user' ? 'bg-blue-500' :
-                          activity.type === 'revenue' ? 'bg-green-500' :
-                          activity.type === 'ai' ? 'bg-purple-500' :
-                          activity.type === 'interview' ? 'bg-orange-500' :
-                          'bg-gray-500'
-                        }`} />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.message}</p>
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
-                        </div>
-                        {activity.trend === 'up' && (
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                        )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span>Candidates</span>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{analytics.overview.candidateCount}</span>
+                        <span className="text-sm text-gray-500">
+                          ({Math.round((analytics.overview.candidateCount / analytics.overview.totalUsers) * 100)}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full" 
+                        style={{ width: `${(analytics.overview.candidateCount / analytics.overview.totalUsers) * 100}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>Recruiters</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{analytics.overview.recruiterCount}</span>
+                        <span className="text-sm text-gray-500">
+                          ({Math.round((analytics.overview.recruiterCount / analytics.overview.totalUsers) * 100)}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full" 
+                        style={{ width: `${(analytics.overview.recruiterCount / analytics.overview.totalUsers) * 100}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span>Others</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">
+                          {analytics.overview.totalUsers - analytics.overview.candidateCount - analytics.overview.recruiterCount}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ({Math.round(((analytics.overview.totalUsers - analytics.overview.candidateCount - analytics.overview.recruiterCount) / analytics.overview.totalUsers) * 100)}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-purple-500 h-2 rounded-full" 
+                        style={{ 
+                          width: `${((analytics.overview.totalUsers - analytics.overview.candidateCount - analytics.overview.recruiterCount) / analytics.overview.totalUsers) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Platform Health Overview */}
+            {/* Platform Health */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-green-500" />
+                    Platform Health
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Active Companies</span>
+                      <span className="font-semibold">
+                        {Math.round((analytics.overview.activeCompanies / analytics.overview.totalCompanies) * 100)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Active Jobs</span>
+                      <span className="font-semibold">
+                        {Math.round((analytics.overview.activeJobs / analytics.overview.totalJobs) * 100)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Interview Rate</span>
+                      <span className="font-semibold">
+                        {analytics.overview.totalApplications > 0 
+                          ? Math.round((analytics.overview.totalInterviews / analytics.overview.totalApplications) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-blue-500" />
+                    Activity Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total Interviews</span>
+                      <span className="font-semibold">{analytics.overview.totalInterviews}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Applications</span>
+                      <span className="font-semibold">{analytics.overview.totalApplications}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total Hires</span>
+                      <span className="font-semibold">{analytics.overview.totalHires}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5 text-yellow-500" />
+                    Success Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Hire Success Rate</span>
+                      <span className="font-semibold">
+                        {analytics.overview.totalApplications > 0 
+                          ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Avg. Applications/Job</span>
+                      <span className="font-semibold">
+                        {analytics.overview.totalJobs > 0 
+                          ? Math.round(analytics.overview.totalApplications / analytics.overview.totalJobs)
+                          : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Platform Status</span>
+                      <span className="font-semibold text-green-600">Healthy</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="growth" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Globe className="mr-2 h-5 w-5 text-primary" />
-                  Platform Health & Performance
-                </CardTitle>
-                <CardDescription>System metrics and operational status</CardDescription>
+                <CardTitle>Platform Growth Metrics</CardTitle>
+                <CardDescription>Month-over-month growth across key metrics</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-green-600">99.2%</div>
-                    <div className="text-sm text-muted-foreground">Uptime</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-6 bg-green-50 rounded-lg">
+                    <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-600">+{analytics.platformGrowth.companiesGrowthRate}%</div>
+                    <p className="text-sm text-green-700">Company Growth</p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600">142ms</div>
-                    <div className="text-sm text-muted-foreground">Avg Response Time</div>
+                  <div className="text-center p-6 bg-blue-50 rounded-lg">
+                    <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-600">+{analytics.platformGrowth.usersGrowthRate}%</div>
+                    <p className="text-sm text-blue-700">User Growth</p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-purple-600">94.8%</div>
-                    <div className="text-sm text-muted-foreground">AI Accuracy</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-600">8</div>
-                    <div className="text-sm text-muted-foreground">Open Issues</div>
+                  <div className="text-center p-6 bg-purple-50 rounded-lg">
+                    <Activity className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-purple-600">+{analytics.platformGrowth.applicationsGrowthRate}%</div>
+                    <p className="text-sm text-purple-700">Application Growth</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="usage">
             <Card>
               <CardHeader>
-                <CardTitle>Usage Analytics</CardTitle>
-                <CardDescription>Detailed platform usage patterns and user behavior</CardDescription>
+                <CardTitle>User Registration Breakdown</CardTitle>
+                <CardDescription>Detailed monthly registration data</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Advanced usage analytics dashboard coming soon...</p>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={analytics.monthlyRegistrations}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="revenue">
+          <TabsContent value="companies" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Analytics</CardTitle>
-                <CardDescription>Financial performance and subscription metrics</CardDescription>
+                <CardTitle>Top Active Companies</CardTitle>
+                <CardDescription>Companies ranked by activity (jobs posted + applications received)</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Revenue analytics dashboard coming soon...</p>
+                {analytics.topCompanies.length > 0 ? (
+                  <div className="space-y-4">
+                    {analytics.topCompanies.map((company, index) => (
+                      <div key={company.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-semibold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{company.name}</h4>
+                            <p className="text-sm text-gray-600">
+                              {company.jobs} jobs • {company.applications} applications
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">
+                          {company.activity} total activity
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No company data available yet</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="performance">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Metrics</CardTitle>
-                <CardDescription>System performance and optimization insights</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Performance metrics dashboard coming soon...</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="performance" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform Efficiency</CardTitle>
+                  <CardDescription>Key performance indicators</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Overall Hire Rate</span>
+                        <span>{analytics.overview.totalApplications > 0 
+                          ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
+                          : 0}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full" 
+                          style={{ 
+                            width: `${analytics.overview.totalApplications > 0 
+                              ? (analytics.overview.totalHires / analytics.overview.totalApplications) * 100
+                              : 0}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Interview Conversion</span>
+                        <span>{analytics.overview.totalApplications > 0 
+                          ? Math.round((analytics.overview.totalInterviews / analytics.overview.totalApplications) * 100)
+                          : 0}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ 
+                            width: `${analytics.overview.totalApplications > 0 
+                              ? (analytics.overview.totalInterviews / analytics.overview.totalApplications) * 100
+                              : 0}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Company Activation</span>
+                        <span>{analytics.overview.totalCompanies > 0 
+                          ? Math.round((analytics.overview.activeCompanies / analytics.overview.totalCompanies) * 100)
+                          : 0}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-purple-600 h-2 rounded-full" 
+                          style={{ 
+                            width: `${analytics.overview.totalCompanies > 0 
+                              ? (analytics.overview.activeCompanies / analytics.overview.totalCompanies) * 100
+                              : 0}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resource Utilization</CardTitle>
+                  <CardDescription>How platform resources are being used</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span>Jobs per Company</span>
+                      <span className="font-semibold">
+                        {analytics.overview.totalCompanies > 0 
+                          ? Math.round(analytics.overview.totalJobs / analytics.overview.totalCompanies)
+                          : 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span>Applications per Job</span>
+                      <span className="font-semibold">
+                        {analytics.overview.totalJobs > 0 
+                          ? Math.round(analytics.overview.totalApplications / analytics.overview.totalJobs)
+                          : 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span>Recruiters per Company</span>
+                      <span className="font-semibold">
+                        {analytics.overview.totalCompanies > 0 
+                          ? Math.round(analytics.overview.recruiterCount / analytics.overview.totalCompanies)
+                          : 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span>Success Rate</span>
+                      <span className="font-semibold text-green-600">
+                        {analytics.overview.totalApplications > 0 
+                          ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </Container>

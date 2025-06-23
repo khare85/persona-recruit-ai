@@ -1,176 +1,424 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withAuth, withRole } from '@/middleware/auth';
+import { withRateLimit } from '@/middleware/security';
+import { handleApiError } from '@/lib/errors';
+import { apiLogger } from '@/lib/logger';
+import { databaseService } from '@/services/database.service';
 
-// Mock interviews database (same as in route.ts)
-const interviews = [
-  {
-    id: 'IV-001',
-    applicationId: 'APP-001',
-    candidateId: '1',
-    candidateName: 'Sarah Johnson',
-    candidateEmail: 'sarah.johnson@email.com',
-    candidateAvatar: '/avatars/sarah.jpg',
-    jobId: '1',
-    jobTitle: 'Senior Frontend Developer',
-    companyId: '1',
-    companyName: 'TechCorp Inc.',
-    interviewerId: 'INT-001',
-    interviewerName: 'Alex Rodriguez',
-    interviewerEmail: 'alex.rodriguez@techcorp.com',
-    scheduledDate: '2024-06-25T14:00:00Z',
-    duration: 60,
-    type: 'technical',
-    format: 'in-person',
-    location: 'Conference Room A, Floor 3',
-    status: 'scheduled',
-    meetingLink: null,
-    notes: 'Focus on React expertise and system design',
-    preparation: [
-      'Review candidate resume',
-      'Prepare technical questions',
-      'Set up coding environment'
-    ],
-    aiInterviewData: {
-      completed: true,
-      score: 87,
-      videoUrl: '/api/interview/video/1',
-      transcript: 'Interview transcript...',
-      analysis: 'Strong technical skills...'
-    },
-    feedback: null,
-    recording: null,
-    createdAt: '2024-06-22T10:00:00Z',
-    updatedAt: '2024-06-22T10:00:00Z',
-    createdBy: 'recruiter@techcorp.com'
-  }
-];
+const updateInterviewSchema = z.object({
+  scheduledFor: z.string().datetime().optional(),
+  duration: z.number().min(15).max(180).optional(),
+  type: z.enum(['phone', 'video', 'in_person']).optional(),
+  notes: z.string().optional(),
+  location: z.string().optional(),
+  meetingLink: z.string().url().optional(),
+  status: z.enum(['scheduled', 'confirmed', 'rescheduled', 'cancelled', 'completed']).optional(),
+  timezone: z.string().optional(),
+  feedback: z.string().optional(),
+  rating: z.number().min(1).max(5).optional(),
+  recommendation: z.enum(['hire', 'no_hire', 'maybe']).optional()
+});
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
+/**
+ * GET /api/interviews/[id] - Get interview details
+ */
+export const GET = withRateLimit('interview',
+  withAuth(
+    withRole(['recruiter', 'company_admin', 'interviewer', 'candidate', 'super_admin'], async (req: NextRequest): Promise<NextResponse> => {
+      try {
+        const interviewId = req.nextUrl.pathname.split('/')[3];
+        const userId = req.user!.id;
+        const userRole = req.user!.role;
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id } = params;
-    
-    const interview = interviews.find(int => int.id === id);
-    
-    if (!interview) {
-      return NextResponse.json(
-        { error: 'Interview not found' },
-        { status: 404 }
-      );
-    }
+        if (!interviewId) {
+          return NextResponse.json(
+            { error: 'Interview ID is required' },
+            { status: 400 }
+          );
+        }
 
-    return NextResponse.json(interview);
+        apiLogger.info('Fetching interview details', { userId, userRole, interviewId });
 
-  } catch (error) {
-    console.error('Error fetching interview:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch interview' },
-      { status: 500 }
-    );
-  }
-}
+        const interview = await databaseService.getInterviewById(interviewId);
+        if (!interview) {
+          return NextResponse.json(
+            { error: 'Interview not found' },
+            { status: 404 }
+          );
+        }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id } = params;
-    const body = await request.json();
-    
-    const interviewIndex = interviews.findIndex(int => int.id === id);
-    
-    if (interviewIndex === -1) {
-      return NextResponse.json(
-        { error: 'Interview not found' },
-        { status: 404 }
-      );
-    }
+        // Check access permissions
+        const hasAccess = userRole === 'super_admin' ||
+          interview.candidateId === userId ||
+          interview.interviewerId === userId ||
+          (userRole === 'recruiter' && interview.companyId === req.user?.companyId) ||
+          (userRole === 'company_admin' && interview.companyId === req.user?.companyId);
 
-    const {
-      scheduledDate,
-      duration,
-      location,
-      meetingLink,
-      notes,
-      status,
-      preparation
-    } = body;
+        if (!hasAccess) {
+          return NextResponse.json(
+            { error: 'Access denied' },
+            { status: 403 }
+          );
+        }
 
-    // Update interview
-    const updatedInterview = {
-      ...interviews[interviewIndex],
-      updatedAt: new Date().toISOString()
-    };
+        // Get related information
+        const [candidate, job, interviewer, application] = await Promise.all([
+          databaseService.getUserById(interview.candidateId),
+          databaseService.getJobById(interview.jobId),
+          databaseService.getUserById(interview.interviewerId),
+          databaseService.getJobApplicationByCandidate(interview.jobId, interview.candidateId)
+        ]);
 
-    // Handle rescheduling
-    if (scheduledDate && scheduledDate !== interviews[interviewIndex].scheduledDate) {
-      // Validate new date is in future
-      if (new Date(scheduledDate) <= new Date()) {
-        return NextResponse.json(
-          { error: 'Interview must be scheduled for a future date' },
-          { status: 400 }
-        );
+        const detailedInterview = {
+          ...interview,
+          candidate: candidate ? {
+            id: candidate.id,
+            name: `${candidate.firstName} ${candidate.lastName}`,
+            email: candidate.email,
+            phone: candidate.phone
+          } : null,
+          job: job ? {
+            id: job.id,
+            title: job.title,
+            department: job.department,
+            companyId: job.companyId
+          } : null,
+          interviewer: interviewer ? {
+            id: interviewer.id,
+            name: `${interviewer.firstName} ${interviewer.lastName}`,
+            email: interviewer.email
+          } : null,
+          application: application ? {
+            id: application.id,
+            status: application.status,
+            appliedAt: application.appliedAt
+          } : null
+        };
+
+        return NextResponse.json({
+          success: true,
+          interview: detailedInterview
+        });
+
+      } catch (error) {
+        return handleApiError(error);
       }
-      updatedInterview.scheduledDate = scheduledDate;
+    })
+  )
+);
+
+/**
+ * PUT /api/interviews/[id] - Update interview
+ */
+export const PUT = withRateLimit('interview',
+  withAuth(
+    withRole(['recruiter', 'company_admin', 'interviewer', 'super_admin'], async (req: NextRequest): Promise<NextResponse> => {
+      try {
+        const interviewId = req.nextUrl.pathname.split('/')[3];
+        const userId = req.user!.id;
+        const userRole = req.user!.role;
+        const body = await req.json();
+
+        if (!interviewId) {
+          return NextResponse.json(
+            { error: 'Interview ID is required' },
+            { status: 400 }
+          );
+        }
+
+        const validation = updateInterviewSchema.safeParse(body);
+        if (!validation.success) {
+          return NextResponse.json(
+            {
+              error: 'Invalid update data',
+              details: validation.error.errors
+            },
+            { status: 400 }
+          );
+        }
+
+        const updateData = validation.data;
+
+        apiLogger.info('Updating interview', {
+          userId,
+          userRole,
+          interviewId,
+          updateFields: Object.keys(updateData)
+        });
+
+        const interview = await databaseService.getInterviewById(interviewId);
+        if (!interview) {
+          return NextResponse.json(
+            { error: 'Interview not found' },
+            { status: 404 }
+          );
+        }
+
+        // Check permissions
+        const canUpdate = userRole === 'super_admin' ||
+          interview.interviewerId === userId ||
+          (userRole === 'recruiter' && interview.companyId === req.user?.companyId) ||
+          (userRole === 'company_admin' && interview.companyId === req.user?.companyId);
+
+        if (!canUpdate) {
+          return NextResponse.json(
+            { error: 'Access denied' },
+            { status: 403 }
+          );
+        }
+
+        // If rescheduling, check interviewer availability
+        if (updateData.scheduledFor && updateData.scheduledFor !== interview.scheduledFor) {
+          const newTime = new Date(updateData.scheduledFor);
+          const duration = updateData.duration || interview.duration;
+          const endTime = new Date(newTime.getTime() + duration * 60000);
+
+          const conflicts = await databaseService.getInterviewerSchedule(
+            interview.interviewerId,
+            newTime,
+            endTime,
+            interviewId // Exclude current interview from conflict check
+          );
+
+          if (conflicts.length > 0) {
+            return NextResponse.json(
+              { 
+                error: 'Interviewer is not available at the new time',
+                conflicts: conflicts.map(c => ({
+                  id: c.id,
+                  scheduledFor: c.scheduledFor,
+                  duration: c.duration
+                }))
+              },
+              { status: 409 }
+            );
+          }
+
+          // Mark as rescheduled if time changed
+          updateData.status = 'rescheduled';
+        }
+
+        // Handle status changes
+        if (updateData.status) {
+          await handleStatusChange(interview, updateData.status, userId);
+        }
+
+        // Update interview
+        await databaseService.updateInterview(interviewId, {
+          ...updateData,
+          updatedAt: new Date().toISOString(),
+          lastUpdatedBy: userId
+        });
+
+        // Send notifications for significant changes
+        if (updateData.scheduledFor || updateData.status) {
+          await sendInterviewUpdateNotification(interview, updateData);
+        }
+
+        apiLogger.info('Interview updated successfully', {
+          interviewId,
+          status: updateData.status
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Interview updated successfully'
+        });
+
+      } catch (error) {
+        return handleApiError(error);
+      }
+    })
+  )
+);
+
+/**
+ * DELETE /api/interviews/[id] - Cancel interview
+ */
+export const DELETE = withRateLimit('interview',
+  withAuth(
+    withRole(['recruiter', 'company_admin', 'super_admin'], async (req: NextRequest): Promise<NextResponse> => {
+      try {
+        const interviewId = req.nextUrl.pathname.split('/')[3];
+        const userId = req.user!.id;
+        const userRole = req.user!.role;
+
+        if (!interviewId) {
+          return NextResponse.json(
+            { error: 'Interview ID is required' },
+            { status: 400 }
+          );
+        }
+
+        apiLogger.info('Cancelling interview', { userId, userRole, interviewId });
+
+        const interview = await databaseService.getInterviewById(interviewId);
+        if (!interview) {
+          return NextResponse.json(
+            { error: 'Interview not found' },
+            { status: 404 }
+          );
+        }
+
+        // Check permissions
+        const canCancel = userRole === 'super_admin' ||
+          (userRole === 'recruiter' && interview.companyId === req.user?.companyId) ||
+          (userRole === 'company_admin' && interview.companyId === req.user?.companyId);
+
+        if (!canCancel) {
+          return NextResponse.json(
+            { error: 'Access denied' },
+            { status: 403 }
+          );
+        }
+
+        // Can't cancel completed interviews
+        if (interview.status === 'completed') {
+          return NextResponse.json(
+            { error: 'Cannot cancel completed interview' },
+            { status: 400 }
+          );
+        }
+
+        // Update interview status to cancelled
+        await databaseService.updateInterview(interviewId, {
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString(),
+          cancelledBy: userId,
+          updatedAt: new Date().toISOString()
+        });
+
+        // Update application status back to under review
+        const application = await databaseService.getJobApplicationByCandidate(
+          interview.jobId,
+          interview.candidateId
+        );
+
+        if (application && application.status === 'interview_scheduled') {
+          await databaseService.updateJobApplication(application.id, {
+            status: 'under_review',
+            lastUpdated: new Date().toISOString()
+          });
+        }
+
+        // Send cancellation notifications
+        await sendInterviewCancellationNotification(interview, userId);
+
+        apiLogger.info('Interview cancelled successfully', { interviewId });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Interview cancelled successfully'
+        });
+
+      } catch (error) {
+        return handleApiError(error);
+      }
+    })
+  )
+);
+
+/**
+ * Handle interview status changes
+ */
+async function handleStatusChange(interview: any, newStatus: string, userId: string): Promise<void> {
+  try {
+    switch (newStatus) {
+      case 'completed':
+        // Update application status
+        const application = await databaseService.getJobApplicationByCandidate(
+          interview.jobId,
+          interview.candidateId
+        );
+        
+        if (application) {
+          await databaseService.updateJobApplication(application.id, {
+            status: 'interviewed',
+            lastUpdated: new Date().toISOString()
+          });
+        }
+        break;
+
+      case 'cancelled':
+        // Handle cancellation logic
+        break;
+
+      case 'confirmed':
+        // Handle confirmation logic
+        break;
     }
-
-    // Update other fields
-    if (duration !== undefined) updatedInterview.duration = duration;
-    if (location !== undefined) updatedInterview.location = location;
-    if (meetingLink !== undefined) updatedInterview.meetingLink = meetingLink;
-    if (notes !== undefined) updatedInterview.notes = notes;
-    if (status !== undefined) updatedInterview.status = status;
-    if (preparation !== undefined) updatedInterview.preparation = preparation;
-
-    interviews[interviewIndex] = updatedInterview;
-
-    // In production, send notifications about changes
-    console.log('Interview updated:', updatedInterview);
-
-    return NextResponse.json({
-      message: 'Interview updated successfully',
-      interview: updatedInterview
-    });
-
   } catch (error) {
-    console.error('Error updating interview:', error);
-    return NextResponse.json(
-      { error: 'Failed to update interview' },
-      { status: 500 }
-    );
+    apiLogger.error('Error handling status change', {
+      interviewId: interview.id,
+      newStatus,
+      error: String(error)
+    });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+/**
+ * Send interview update notifications
+ */
+async function sendInterviewUpdateNotification(interview: any, updateData: any): Promise<void> {
   try {
-    const { id } = params;
-    
-    const interviewIndex = interviews.findIndex(int => int.id === id);
-    
-    if (interviewIndex === -1) {
-      return NextResponse.json(
-        { error: 'Interview not found' },
-        { status: 404 }
-      );
+    const [candidate, interviewer] = await Promise.all([
+      databaseService.getUserById(interview.candidateId),
+      databaseService.getUserById(interview.interviewerId)
+    ]);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n📅 INTERVIEW UPDATE NOTIFICATION');
+      console.log('Interview ID:', interview.id);
+      console.log('Update:', JSON.stringify(updateData, null, 2));
+      console.log('Candidate:', candidate?.email);
+      console.log('Interviewer:', interviewer?.email);
+      console.log('');
     }
 
-    const deletedInterview = interviews.splice(interviewIndex, 1)[0];
-
-    // In production, send cancellation notifications
-    console.log('Interview cancelled:', deletedInterview);
-
-    return NextResponse.json({
-      message: 'Interview cancelled successfully',
-      interview: deletedInterview
+    // TODO: Implement actual notifications
+    apiLogger.info('Interview update notification sent', {
+      interviewId: interview.id,
+      updates: Object.keys(updateData)
     });
 
   } catch (error) {
-    console.error('Error deleting interview:', error);
-    return NextResponse.json(
-      { error: 'Failed to cancel interview' },
-      { status: 500 }
-    );
+    apiLogger.error('Failed to send update notification', {
+      interviewId: interview.id,
+      error: String(error)
+    });
+  }
+}
+
+/**
+ * Send interview cancellation notifications
+ */
+async function sendInterviewCancellationNotification(interview: any, cancelledBy: string): Promise<void> {
+  try {
+    const [candidate, interviewer] = await Promise.all([
+      databaseService.getUserById(interview.candidateId),
+      databaseService.getUserById(interview.interviewerId)
+    ]);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n❌ INTERVIEW CANCELLATION NOTIFICATION');
+      console.log('Interview ID:', interview.id);
+      console.log('Cancelled by:', cancelledBy);
+      console.log('Candidate:', candidate?.email);
+      console.log('Interviewer:', interviewer?.email);
+      console.log('');
+    }
+
+    // TODO: Implement actual notifications
+    apiLogger.info('Interview cancellation notification sent', {
+      interviewId: interview.id,
+      cancelledBy
+    });
+
+  } catch (error) {
+    apiLogger.error('Failed to send cancellation notification', {
+      interviewId: interview.id,
+      error: String(error)
+    });
   }
 }

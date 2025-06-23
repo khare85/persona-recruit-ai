@@ -175,14 +175,21 @@ export default function CompanyManagementPage() {
 
   const handleCreateCompany = async (data: CompanyFormData) => {
     try {
-      const newCompany: Company = {
-        ...data,
-        id: `company_${Date.now()}`,
-        status: 'Active',
-        createdAt: new Date().toISOString(),
-        userCount: 0,
-        activeJobs: 0
-      };
+      const response = await fetch('/api/admin/companies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create company');
+      }
+
+      const result = await response.json();
+      const newCompany: Company = result.data.company;
 
       setCompanies([...companies, newCompany]);
       setIsCreateDialogOpen(false);
@@ -195,7 +202,7 @@ export default function CompanyManagementPage() {
     } catch (error) {
       toast({
         title: "Creation Failed",
-        description: "Failed to create company. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create company. Please try again.",
         variant: "destructive"
       });
     }
@@ -205,11 +212,29 @@ export default function CompanyManagementPage() {
     if (!selectedCompany) return;
 
     try {
+      const response = await fetch(`/api/admin/companies/${selectedCompany.id}/invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send invitation');
+      }
+
+      const result = await response.json();
       const newUser: CompanyUser = {
-        ...data,
-        id: `user_${Date.now()}`,
-        status: 'Pending',
-        invitedAt: new Date().toISOString()
+        id: result.data.invitation.id,
+        email: result.data.invitation.email,
+        firstName: result.data.invitation.firstName,
+        lastName: result.data.invitation.lastName,
+        role: result.data.invitation.role,
+        department: result.data.invitation.department,
+        status: result.data.invitation.status,
+        invitedAt: result.data.invitation.invitedAt
       };
 
       setCompanyUsers([...companyUsers, newUser]);
@@ -223,7 +248,7 @@ export default function CompanyManagementPage() {
     } catch (error) {
       toast({
         title: "Invitation Failed",
-        description: "Failed to send invitation. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to send invitation. Please try again.",
         variant: "destructive"
       });
     }
@@ -238,11 +263,28 @@ export default function CompanyManagementPage() {
 
   const handleDeleteCompany = async (companyId: string) => {
     if (confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
-      setCompanies(companies.filter(c => c.id !== companyId));
-      toast({
-        title: "Company Deleted",
-        description: "Company has been deleted successfully."
-      });
+      try {
+        const response = await fetch(`/api/admin/companies/${companyId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete company');
+        }
+
+        setCompanies(companies.filter(c => c.id !== companyId));
+        toast({
+          title: "Company Deleted",
+          description: "Company has been deleted successfully."
+        });
+      } catch (error) {
+        toast({
+          title: "Deletion Failed",
+          description: error instanceof Error ? error.message : "Failed to delete company. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

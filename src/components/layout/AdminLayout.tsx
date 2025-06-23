@@ -59,12 +59,6 @@ const adminSidebarItems: AdminSidebarItem[] = [
     description: 'Manage candidates and recruiters'
   },
   {
-    title: 'Company Management',
-    href: '/admin/companies',
-    icon: Building,
-    description: 'Manage company accounts'
-  },
-  {
     title: 'Analytics & Reports',
     href: '/admin/analytics',
     icon: BarChart3,

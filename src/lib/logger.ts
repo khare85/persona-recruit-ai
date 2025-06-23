@@ -126,6 +126,8 @@ export const authLogger = new Logger('auth');
 export const dbLogger = new Logger('database');
 export const fileLogger = new Logger('files');
 export const aiLogger = new Logger('ai');
+export const storageLogger = new Logger('storage');
+export const securityLogger = new Logger('security');
 
 // Generic logger factory
 export function createLogger(service: string): Logger {

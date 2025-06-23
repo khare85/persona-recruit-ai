@@ -1,139 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withRateLimit } from '@/middleware/security';
+import { handleApiError } from '@/lib/errors';
+import { authLogger } from '@/lib/logger';
+import { databaseService } from '@/services/database.service';
 import bcrypt from 'bcryptjs';
 
-// Mock user database - in production this would be a real database
-const users = [
-  {
-    id: '1',
-    email: 'admin@techcorp.com',
-    name: 'Admin User',
-    role: 'admin',
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeJe8Q4v/3/YqHV5.'  // hashed password
-  },
-  {
-    id: '2',
-    email: 'recruiter@techcorp.com',
-    name: 'Recruiter User',
-    role: 'recruiter',
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeJe8Q4v/3/YqHV5.'
-  },
-  {
-    id: '3',
-    email: 'candidate@example.com',
-    name: 'Candidate User',
-    role: 'candidate',
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeJe8Q4v/3/YqHV5.'
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/,
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    )
+});
+
+/**
+ * Send password change confirmation email
+ */
+async function sendPasswordChangeConfirmation(email: string, firstName: string): Promise<void> {
+  // In development, just log the confirmation
+  if (process.env.NODE_ENV === 'development') {
+    console.log('\n✅ PASSWORD CHANGED CONFIRMATION');
+    console.log('To:', email);
+    console.log('Password successfully reset\n');
+    return;
   }
-];
 
-// Mock password reset tokens - in production this would be stored in database
-const resetTokens: Record<string, {
-  userId: string;
-  token: string;
-  expiresAt: Date;
-  used: boolean;
-}> = {};
+  // TODO: Implement actual email sending
+  authLogger.info('Would send password change confirmation email', { to: email });
+}
 
-// Mock email service for confirmation
-const sendPasswordChangeConfirmation = async (email: string, userName: string) => {
-  // In production, this would use a real email service
-  console.log('Sending password change confirmation to:', email);
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return true;
-};
-
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/auth/reset-password - Reset user password with token
+ */
+export const POST = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const { token, password } = await request.json();
+    const body = await req.json();
+    const validation = resetPasswordSchema.safeParse(body);
 
-    // Validate inputs
-    if (!token || !password) {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Reset token and new password are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate password strength
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return NextResponse.json(
-        { 
-          error: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character' 
+        {
+          error: 'Invalid input',
+          details: validation.error.errors
         },
         { status: 400 }
       );
     }
 
-    // Validate reset token
-    const resetData = resetTokens[token];
-    if (!resetData) {
+    const { token, password } = validation.data;
+
+    authLogger.info('Password reset attempt', { token: token.substring(0, 8) + '...' });
+
+    // Find user with this reset token
+    const user = await databaseService.getUserByResetToken(token);
+
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      authLogger.warn('Invalid reset token used', { token: token.substring(0, 8) + '...' });
       return NextResponse.json(
         { error: 'Invalid or expired reset token' },
         { status: 400 }
       );
     }
 
-    if (resetData.used) {
-      return NextResponse.json(
-        { error: 'Reset token has already been used' },
-        { status: 400 }
-      );
-    }
-
-    if (new Date() > resetData.expiresAt) {
+    // Check if token has expired
+    const now = new Date();
+    const expiry = new Date(user.resetTokenExpiry);
+    
+    if (now > expiry) {
+      authLogger.warn('Expired reset token used', { 
+        userId: user.id,
+        expiry: user.resetTokenExpiry
+      });
       return NextResponse.json(
         { error: 'Reset token has expired' },
         { status: 400 }
       );
     }
 
-    // Find user
-    const userIndex = users.findIndex(u => u.id === resetData.userId);
-    if (userIndex === -1) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    const user = users[userIndex];
-
     // Hash new password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Update user password in database
-    users[userIndex] = {
-      ...user,
-      password: hashedPassword,
+    // Update user password and clear reset token
+    await databaseService.updateUser(user.id, {
+      passwordHash: hashedPassword,
+      resetToken: null,
+      resetTokenExpiry: null,
       updatedAt: new Date().toISOString()
-    };
-
-    // Mark token as used
-    resetTokens[token].used = true;
+    } as any);
 
     // Send confirmation email
     try {
-      await sendPasswordChangeConfirmation(user.email, user.name);
+      await sendPasswordChangeConfirmation(user.email, user.firstName);
     } catch (emailError) {
-      console.error('Failed to send password change confirmation:', emailError);
+      authLogger.error('Failed to send password change confirmation', {
+        userId: user.id,
+        error: String(emailError)
+      });
       // Don't fail the request if email fails
     }
 
-    // Log security event
-    console.log(`Password reset completed for user ${user.email} at ${new Date().toISOString()}`);
+    authLogger.info('Password reset completed successfully', { 
+      userId: user.id,
+      email: user.email 
+    });
 
     return NextResponse.json({
-      message: 'Password has been successfully reset',
-      success: true
+      success: true,
+      message: 'Password has been successfully reset. You can now log in with your new password.'
     });
 
   } catch (error) {
-    console.error('Reset password error:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred. Please try again later.' },
-      { status: 500 }
-    );
+    authLogger.error('Password reset failed', { error: String(error) });
+    return handleApiError(error);
   }
-}
+});

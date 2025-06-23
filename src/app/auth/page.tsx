@@ -197,7 +197,7 @@ export default function AuthenticationPage() {
                           <div className="flex items-center justify-between">
                             <Label htmlFor="login-password">Password</Label>
                             <Link
-                              href="/forgot-password"
+                              href="/auth/forgot-password"
                               className="text-xs text-primary hover:underline"
                             >
                               Forgot password?
@@ -336,13 +336,13 @@ export default function AuthenticationPage() {
               <CardContent className="space-y-3 px-0">
                  <Alert variant="default" className="mb-4">
                   <Info className="h-4 w-4" />
-                  <AlertTitle>Demo Mode</AlertTitle>
+                  <AlertTitle>Choose Your Role</AlertTitle>
                   <AlertDescription>
-                    You are about to enter a demonstration environment. No actual user account will be created.
+                    Candidates must create an account with a video introduction. Other roles enter demo mode.
                   </AlertDescription>
                 </Alert>
-                <Button onClick={() => handlePersonaSelection('/candidates/dashboard')} className="w-full justify-start" variant="outline" size="lg">
-                  <Users className="mr-3 h-5 w-5 text-primary" /> View as Candidate
+                <Button onClick={() => router.push('/auth/register/candidate')} className="w-full justify-start" variant="outline" size="lg">
+                  <Users className="mr-3 h-5 w-5 text-primary" /> Sign up as Candidate
                 </Button>
                 <Button onClick={() => handlePersonaSelection('/recruiter/dashboard')} className="w-full justify-start" variant="outline" size="lg">
                   <LayoutDashboard className="mr-3 h-5 w-5 text-primary" /> View as Recruiter

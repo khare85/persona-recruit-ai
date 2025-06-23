@@ -2,13 +2,14 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare } from 'lucide-react';
+import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, Bookmark } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import Image from 'next/image';
 import { candidateJobMatcher } from '@/ai/flows/candidate-job-matcher';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import { QuickApplyButton } from '@/components/jobs/QuickApplyButton';
 
 // Mock job data - in a real app, this would come from a database or API
 const MOCK_JOB = {
@@ -157,11 +158,23 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
             <CardHeader>
               <CardTitle className="text-xl">Ready to Apply?</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Button size="lg" className="w-full">Apply Now</Button>
-              <Button variant="outline" className="w-full mt-3">Save Job</Button>
+            <CardContent className="space-y-3">
+              <QuickApplyButton 
+                jobId={job.id}
+                jobTitle={job.title}
+                companyName={job.company}
+                className="w-full"
+              />
+              <Button size="lg" variant="secondary" className="w-full">
+                Apply with Resume
+              </Button>
+              <Button variant="outline" className="w-full">
+                <Bookmark className="mr-2 h-4 w-4" />
+                Save Job
+              </Button>
+              <Separator className="my-3" />
               <Link href={`/jobs/${job.id}/applicants`} passHref>
-                <Button variant="secondary" className="w-full mt-3">
+                <Button variant="ghost" className="w-full">
                   <Users className="mr-2 h-4 w-4" />
                   View Applicants
                 </Button>

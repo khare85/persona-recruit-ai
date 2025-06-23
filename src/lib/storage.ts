@@ -376,3 +376,44 @@ export function createStorageProvider(): StorageProvider {
  * Default file upload service instance
  */
 export const fileUploadService = new FileUploadService(createStorageProvider());
+
+/**
+ * Simple upload function for backwards compatibility
+ */
+export async function uploadToStorage(
+  file: File | Buffer,
+  options: {
+    folder?: string;
+    maxSize?: number;
+    userId?: string;
+    type?: 'video' | 'image' | 'document';
+  } = {}
+): Promise<string> {
+  if (options.type === 'video') {
+    // Use our video storage service for videos
+    const { videoStorageService } = await import('@/services/videoStorage.service');
+    
+    const videoMetadata = await videoStorageService.uploadVideo(
+      file,
+      file instanceof File ? file.name : 'upload.mp4',
+      {
+        userId: options.userId || 'anonymous',
+        type: 'intro',
+        maxSizeMB: options.maxSize ? options.maxSize / (1024 * 1024) : 50
+      }
+    );
+    return videoMetadata.url;
+  } else {
+    // Use general file upload service
+    const uploadFile = file instanceof File ? file : new File([file], 'upload');
+    const result = await fileUploadService.uploadFile(
+      uploadFile,
+      options.type === 'image' ? 'image' : 'document',
+      {
+        path: options.folder ? `${options.folder}/${uploadFile.name}` : undefined,
+        maxSize: options.maxSize
+      }
+    );
+    return result.url;
+  }
+}

@@ -56,18 +56,20 @@ const companyNavItems = [
   { href: '/company/dashboard', label: 'Company Hub', icon: LayoutDashboard },
   { href: '/jobs', label: 'Company Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
-  { href: '/jobs/1/applicants', label: 'Applicants (Demo Job)', icon: UsersRound },
+  { href: '/company/applications', label: 'Application Management', icon: UsersRound },
+  { href: '/company/analytics', label: 'Analytics & Reports', icon: BarChartBig },
   { href: '/company/talent-search', label: 'AI Talent Search', icon: SearchCode },
   { href: '/company/advanced-matching', label: 'Advanced Match', icon: SearchCheck }, 
+  { href: '/company/team', label: 'Team Management', icon: UsersRound },
   { href: '/company/portal', label: 'Company Job Board', icon: ExternalLink },
   { href: '/company/settings', label: 'Company Settings', icon: Settings2 },
 ];
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
+  { href: '/admin/company-management', label: 'Company Management', icon: Building },
+  { href: '/admin/analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, 
-  { href: '/admin/dashboard#companies', label: 'Company Management', icon: Building },
-  { href: '/admin/dashboard#analytics', label: 'Platform Analytics', icon: BarChartBig },
   { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
   { href: '/admin/dashboard#billing', label: 'Billing & Subs', icon: DollarSign },
   { href: '/admin/dashboard#settings', label: 'Platform Settings', icon: Settings },

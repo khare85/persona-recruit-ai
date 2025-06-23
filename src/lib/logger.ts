@@ -129,6 +129,8 @@ export const aiLogger = new Logger('ai');
 export const storageLogger = new Logger('storage');
 export const securityLogger = new Logger('security');
 export const emailLogger = new Logger('email');
+export const notificationLogger = new Logger('notification');
+export const integrationLogger = new Logger('integration');
 
 // Generic logger factory
 export function createLogger(service: string): Logger {

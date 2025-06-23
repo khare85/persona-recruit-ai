@@ -5,6 +5,19 @@ import DOMPurify from 'isomorphic-dompurify';
  * Comprehensive validation schemas for all API endpoints
  */
 
+/**
+ * Sanitize string input to prevent XSS attacks
+ */
+export function sanitizeString(input: string): string {
+  if (typeof input !== 'string') return '';
+  
+  // Remove potentially dangerous characters and normalize whitespace
+  return DOMPurify.sanitize(input.trim(), { 
+    ALLOWED_TAGS: [], 
+    ALLOWED_ATTR: [] 
+  });
+}
+
 // Base validation schemas
 export const emailSchema = z.string().email().min(3).max(254);
 export const passwordSchema = z.string().min(8).max(128)
@@ -194,19 +207,6 @@ export const searchSchema = z.object({
   salaryMax: z.string().transform(Number).pipe(z.number().min(0)).optional(),
   remote: z.string().transform(val => val === 'true').optional()
 });
-
-/**
- * Sanitize string input to prevent XSS attacks
- */
-export function sanitizeString(input: string): string {
-  if (typeof input !== 'string') return '';
-  
-  // Remove potentially dangerous characters and normalize whitespace
-  return DOMPurify.sanitize(input.trim(), { 
-    ALLOWED_TAGS: [], 
-    ALLOWED_ATTR: [] 
-  });
-}
 
 /**
  * Validate file upload

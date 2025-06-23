@@ -362,7 +362,7 @@ export async function searchJobsByEmbedding(
 // Export db and storageBucket for use in other services if needed
 // However, it's generally better practice for other services to call functions from this module
 // rather than directly accessing db/storageBucket, to encapsulate logic and error handling.
-export { db, storageBucket };
+export { db, storageBucket, storageBucket as storage };
 
 
     

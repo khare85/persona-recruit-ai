@@ -555,3 +555,58 @@ https://nextjs.org/docs/messages/module-not-found
 [2025-06-23T17:14:35.719Z] WARN [database] High memory usage detected {"heapUsedPercent":97.69214621809671}
 [2025-06-23T17:15:05.727Z] WARN [database] High memory usage detected {"heapUsedPercent":97.79527582724124}
 [2025-06-23T17:15:35.733Z] WARN [database] High memory usage detected {"heapUsedPercent":97.89861418387414}
+[2025-06-23T17:16:05.721Z] WARN [database] High memory usage detected {"heapUsedPercent":97.48075809567518}
+[2025-06-23T17:16:35.724Z] WARN [database] High memory usage detected {"heapUsedPercent":97.58371762663835}
+[2025-06-23T17:17:05.721Z] WARN [database] High memory usage detected {"heapUsedPercent":97.6874026064125}
+[2025-06-23T17:17:35.732Z] WARN [database] High memory usage detected {"heapUsedPercent":97.7902620754707}
+[2025-06-23T17:18:05.740Z] WARN [database] High memory usage detected {"heapUsedPercent":96.99719989331663}
+[2025-06-23T17:18:35.737Z] WARN [database] High memory usage detected {"heapUsedPercent":97.09974082178039}
+[2025-06-23T17:19:05.740Z] WARN [database] High memory usage detected {"heapUsedPercent":97.20204954142075}
+[2025-06-23T17:19:35.779Z] WARN [database] High memory usage detected {"heapUsedPercent":97.3047563333298}
+[2025-06-23T17:20:05.739Z] WARN [database] High memory usage detected {"heapUsedPercent":97.40738848668846}
+[2025-06-23T17:20:35.750Z] WARN [database] High memory usage detected {"heapUsedPercent":97.64469284997652}
+[2025-06-23T17:21:05.738Z] WARN [database] High memory usage detected {"heapUsedPercent":97.74784833550356}
+[2025-06-23T17:21:35.749Z] WARN [database] High memory usage detected {"heapUsedPercent":97.85121228333263}
+[2025-06-23T17:22:06.528Z] WARN [database] High memory usage detected {"heapUsedPercent":97.958445291487}
+[2025-06-23T17:22:36.554Z] WARN [database] High memory usage detected {"heapUsedPercent":97.45806024343253}
+[2025-06-23T17:23:05.793Z] WARN [database] High memory usage detected {"heapUsedPercent":97.56085563955592}
+[2025-06-23T17:23:35.775Z] WARN [database] High memory usage detected {"heapUsedPercent":97.66355540431941}
+[2025-06-23T17:24:05.839Z] WARN [database] High memory usage detected {"heapUsedPercent":97.76635495832802}
+[2025-06-23T17:24:35.762Z] WARN [database] High memory usage detected {"heapUsedPercent":97.53627006429089}
+[2025-06-23T17:25:05.764Z] WARN [database] High memory usage detected {"heapUsedPercent":97.63890330289095}
+[2025-06-23T17:25:35.783Z] WARN [database] High memory usage detected {"heapUsedPercent":97.74171117267}
+[2025-06-23T17:26:05.777Z] WARN [database] High memory usage detected {"heapUsedPercent":97.84428204299186}
+[2025-06-23T17:26:35.777Z] WARN [database] High memory usage detected {"heapUsedPercent":97.55771643622003}
+[2025-06-23T17:27:05.755Z] WARN [database] High memory usage detected {"heapUsedPercent":97.66080288430834}
+[2025-06-23T17:27:35.830Z] WARN [database] High memory usage detected {"heapUsedPercent":97.7699348974965}
+[2025-06-23T17:28:05.832Z] WARN [database] High memory usage detected {"heapUsedPercent":97.87269287265296}
+[2025-06-23T17:28:35.774Z] WARN [database] High memory usage detected {"heapUsedPercent":97.09579865154564}
+[2025-06-23T17:29:05.781Z] WARN [database] High memory usage detected {"heapUsedPercent":97.20855305817278}
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to /tmp/next-panic-f01517de6ae5d1df997f9294f184f642.log.
+
+To help make Turbopack better, report this error by ]8;;https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20%5Bproject%5D%2Fsrc%2Fapp%2Fglobals.css%20%5Bapp-client%5D%20%28css%29&body=Turbopack%20version%3A%20%601d586ca6%60%0A%0AError%20message%3A%0A%60%60%60%0A%5Bproject%5D%2Fsrc%2Fapp%2Fglobals.css%20%5Bapp-client%5D%20%28css%29%0A%0ACaused%20by%3A%0A-%20creating%20new%20process%0A-%20node%20process%20exited%20before%20we%20could%20connect%20to%20it%20with%20exit%20status%3A%201%0A%0ADebug%20info%3A%0A-%20Execution%20of%20subscribe_issues_and_diags_operation%20failed%0A-%20Execution%20of%20%3CAppEndpoint%20as%20Endpoint%3E%3A%3Aserver_changed%20failed%0A-%20Execution%20of%20AppEndpoint%3A%3Aoutput%20failed%0A-%20Execution%20of%20AppProject%3A%3Aapp_module_graphs%20failed%0A-%20Execution%20of%20SingleModuleGraph%3A%3Anew_with_entries_visited_intern%20failed%0A-%20%5Bproject%5D%2Fsrc%2Fapp%2Fglobals.css%20%5Bapp-client%5D%20%28css%29%0A-%20Execution%20of%20primary_chunkable_referenced_modules%20failed%0A-%20Execution%20of%20%3CCssModuleAsset%20as%20Module%3E%3A%3Areferences%20failed%0A-%20Execution%20of%20parse_css%20failed%0A-%20Execution%20of%20%3CPostCssTransformedAsset%20as%20Asset%3E%3A%3Acontent%20failed%0A-%20Execution%20of%20PostCssTransformedAsset%3A%3Aprocess%20failed%0A-%20creating%20new%20process%0A-%20node%20process%20exited%20before%20we%20could%20connect%20to%20it%20with%20exit%20status%3A%201%0A%20%20Process%20output%3A%0A%20%20%0A%20%20Process%20error%20output%3A%0A%20%20node%3Ainternal%2Fmodules%2Fcjs%2Floader%3A1215%0A%20%20%20%20throw%20err%3B%0A%20%20%20%20%5E%0A%20%20%0A%20%20Error%3A%20Cannot%20find%20module%20%27%2Fhome%2Fuser%2Fstudio%2F.next%2Ftransform.js%27%0A%20%20%20%20%20%20at%20Module._resolveFilename%20%28node%3Ainternal%2Fmodules%2Fcjs%2Floader%3A1212%3A15%29%0A%20%20%20%20%20%20at%20Module._load%20%28node%3Ainternal%2Fmodules%2Fcjs%2Floader%3A1043%3A27%29%0A%20%20%20%20%20%20at%20Function.executeUserEntryPoint%20%5Bas%20runMain%5D%20%28node%3Ainternal%2Fmodules%2Frun_main%3A164%3A12%29%0A%20%20%20%20%20%20at%20node%3Ainternal%2Fmain%2Frun_main_module%3A28%3A49%20%7B%0A%20%20%20%20code%3A%20%27MODULE_NOT_FOUND%27%2C%0A%20%20%7D%0A%20%20%0A%20%20Node.js%20v20.19.0%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace\clicking here.]8;;\
+-----
+
+ ✓ Compiled in 18.1s
+ ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+   ▲ Next.js 15.3.3 (Turbopack)
+   - Local:        http://localhost:9002
+   - Network:      http://0.0.0.0:9002
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Compiled instrumentation Node.js in 277ms
+ ✓ Compiled instrumentation Edge in 95ms
+[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...
+[FirestoreService] Firebase Admin SDK initialized successfully using Application Default Credentials.
+[FirestoreService] Firestore DB instance acquired.
+[FirestoreService] Firebase Storage bucket 'ai-talent-stream.firebasestorage.app' instance acquired.
+[2025-06-23T17:29:24.240Z] INFO [database] Initializing application...
+[2025-06-23T17:29:25.425Z] INFO [database] Health monitoring started
+[2025-06-23T17:29:25.428Z] INFO [database] Cache cleanup active
+[2025-06-23T17:29:32.933Z] INFO [database] Initial health check {"results":{"healthy":true,"checks":{"database":true,"memory":true,"eventLoop":true},"timestamp":"2025-06-23T17:29:32.933Z"}}
+[2025-06-23T17:29:32.935Z] INFO [database] Application initialization complete
+ ✓ Ready in 13.1s
+[2025-06-23T17:29:55.627Z] WARN [database] High memory usage detected {"heapUsedPercent":93.63294083124939}

@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
       '@': './src',
     },
   },
+  // Optimization for production builds
+  compress: true,
+  poweredByHeader: false,
+  generateEtags: true,
   // Instrumentation is enabled by default in Next.js 15
 };
 

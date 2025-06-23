@@ -164,13 +164,20 @@ class DatabaseService {
     this.ensureDb();
     const snapshot = await this.db!.collection(COLLECTIONS.USERS)
       .where('email', '==', email)
-      .where('deletedAt', '==', null)
       .limit(1)
       .get();
     
     if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as User;
+    
+    // Filter out deleted users in code instead of query
+    for (const doc of snapshot.docs) {
+      const userData = doc.data();
+      if (!userData.deletedAt) {
+        return { id: doc.id, ...userData } as User;
+      }
+    }
+    
+    return null;
   }
 
   async getUserByResetToken(resetToken: string): Promise<User | null> {
@@ -195,6 +202,18 @@ class DatabaseService {
 
   async deleteUser(id: string): Promise<void> {
     return this.delete(COLLECTIONS.USERS, id);
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    try {
+      await this.update(COLLECTIONS.USERS, id, {
+        lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      dbLogger.info('User last login updated', { userId: id });
+    } catch (error) {
+      dbLogger.error('Error updating user last login', { error: String(error), userId: id });
+      // Don't throw here as login should succeed even if this fails
+    }
   }
 
   async listUsers(options?: {

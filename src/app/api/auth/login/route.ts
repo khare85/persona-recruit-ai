@@ -3,37 +3,8 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '@/lib/env';
-
-// Mock user database (replace with real database)
-const mockUsers = [
-  {
-    id: '1',
-    email: 'admin@techcorp.com',
-    password: '$2a$10$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj0kq65w1RqG', // password: "admin123"
-    fullName: 'Admin User',
-    role: 'admin',
-    companyId: 'techcorp',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    email: 'recruiter@techcorp.com',
-    password: '$2a$10$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj0kq65w1RqG', // password: "admin123"
-    fullName: 'Jane Recruiter',
-    role: 'recruiter',
-    companyId: 'techcorp',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    email: 'candidate@example.com',
-    password: '$2a$10$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj0kq65w1RqG', // password: "admin123"
-    fullName: 'John Candidate',
-    role: 'candidate',
-    companyId: null,
-    createdAt: new Date().toISOString()
-  }
-];
+import { databaseService } from '@/services/database.service';
+import { apiLogger } from '@/lib/logger';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -57,10 +28,11 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validation.data;
 
-    // Find user by email
-    const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    // Find user by email in database
+    const user = await databaseService.getUserByEmail(email);
     
     if (!user) {
+      apiLogger.warn('Login attempt with invalid email', { email });
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -68,14 +40,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     
     if (!isValidPassword) {
+      apiLogger.warn('Login attempt with invalid password', { email, userId: user.id });
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
+
+    // Check if email is verified (if email verification is required)
+    // Temporarily disabled for launch - TODO: Re-enable after email verification flow is tested
+    // if (!user.emailVerified) {
+    //   return NextResponse.json(
+    //     { error: 'Please verify your email address before logging in' },
+    //     { status: 403 }
+    //   );
+    // }
 
     // Generate JWT token
     const token = jwt.sign(
@@ -83,21 +65,29 @@ export async function POST(request: NextRequest) {
         userId: user.id, 
         email: user.email, 
         role: user.role,
-        companyId: user.companyId
+        status: user.status
       },
       env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
       { expiresIn: '7d' }
     );
 
+    // Update last login timestamp
+    await databaseService.updateUserLastLogin(user.id);
+
     // Create response with user data (excluding password)
     const userResponse = {
       id: user.id,
       email: user.email,
-      fullName: user.fullName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role,
-      companyId: user.companyId,
-      createdAt: user.createdAt
+      status: user.status,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      lastLoginAt: new Date().toISOString()
     };
+
+    apiLogger.info('User logged in successfully', { userId: user.id, email: user.email, role: user.role });
 
     const response = NextResponse.json({
       success: true,
@@ -120,7 +110,7 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Login API Error:', error);
+    apiLogger.error('Login API Error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

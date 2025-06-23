@@ -5,7 +5,7 @@ import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
 import { databaseService } from '@/services/database.service';
-import { emailService } from '@/services/email.service';
+// import { emailService } from '@/services/email.service'; // Temporarily disabled for launch
 import jwt from 'jsonwebtoken';
 
 const candidateRegistrationSchema = z.object({
@@ -110,21 +110,22 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       { expiresIn: '7d' }
     );
 
-    // Send email verification
+    // Send email verification - Temporarily disabled for launch
     try {
       const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${authToken}`;
-      await emailService.sendVerificationEmail(
-        candidateData.email,
-        candidateData.firstName,
-        verificationUrl
-      );
+      // await emailService.sendVerificationEmail(
+      //   candidateData.email,
+      //   candidateData.firstName,
+      //   verificationUrl
+      // );
       
-      apiLogger.info('Verification email sent', {
+      apiLogger.info('Email verification disabled for launch', {
         candidateId: userId,
-        email: candidateData.email
+        email: candidateData.email,
+        verificationUrl
       });
     } catch (emailError) {
-      apiLogger.warn('Failed to send verification email', {
+      apiLogger.warn('Email verification disabled', {
         candidateId: userId,
         email: candidateData.email,
         error: String(emailError)

@@ -57,3 +57,463 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
 [2025-06-23T15:39:04.856Z] WARN [database] High memory usage detected {"heapUsedPercent":94.27967104452115}
 [2025-06-23T15:39:34.892Z] WARN [database] High memory usage detected {"heapUsedPercent":94.50322340266281}
 [2025-06-23T15:40:04.852Z] WARN [database] High memory usage detected {"heapUsedPercent":94.83416977431229}
+[2025-06-23T15:40:34.902Z] WARN [database] High memory usage detected {"heapUsedPercent":95.02331146974393}
+[2025-06-23T15:41:04.864Z] WARN [database] High memory usage detected {"heapUsedPercent":95.36443986582547}
+[2025-06-23T15:41:34.855Z] WARN [database] High memory usage detected {"heapUsedPercent":95.55258130442509}
+[2025-06-23T15:42:04.859Z] WARN [database] High memory usage detected {"heapUsedPercent":95.734919250933}
+[2025-06-23T15:42:34.860Z] WARN [database] High memory usage detected {"heapUsedPercent":95.91772230984539}
+[2025-06-23T15:43:04.872Z] WARN [database] High memory usage detected {"heapUsedPercent":95.48775018882175}
+[2025-06-23T15:43:34.871Z] WARN [database] High memory usage detected {"heapUsedPercent":95.67534321130265}
+[2025-06-23T15:44:04.890Z] WARN [database] High memory usage detected {"heapUsedPercent":95.85726463923938}
+[2025-06-23T15:44:34.892Z] WARN [database] High memory usage detected {"heapUsedPercent":96.04427453572063}
+[2025-06-23T15:45:04.873Z] WARN [database] High memory usage detected {"heapUsedPercent":95.56510462946508}
+[2025-06-23T15:45:34.879Z] WARN [database] High memory usage detected {"heapUsedPercent":95.74681085614004}
+[2025-06-23T15:46:04.885Z] WARN [database] High memory usage detected {"heapUsedPercent":95.93518137995379}
+[2025-06-23T15:46:34.904Z] WARN [database] High memory usage detected {"heapUsedPercent":95.61201052902572}
+[2025-06-23T15:47:04.903Z] WARN [database] High memory usage detected {"heapUsedPercent":96.59797954006326}
+[2025-06-23T15:47:34.891Z] WARN [database] High memory usage detected {"heapUsedPercent":97.26703263303362}
+[2025-06-23T15:48:04.892Z] WARN [database] High memory usage detected {"heapUsedPercent":97.44117597216876}
+[2025-06-23T15:48:34.891Z] WARN [database] High memory usage detected {"heapUsedPercent":95.98468545199209}
+[2025-06-23T15:49:04.894Z] WARN [database] High memory usage detected {"heapUsedPercent":96.17182352890184}
+[2025-06-23T15:49:34.901Z] WARN [database] High memory usage detected {"heapUsedPercent":96.43100759821769}
+[2025-06-23T15:50:04.896Z] WARN [database] High memory usage detected {"heapUsedPercent":96.60405884826103}
+[2025-06-23T15:50:34.902Z] WARN [database] High memory usage detected {"heapUsedPercent":97.07524604878775}
+[2025-06-23T15:51:04.905Z] WARN [database] High memory usage detected {"heapUsedPercent":97.24956705034461}
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 2.3s
+[2025-06-23T15:51:33.144Z] WARN [api] Login attempt with invalid email {"email":"admin@talentai.com"}
+ POST /api/auth/login 401 in 2686ms
+[2025-06-23T15:51:34.887Z] WARN [database] High memory usage detected {"heapUsedPercent":93.76006818726648}
+[2025-06-23T15:51:43.540Z] WARN [api] Login attempt with invalid email {"email":"admin@talentai.com"}
+ POST /api/auth/login 401 in 299ms
+[2025-06-23T15:52:04.903Z] WARN [database] High memory usage detected {"heapUsedPercent":94.41070297128756}
+[FirestoreService] Firebase Admin SDK was already initialized.
+[FirestoreService] Firestore DB instance acquired.
+[FirestoreService] Firebase Storage bucket 'ai-talent-stream.firebasestorage.app' instance acquired.
+ POST /api/auth/login 403 in 1607ms
+[2025-06-23T15:52:34.908Z] WARN [database] High memory usage detected {"heapUsedPercent":94.44241021134911}
+[2025-06-23T15:53:04.911Z] WARN [database] High memory usage detected {"heapUsedPercent":94.62179581159911}
+[2025-06-23T15:53:34.909Z] WARN [database] High memory usage detected {"heapUsedPercent":94.78354246080126}
+[2025-06-23T15:54:04.915Z] WARN [database] High memory usage detected {"heapUsedPercent":94.93938735570542}
+[2025-06-23T15:54:34.906Z] WARN [database] High memory usage detected {"heapUsedPercent":95.23481371332794}
+ POST /api/auth/login 403 in 855ms
+[2025-06-23T15:55:04.920Z] WARN [database] High memory usage detected {"heapUsedPercent":95.97966348305503}
+[2025-06-23T15:55:34.924Z] WARN [database] High memory usage detected {"heapUsedPercent":94.82581271053438}
+[FirestoreService] Firebase Admin SDK was already initialized.
+[FirestoreService] Firestore DB instance acquired.
+[FirestoreService] Firebase Storage bucket 'ai-talent-stream.firebasestorage.app' instance acquired.
+[2025-06-23T15:56:06.086Z] WARN [database] High memory usage detected {"heapUsedPercent":91.58136230297428}
+[2025-06-23T15:56:06.119Z] INFO [database] User last login updated {"userId":"cs2sqxpl0HCX9BjffXId"}
+[2025-06-23T15:56:06.120Z] INFO [api] User logged in successfully {"userId":"cs2sqxpl0HCX9BjffXId","email":"admin@talentai.com","role":"super_admin"}
+ POST /api/auth/login 200 in 1629ms
+[2025-06-23T15:56:35.331Z] WARN [database] High memory usage detected {"heapUsedPercent":91.96316289540093}
+[2025-06-23T15:56:40.594Z] INFO [database] User last login updated {"userId":"JPmcGfiOc5cp6GEzXjvJ"}
+[2025-06-23T15:56:40.594Z] INFO [api] User logged in successfully {"userId":"JPmcGfiOc5cp6GEzXjvJ","email":"candidate@example.com","role":"candidate"}
+ POST /api/auth/login 200 in 1708ms
+[2025-06-23T15:57:05.332Z] WARN [database] High memory usage detected {"heapUsedPercent":95.32999920808109}
+ GET / 200 in 242ms
+[2025-06-23T15:57:35.350Z] WARN [database] High memory usage detected {"heapUsedPercent":93.9616855383393}
+ ○ Compiling /api/auth/register/candidate ...
+ ✓ Compiled /api/auth/register/candidate in 1523ms
+ ⨯ ./src/services/email.service.ts:6:1
+Export emailLogger doesn't exist in target module
+[0m [90m 4 |[39m [90m */[39m[0m
+[0m [90m 5 |[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m { emailLogger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m[0m
+[0m [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 7 |[39m[0m
+[0m [90m 8 |[39m [36mexport[39m [36minterface[39m [33mEmailProvider[39m {[0m
+[0m [90m 9 |[39m   sendEmail(options[33m:[39m [33mEmailOptions[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mEmailResult[39m[33m>[39m[33m;[39m[0m
+
+The export emailLogger was not found in module [project]/src/lib/logger.ts [app-route] (ecmascript).
+Did you mean to import aiLogger?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+
+./src/app/api/auth/register/candidate/route.ts:6:1
+Export sanitizeString doesn't exist in target module
+[0m [90m 4 |[39m [36mimport[39m { handleApiError } [36mfrom[39m [32m'@/lib/errors'[39m[33m;[39m[0m
+[0m [90m 5 |[39m [36mimport[39m { apiLogger } [36mfrom[39m [32m'@/lib/logger'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m { sanitizeString } [36mfrom[39m [32m'@/lib/validation'[39m[33m;[39m[0m
+[0m [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 7 |[39m [36mimport[39m { databaseService } [36mfrom[39m [32m'@/services/database.service'[39m[33m;[39m[0m
+[0m [90m 8 |[39m [36mimport[39m { emailService } [36mfrom[39m [32m'@/services/email.service'[39m[33m;[39m[0m
+[0m [90m 9 |[39m [36mimport[39m jwt [36mfrom[39m [32m'jsonwebtoken'[39m[33m;[39m[0m
+
+The export sanitizeString was not found in module [project]/src/lib/validation.ts [app-route] (ecmascript).
+Did you mean to import rateLimitConfig?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+ ⚠ ./src/services/email.service.ts:64:29
+Module not found: Can't resolve '@sendgrid/mail'
+[0m [90m 62 |[39m     [36mtry[39m {[0m
+[0m [90m 63 |[39m       [90m// Dynamic import to avoid issues if SendGrid is not installed[39m[0m
+[0m[31m[1m>[22m[39m[90m 64 |[39m       [36mconst[39m sgMail [33m=[39m ([36mawait[39m [36mimport[39m([32m'@sendgrid/mail'[39m))[33m.[39m[36mdefault[39m[33m;[39m[0m
+[0m [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 65 |[39m       sgMail[33m.[39msetApiKey([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 66 |[39m[0m
+[0m [90m 67 |[39m       [36mconst[39m msg [33m=[39m {[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:232:32
+Module not found: Can't resolve 'nodemailer'
+[0m [90m 230 |[39m   [36mprivate[39m [36masync[39m initializeTransporter(config[33m:[39m any) {[0m
+[0m [90m 231 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 232 |[39m       [36mconst[39m nodemailer [33m=[39m [36mawait[39m [36mimport[39m([32m'nodemailer'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 233 |[39m       [36mthis[39m[33m.[39mtransporter [33m=[39m nodemailer[33m.[39mcreateTransporter({[0m
+[0m [90m 234 |[39m         host[33m:[39m config[33m.[39mhost[33m,[39m[0m
+[0m [90m 235 |[39m         port[33m:[39m config[33m.[39mport[33m,[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:152:32
+Module not found: Can't resolve 'resend'
+[0m [90m 150 |[39m   [36masync[39m sendEmail(options[33m:[39m [33mEmailOptions[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mEmailResult[39m[33m>[39m {[0m
+[0m [90m 151 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 152 |[39m       [36mconst[39m { [33mResend[39m } [33m=[39m [36mawait[39m [36mimport[39m([32m'resend'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 153 |[39m       [36mconst[39m resend [33m=[39m [36mnew[39m [33mResend[39m([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 154 |[39m[0m
+[0m [90m 155 |[39m       [36mconst[39m result [33m=[39m [36mawait[39m resend[33m.[39memails[33m.[39msend({[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 4s
+ GET /api/auth/register/candidate?email=test@example.com 500 in 6510ms
+[2025-06-23T15:58:05.340Z] WARN [database] High memory usage detected {"heapUsedPercent":97.05835697540093}
+[2025-06-23T15:58:35.345Z] WARN [database] High memory usage detected {"heapUsedPercent":96.73013216906769}
+[2025-06-23T15:59:05.356Z] WARN [database] High memory usage detected {"heapUsedPercent":96.29751498922123}
+[2025-06-23T15:59:35.348Z] WARN [database] High memory usage detected {"heapUsedPercent":96.43765473423606}
+[2025-06-23T16:00:05.348Z] WARN [database] High memory usage detected {"heapUsedPercent":96.58524698531393}
+[2025-06-23T16:00:35.397Z] WARN [database] High memory usage detected {"heapUsedPercent":96.83137875976827}
+[2025-06-23T16:01:05.355Z] WARN [database] High memory usage detected {"heapUsedPercent":97.12113593504097}
+[2025-06-23T16:01:35.367Z] WARN [database] High memory usage detected {"heapUsedPercent":97.25799353530145}
+[2025-06-23T16:02:05.363Z] WARN [database] High memory usage detected {"heapUsedPercent":97.39485113556195}
+[2025-06-23T16:02:35.370Z] WARN [database] High memory usage detected {"heapUsedPercent":97.08551713348619}
+[2025-06-23T16:03:05.361Z] WARN [database] High memory usage detected {"heapUsedPercent":97.22241713077278}
+[2025-06-23T16:03:35.432Z] WARN [database] High memory usage detected {"heapUsedPercent":97.35925353252021}
+[2025-06-23T16:04:05.374Z] WARN [database] High memory usage detected {"heapUsedPercent":96.93952750860014}
+[2025-06-23T16:04:35.371Z] WARN [database] High memory usage detected {"heapUsedPercent":97.0781635144103}
+ ⚠ ./src/services/email.service.ts:64:29
+Module not found: Can't resolve '@sendgrid/mail'
+[0m [90m 62 |[39m     [36mtry[39m {[0m
+[0m [90m 63 |[39m       [90m// Dynamic import to avoid issues if SendGrid is not installed[39m[0m
+[0m[31m[1m>[22m[39m[90m 64 |[39m       [36mconst[39m sgMail [33m=[39m ([36mawait[39m [36mimport[39m([32m'@sendgrid/mail'[39m))[33m.[39m[36mdefault[39m[33m;[39m[0m
+[0m [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 65 |[39m       sgMail[33m.[39msetApiKey([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 66 |[39m[0m
+[0m [90m 67 |[39m       [36mconst[39m msg [33m=[39m {[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:232:32
+Module not found: Can't resolve 'nodemailer'
+[0m [90m 230 |[39m   [36mprivate[39m [36masync[39m initializeTransporter(config[33m:[39m any) {[0m
+[0m [90m 231 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 232 |[39m       [36mconst[39m nodemailer [33m=[39m [36mawait[39m [36mimport[39m([32m'nodemailer'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 233 |[39m       [36mthis[39m[33m.[39mtransporter [33m=[39m nodemailer[33m.[39mcreateTransporter({[0m
+[0m [90m 234 |[39m         host[33m:[39m config[33m.[39mhost[33m,[39m[0m
+[0m [90m 235 |[39m         port[33m:[39m config[33m.[39mport[33m,[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:152:32
+Module not found: Can't resolve 'resend'
+[0m [90m 150 |[39m   [36masync[39m sendEmail(options[33m:[39m [33mEmailOptions[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mEmailResult[39m[33m>[39m {[0m
+[0m [90m 151 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 152 |[39m       [36mconst[39m { [33mResend[39m } [33m=[39m [36mawait[39m [36mimport[39m([32m'resend'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 153 |[39m       [36mconst[39m resend [33m=[39m [36mnew[39m [33mResend[39m([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 154 |[39m[0m
+[0m [90m 155 |[39m       [36mconst[39m result [33m=[39m [36mawait[39m resend[33m.[39memails[33m.[39msend({[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:64:29
+Module not found: Can't resolve '@sendgrid/mail'
+[0m [90m 62 |[39m     [36mtry[39m {[0m
+[0m [90m 63 |[39m       [90m// Dynamic import to avoid issues if SendGrid is not installed[39m[0m
+[0m[31m[1m>[22m[39m[90m 64 |[39m       [36mconst[39m sgMail [33m=[39m ([36mawait[39m [36mimport[39m([32m'@sendgrid/mail'[39m))[33m.[39m[36mdefault[39m[33m;[39m[0m
+[0m [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 65 |[39m       sgMail[33m.[39msetApiKey([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 66 |[39m[0m
+[0m [90m 67 |[39m       [36mconst[39m msg [33m=[39m {[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:232:32
+Module not found: Can't resolve 'nodemailer'
+[0m [90m 230 |[39m   [36mprivate[39m [36masync[39m initializeTransporter(config[33m:[39m any) {[0m
+[0m [90m 231 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 232 |[39m       [36mconst[39m nodemailer [33m=[39m [36mawait[39m [36mimport[39m([32m'nodemailer'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 233 |[39m       [36mthis[39m[33m.[39mtransporter [33m=[39m nodemailer[33m.[39mcreateTransporter({[0m
+[0m [90m 234 |[39m         host[33m:[39m config[33m.[39mhost[33m,[39m[0m
+[0m [90m 235 |[39m         port[33m:[39m config[33m.[39mport[33m,[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:152:32
+Module not found: Can't resolve 'resend'
+[0m [90m 150 |[39m   [36masync[39m sendEmail(options[33m:[39m [33mEmailOptions[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mEmailResult[39m[33m>[39m {[0m
+[0m [90m 151 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 152 |[39m       [36mconst[39m { [33mResend[39m } [33m=[39m [36mawait[39m [36mimport[39m([32m'resend'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 153 |[39m       [36mconst[39m resend [33m=[39m [36mnew[39m [33mResend[39m([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 154 |[39m[0m
+[0m [90m 155 |[39m       [36mconst[39m result [33m=[39m [36mawait[39m resend[33m.[39memails[33m.[39msend({[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ POST /api/auth/login 500 in 462ms
+ ⚠ ./src/services/email.service.ts:64:29
+Module not found: Can't resolve '@sendgrid/mail'
+[0m [90m 62 |[39m     [36mtry[39m {[0m
+[0m [90m 63 |[39m       [90m// Dynamic import to avoid issues if SendGrid is not installed[39m[0m
+[0m[31m[1m>[22m[39m[90m 64 |[39m       [36mconst[39m sgMail [33m=[39m ([36mawait[39m [36mimport[39m([32m'@sendgrid/mail'[39m))[33m.[39m[36mdefault[39m[33m;[39m[0m
+[0m [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 65 |[39m       sgMail[33m.[39msetApiKey([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 66 |[39m[0m
+[0m [90m 67 |[39m       [36mconst[39m msg [33m=[39m {[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:232:32
+Module not found: Can't resolve 'nodemailer'
+[0m [90m 230 |[39m   [36mprivate[39m [36masync[39m initializeTransporter(config[33m:[39m any) {[0m
+[0m [90m 231 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 232 |[39m       [36mconst[39m nodemailer [33m=[39m [36mawait[39m [36mimport[39m([32m'nodemailer'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 233 |[39m       [36mthis[39m[33m.[39mtransporter [33m=[39m nodemailer[33m.[39mcreateTransporter({[0m
+[0m [90m 234 |[39m         host[33m:[39m config[33m.[39mhost[33m,[39m[0m
+[0m [90m 235 |[39m         port[33m:[39m config[33m.[39mport[33m,[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:152:32
+Module not found: Can't resolve 'resend'
+[0m [90m 150 |[39m   [36masync[39m sendEmail(options[33m:[39m [33mEmailOptions[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mEmailResult[39m[33m>[39m {[0m
+[0m [90m 151 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 152 |[39m       [36mconst[39m { [33mResend[39m } [33m=[39m [36mawait[39m [36mimport[39m([32m'resend'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 153 |[39m       [36mconst[39m resend [33m=[39m [36mnew[39m [33mResend[39m([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 154 |[39m[0m
+[0m [90m 155 |[39m       [36mconst[39m result [33m=[39m [36mawait[39m resend[33m.[39memails[33m.[39msend({[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:64:29
+Module not found: Can't resolve '@sendgrid/mail'
+[0m [90m 62 |[39m     [36mtry[39m {[0m
+[0m [90m 63 |[39m       [90m// Dynamic import to avoid issues if SendGrid is not installed[39m[0m
+[0m[31m[1m>[22m[39m[90m 64 |[39m       [36mconst[39m sgMail [33m=[39m ([36mawait[39m [36mimport[39m([32m'@sendgrid/mail'[39m))[33m.[39m[36mdefault[39m[33m;[39m[0m
+[0m [90m    |[39m                             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 65 |[39m       sgMail[33m.[39msetApiKey([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 66 |[39m[0m
+[0m [90m 67 |[39m       [36mconst[39m msg [33m=[39m {[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:232:32
+Module not found: Can't resolve 'nodemailer'
+[0m [90m 230 |[39m   [36mprivate[39m [36masync[39m initializeTransporter(config[33m:[39m any) {[0m
+[0m [90m 231 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 232 |[39m       [36mconst[39m nodemailer [33m=[39m [36mawait[39m [36mimport[39m([32m'nodemailer'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 233 |[39m       [36mthis[39m[33m.[39mtransporter [33m=[39m nodemailer[33m.[39mcreateTransporter({[0m
+[0m [90m 234 |[39m         host[33m:[39m config[33m.[39mhost[33m,[39m[0m
+[0m [90m 235 |[39m         port[33m:[39m config[33m.[39mport[33m,[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⚠ ./src/services/email.service.ts:152:32
+Module not found: Can't resolve 'resend'
+[0m [90m 150 |[39m   [36masync[39m sendEmail(options[33m:[39m [33mEmailOptions[39m)[33m:[39m [33mPromise[39m[33m<[39m[33mEmailResult[39m[33m>[39m {[0m
+[0m [90m 151 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 152 |[39m       [36mconst[39m { [33mResend[39m } [33m=[39m [36mawait[39m [36mimport[39m([32m'resend'[39m)[33m;[39m[0m
+[0m [90m     |[39m                                [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 153 |[39m       [36mconst[39m resend [33m=[39m [36mnew[39m [33mResend[39m([36mthis[39m[33m.[39mapiKey)[33m;[39m[0m
+[0m [90m 154 |[39m[0m
+[0m [90m 155 |[39m       [36mconst[39m result [33m=[39m [36mawait[39m resend[33m.[39memails[33m.[39msend({[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ POST /api/auth/login 500 in 362ms
+[2025-06-23T16:05:05.373Z] WARN [database] High memory usage detected {"heapUsedPercent":95.28896118985806}
+[2025-06-23T16:05:35.379Z] WARN [database] High memory usage detected {"heapUsedPercent":95.54708292021083}
+[2025-06-23T16:06:05.373Z] WARN [database] High memory usage detected {"heapUsedPercent":95.67706362847676}
+[2025-06-23T16:06:35.382Z] WARN [database] High memory usage detected {"heapUsedPercent":95.80746731168136}
+[2025-06-23T16:07:06.141Z] WARN [database] High memory usage detected {"heapUsedPercent":95.93741234736211}
+[2025-06-23T16:07:35.380Z] WARN [database] High memory usage detected {"heapUsedPercent":96.06739305562803}
+[2025-06-23T16:08:05.375Z] WARN [database] High memory usage detected {"heapUsedPercent":96.1976336641575}
+[2025-06-23T16:08:35.388Z] WARN [database] High memory usage detected {"heapUsedPercent":96.32758379592184}
+[2025-06-23T16:09:05.389Z] WARN [database] High memory usage detected {"heapUsedPercent":96.45766132977613}
+[2025-06-23T16:09:35.399Z] WARN [database] High memory usage detected {"heapUsedPercent":97.33725654204987}
+[2025-06-23T16:10:05.398Z] WARN [database] High memory usage detected {"heapUsedPercent":97.46972142297061}
+[2025-06-23T16:10:35.416Z] WARN [database] High memory usage detected {"heapUsedPercent":97.60214477234065}
+[2025-06-23T16:11:05.416Z] WARN [database] High memory usage detected {"heapUsedPercent":97.35024175920766}
+[2025-06-23T16:11:35.446Z] WARN [database] High memory usage detected {"heapUsedPercent":95.59878846712736}
+[FirestoreService] Firebase Admin SDK was already initialized.
+[FirestoreService] Firestore DB instance acquired.
+[FirestoreService] Firebase Storage bucket 'ai-talent-stream.firebasestorage.app' instance acquired.
+[2025-06-23T16:11:49.899Z] ERROR [api] Rate limiting error {"error":"TypeError: Cannot read properties of undefined (reading 'check')"}
+[2025-06-23T16:11:49.901Z] INFO [api] Email availability check requested {"email":"newuser@example.com","userAgent":"curl/8.12.1"}
+ GET /api/auth/register/candidate?email=newuser@example.com 200 in 3895ms
+[2025-06-23T16:12:35.410Z] WARN [database] High memory usage detected {"heapUsedPercent":97.58206518460425}
+[2025-06-23T16:13:05.418Z] WARN [database] High memory usage detected {"heapUsedPercent":97.23246694159083}
+[2025-06-23T16:13:35.418Z] WARN [database] High memory usage detected {"heapUsedPercent":97.3486750063201}
+[2025-06-23T16:14:05.423Z] WARN [database] High memory usage detected {"heapUsedPercent":97.46514341589676}
+[2025-06-23T16:14:35.431Z] WARN [database] High memory usage detected {"heapUsedPercent":97.59305802135043}
+[2025-06-23T16:15:05.447Z] WARN [database] High memory usage detected {"heapUsedPercent":97.38045952122403}
+[2025-06-23T16:15:35.429Z] WARN [database] High memory usage detected {"heapUsedPercent":97.49669002947464}
+[2025-06-23T16:16:05.430Z] WARN [database] High memory usage detected {"heapUsedPercent":97.61216643540862}
+[2025-06-23T16:16:35.425Z] WARN [database] High memory usage detected {"heapUsedPercent":97.72799296027532}
+[2025-06-23T16:17:05.437Z] WARN [database] High memory usage detected {"heapUsedPercent":97.41098719893363}
+[2025-06-23T16:17:35.440Z] WARN [database] High memory usage detected {"heapUsedPercent":97.52464119093584}
+[2025-06-23T16:18:05.487Z] WARN [database] High memory usage detected {"heapUsedPercent":97.63757250155129}
+[2025-06-23T16:18:35.446Z] WARN [database] High memory usage detected {"heapUsedPercent":97.75013124971272}
+[2025-06-23T16:19:05.456Z] WARN [database] High memory usage detected {"heapUsedPercent":97.45083791540264}
+[2025-06-23T16:19:35.449Z] WARN [database] High memory usage detected {"heapUsedPercent":97.56265602736028}
+[2025-06-23T16:20:05.460Z] WARN [database] High memory usage detected {"heapUsedPercent":97.67415095261077}
+[2025-06-23T16:20:35.449Z] WARN [database] High memory usage detected {"heapUsedPercent":97.78580298251057}
+[2025-06-23T16:21:05.454Z] WARN [database] High memory usage detected {"heapUsedPercent":97.89718120145018}
+[2025-06-23T16:21:35.518Z] WARN [database] High memory usage detected {"heapUsedPercent":97.43071013860842}
+[2025-06-23T16:22:05.461Z] WARN [database] High memory usage detected {"heapUsedPercent":97.5427450029833}
+[2025-06-23T16:22:35.457Z] WARN [database] High memory usage detected {"heapUsedPercent":97.65406272948411}
+[2025-06-23T16:23:05.471Z] WARN [database] High memory usage detected {"heapUsedPercent":97.4475987355425}
+[2025-06-23T16:23:35.461Z] WARN [database] High memory usage detected {"heapUsedPercent":97.5588761230379}
+[2025-06-23T16:24:05.465Z] WARN [database] High memory usage detected {"heapUsedPercent":97.67017592109188}
+[2025-06-23T16:24:35.476Z] WARN [database] High memory usage detected {"heapUsedPercent":97.78208528633881}
+[2025-06-23T16:25:05.464Z] WARN [database] High memory usage detected {"heapUsedPercent":96.96647586951313}
+[2025-06-23T16:25:35.484Z] WARN [database] High memory usage detected {"heapUsedPercent":97.07712562311781}
+[2025-06-23T16:26:05.488Z] WARN [database] High memory usage detected {"heapUsedPercent":97.18796252595135}
+[2025-06-23T16:26:35.486Z] WARN [database] High memory usage detected {"heapUsedPercent":97.2985409846117}
+[2025-06-23T16:27:05.486Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42125737568745}
+[2025-06-23T16:27:35.497Z] WARN [database] High memory usage detected {"heapUsedPercent":97.53247898287121}
+[2025-06-23T16:28:05.511Z] WARN [database] High memory usage detected {"heapUsedPercent":97.85735384681486}
+[2025-06-23T16:28:35.506Z] WARN [database] High memory usage detected {"heapUsedPercent":97.4886586110539}
+[2025-06-23T16:29:05.600Z] WARN [database] High memory usage detected {"heapUsedPercent":97.67480522377814}
+[2025-06-23T16:29:35.502Z] WARN [database] High memory usage detected {"heapUsedPercent":97.48111669770152}
+[2025-06-23T16:30:05.506Z] WARN [database] High memory usage detected {"heapUsedPercent":97.66746413618397}
+[2025-06-23T16:30:35.505Z] WARN [database] High memory usage detected {"heapUsedPercent":97.85370001342305}
+[2025-06-23T16:31:05.529Z] WARN [database] High memory usage detected {"heapUsedPercent":97.43608675596596}
+[2025-06-23T16:31:35.588Z] WARN [database] High memory usage detected {"heapUsedPercent":97.62038418706652}
+[2025-06-23T16:32:05.553Z] WARN [database] High memory usage detected {"heapUsedPercent":96.872240072412}
+[2025-06-23T16:32:35.529Z] WARN [database] High memory usage detected {"heapUsedPercent":97.07398058995645}
+[2025-06-23T16:39:16.339Z] ERROR [database] Database health check failed {"error":{"code":2,"details":"Getting metadata from plugin failed with error: Could not refresh access token: Request failed with status code 500","metadata":{}}}
+[2025-06-23T16:39:16.340Z] ERROR [database] Database health check failed {"error":{"code":2,"details":"Getting metadata from plugin failed with error: Could not refresh access token: Request failed with status code 500","metadata":{}}}
+[2025-06-23T16:39:16.340Z] ERROR [database] Database health check failed {"error":{"code":2,"details":"Getting metadata from plugin failed with error: Could not refresh access token: Request failed with status code 500","metadata":{}}}
+[2025-06-23T16:39:16.340Z] ERROR [database] Database health check failed {"error":{"code":2,"details":"Getting metadata from plugin failed with error: Could not refresh access token: Request failed with status code 500","metadata":{}}}
+[2025-06-23T16:39:16.340Z] ERROR [database] Database health check failed {"error":{"code":2,"details":"Getting metadata from plugin failed with error: Could not refresh access token: Request failed with status code 500","metadata":{}}}
+[2025-06-23T16:39:16.340Z] WARN [database] High memory usage detected {"heapUsedPercent":97.4170318851626}
+[2025-06-23T16:39:16.340Z] WARN [database] High memory usage detected {"heapUsedPercent":97.41901676829269}
+[2025-06-23T16:39:16.340Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42100165142277}
+[2025-06-23T16:39:16.340Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42298653455285}
+[2025-06-23T16:39:16.341Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42497141768293}
+[2025-06-23T16:39:16.341Z] ERROR [database] Server health check failed {"results":{"healthy":false,"checks":{"database":false,"memory":false,"eventLoop":true},"timestamp":"2025-06-23T16:39:16.341Z"},"failedChecks":["memory","database"]}
+[2025-06-23T16:39:16.341Z] INFO [database] Attempting database connection recovery...
+[2025-06-23T16:39:16.342Z] ERROR [database] Server health check failed {"results":{"healthy":false,"checks":{"database":false,"memory":false,"eventLoop":true},"timestamp":"2025-06-23T16:39:16.341Z"},"failedChecks":["memory","database"]}
+[2025-06-23T16:39:16.342Z] INFO [database] Attempting database connection recovery...
+[2025-06-23T16:39:16.342Z] ERROR [database] Server health check failed {"results":{"healthy":false,"checks":{"database":false,"memory":false,"eventLoop":true},"timestamp":"2025-06-23T16:39:16.342Z"},"failedChecks":["memory","database"]}
+[2025-06-23T16:39:16.342Z] INFO [database] Attempting database connection recovery...
+[2025-06-23T16:39:16.342Z] ERROR [database] Server health check failed {"results":{"healthy":false,"checks":{"database":false,"memory":false,"eventLoop":true},"timestamp":"2025-06-23T16:39:16.342Z"},"failedChecks":["memory","database"]}
+[2025-06-23T16:39:16.342Z] INFO [database] Attempting database connection recovery...
+[2025-06-23T16:39:16.342Z] ERROR [database] Server health check failed {"results":{"healthy":false,"checks":{"database":false,"memory":false,"eventLoop":true},"timestamp":"2025-06-23T16:39:16.342Z"},"failedChecks":["memory","database"]}
+[2025-06-23T16:39:16.342Z] INFO [database] Attempting database connection recovery...
+[2025-06-23T16:41:00.593Z] WARN [database] High memory usage detected {"heapUsedPercent":97.78894160959646}
+[2025-06-23T16:41:00.596Z] WARN [database] High memory usage detected {"heapUsedPercent":97.82269864629838}
+[2025-06-23T16:41:00.597Z] WARN [database] High memory usage detected {"heapUsedPercent":97.85639642299857}
+[2025-06-23T16:41:00.600Z] WARN [database] High memory usage detected {"heapUsedPercent":97.90705949162368}
+[2025-06-23T16:41:00.604Z] WARN [database] High memory usage detected {"heapUsedPercent":97.03351302857882}
+[2025-06-23T16:41:00.606Z] WARN [database] High memory usage detected {"heapUsedPercent":97.06702487849692}
+[2025-06-23T16:41:00.608Z] WARN [database] High memory usage detected {"heapUsedPercent":97.10320976254364}
+[2025-06-23T16:41:00.610Z] WARN [database] High memory usage detected {"heapUsedPercent":97.1365826988771}
+[2025-06-23T16:41:00.612Z] WARN [database] High memory usage detected {"heapUsedPercent":97.1706207366158}
+[2025-06-23T16:41:00.614Z] WARN [database] High memory usage detected {"heapUsedPercent":97.20732338947799}
+[2025-06-23T16:41:00.615Z] WARN [database] High memory usage detected {"heapUsedPercent":97.24091521994482}
+[2025-06-23T16:41:01.221Z] INFO [database] User last login updated {"userId":"cs2sqxpl0HCX9BjffXId"}
+[2025-06-23T16:41:01.222Z] INFO [api] User logged in successfully {"userId":"cs2sqxpl0HCX9BjffXId","email":"admin@talentai.com","role":"super_admin"}
+ POST /api/auth/login 200 in 33286ms
+[2025-06-23T16:41:05.543Z] WARN [database] High memory usage detected {"heapUsedPercent":97.79767955073481}
+[2025-06-23T16:41:35.560Z] WARN [database] High memory usage detected {"heapUsedPercent":97.9027439147936}
+[2025-06-23T16:42:05.551Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42072759070012}
+[2025-06-23T16:42:35.563Z] WARN [database] High memory usage detected {"heapUsedPercent":97.52548243460527}
+[2025-06-23T16:43:05.560Z] WARN [database] High memory usage detected {"heapUsedPercent":97.63023727851038}
+[2025-06-23T16:43:35.568Z] WARN [database] High memory usage detected {"heapUsedPercent":97.73526190270644}
+[2025-06-23T16:44:05.563Z] WARN [database] High memory usage detected {"heapUsedPercent":97.5232314553028}
+[2025-06-23T16:44:35.560Z] WARN [database] High memory usage detected {"heapUsedPercent":97.62865231930115}
+[2025-06-23T16:45:05.578Z] WARN [database] High memory usage detected {"heapUsedPercent":97.73379918769155}
+[2025-06-23T16:45:35.575Z] WARN [database] High memory usage detected {"heapUsedPercent":97.83875636681486}
+[2025-06-23T16:46:05.574Z] WARN [database] High memory usage detected {"heapUsedPercent":97.57477213682178}
+[2025-06-23T16:46:35.576Z] WARN [database] High memory usage detected {"heapUsedPercent":97.67995694306558}
+[2025-06-23T16:47:05.585Z] WARN [database] High memory usage detected {"heapUsedPercent":97.78552955847758}
+[2025-06-23T16:47:35.581Z] WARN [database] High memory usage detected {"heapUsedPercent":96.91139659782655}
+[2025-06-23T16:48:05.585Z] WARN [database] High memory usage detected {"heapUsedPercent":97.01897043929782}
+[2025-06-23T16:48:35.577Z] WARN [database] High memory usage detected {"heapUsedPercent":97.12335424079393}
+[2025-06-23T16:49:05.586Z] WARN [database] High memory usage detected {"heapUsedPercent":97.22781339756506}
+[2025-06-23T16:49:35.590Z] WARN [database] High memory usage detected {"heapUsedPercent":97.4971728980775}
+[2025-06-23T16:50:05.592Z] WARN [database] High memory usage detected {"heapUsedPercent":97.60220840607354}
+[2025-06-23T16:50:35.591Z] WARN [database] High memory usage detected {"heapUsedPercent":97.70721444755162}
+[2025-06-23T16:51:05.594Z] WARN [database] High memory usage detected {"heapUsedPercent":97.81192582385016}
+[2025-06-23T16:51:35.600Z] WARN [database] High memory usage detected {"heapUsedPercent":97.91662878114359}
+[2025-06-23T16:52:05.600Z] WARN [database] High memory usage detected {"heapUsedPercent":97.60914566630026}
+[2025-06-23T16:52:35.592Z] WARN [database] High memory usage detected {"heapUsedPercent":97.71384862359369}
+[2025-06-23T16:53:05.618Z] WARN [database] High memory usage detected {"heapUsedPercent":97.81903988318462}
+[2025-06-23T16:53:35.607Z] WARN [database] High memory usage detected {"heapUsedPercent":97.92306932006768}
+[2025-06-23T16:54:05.620Z] WARN [database] High memory usage detected {"heapUsedPercent":97.51044872691662}
+[2025-06-23T16:54:35.623Z] WARN [database] High memory usage detected {"heapUsedPercent":97.61501586646077}
+[2025-06-23T16:55:05.614Z] WARN [database] High memory usage detected {"heapUsedPercent":97.7348844889372}
+[2025-06-23T16:55:35.619Z] WARN [database] High memory usage detected {"heapUsedPercent":97.83891355435624}
+[2025-06-23T16:56:05.621Z] WARN [database] High memory usage detected {"heapUsedPercent":97.60577192113986}
+[2025-06-23T16:56:35.616Z] WARN [database] High memory usage detected {"heapUsedPercent":97.7095739865374}

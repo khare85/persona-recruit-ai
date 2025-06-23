@@ -61,7 +61,10 @@ export class SendGridProvider implements EmailProvider {
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
     try {
       // Dynamic import to avoid issues if SendGrid is not installed
-      const sgMail = (await import('@sendgrid/mail')).default;
+      const sgMail = await import('@sendgrid/mail').then(m => m.default).catch(() => null);
+      if (!sgMail) {
+        throw new Error('SendGrid not available');
+      }
       sgMail.setApiKey(this.apiKey);
 
       const msg = {
@@ -149,7 +152,11 @@ export class ResendProvider implements EmailProvider {
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {
     try {
-      const { Resend } = await import('resend');
+      const ResendModule = await import('resend').catch(() => null);
+      if (!ResendModule) {
+        throw new Error('Resend not available');
+      }
+      const { Resend } = ResendModule;
       const resend = new Resend(this.apiKey);
 
       const result = await resend.emails.send({
@@ -229,7 +236,10 @@ export class SMTPProvider implements EmailProvider {
 
   private async initializeTransporter(config: any) {
     try {
-      const nodemailer = await import('nodemailer');
+      const nodemailer = await import('nodemailer').catch(() => null);
+      if (!nodemailer) {
+        throw new Error('Nodemailer not available');
+      }
       this.transporter = nodemailer.createTransporter({
         host: config.host,
         port: config.port,

@@ -198,7 +198,7 @@ export const searchSchema = z.object({
 /**
  * Sanitize string input to prevent XSS attacks
  */
-function sanitizeString(input: string): string {
+export function sanitizeString(input: string): string {
   if (typeof input !== 'string') return '';
   
   // Remove potentially dangerous characters and normalize whitespace

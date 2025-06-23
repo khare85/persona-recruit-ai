@@ -1,4 +1,4 @@
-import { storage } from './firestoreService';
+import { storageBucket } from './firestoreService';
 import { storageLogger } from '@/lib/logger';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,7 +25,7 @@ export interface VideoMetadata {
 }
 
 class VideoStorageService {
-  private bucket = storage?.bucket();
+  private bucket = storageBucket;
   private readonly DEFAULT_MAX_SIZE_MB = 50;
   private readonly ALLOWED_FORMATS = ['video/webm', 'video/mp4', 'video/quicktime', 'video/x-msvideo'];
   private readonly BASE_PATH = 'videos';

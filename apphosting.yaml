@@ -4,8 +4,9 @@ runConfig:
   minInstances: 0
   maxInstances: 100
   concurrency: 80
-  cpu: 2
-  memoryMiB: 2048
+  cpu: 4
+  memoryMiB: 4096
+  timeoutSeconds: 3600
 
 # Environment variables and secrets.
 # env:

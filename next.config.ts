@@ -18,16 +18,39 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Since we're using Turbopack, configure it properly
-  turbopack: {
-    resolveAlias: {
-      '@': './src',
-    },
-  },
   // Optimization for production builds
   compress: true,
   poweredByHeader: false,
   generateEtags: true,
+  // External packages for server components
+  serverExternalPackages: [
+    '@google-cloud/documentai',
+    '@google-cloud/storage',
+    'firebase-admin'
+  ],
+  // Configure webpack for better memory management
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
+      config.optimization.splitChunks.cacheGroups = {
+        default: false,
+        vendors: false,
+        vendor: {
+          name: 'vendor',
+          chunks: 'all',
+          test: /node_modules/,
+          priority: 20
+        },
+        common: {
+          name: 'common',
+          minChunks: 2,
+          priority: 10,
+          reuseExistingChunk: true,
+          enforce: true
+        }
+      };
+    }
+    return config;
+  },
   // Instrumentation is enabled by default in Next.js 15
 };
 

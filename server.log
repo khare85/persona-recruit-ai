@@ -612,3 +612,103 @@ To help make Turbopack better, report this error by ]8;;https://github.com/verc
 [2025-06-23T17:29:55.627Z] WARN [database] High memory usage detected {"heapUsedPercent":93.63294083124939}
 [2025-06-23T17:30:25.639Z] WARN [database] High memory usage detected {"heapUsedPercent":93.91922486393057}
 [2025-06-23T17:30:55.634Z] WARN [database] High memory usage detected {"heapUsedPercent":94.2973615095126}
+[2025-06-23T17:31:25.652Z] WARN [database] High memory usage detected {"heapUsedPercent":94.53603847945475}
+[2025-06-23T17:31:55.749Z] WARN [database] High memory usage detected {"heapUsedPercent":95.14256900821829}
+[2025-06-23T17:32:25.646Z] WARN [database] High memory usage detected {"heapUsedPercent":95.38503660678816}
+[2025-06-23T17:32:55.658Z] WARN [database] High memory usage detected {"heapUsedPercent":95.69378573284824}
+[2025-06-23T17:33:25.662Z] WARN [database] High memory usage detected {"heapUsedPercent":95.9741571069696}
+[2025-06-23T17:33:55.653Z] WARN [database] High memory usage detected {"heapUsedPercent":96.22226643711018}
+[2025-06-23T17:34:25.657Z] WARN [database] High memory usage detected {"heapUsedPercent":95.61513672841798}
+[2025-06-23T17:34:55.658Z] WARN [database] High memory usage detected {"heapUsedPercent":95.9116149545837}
+[2025-06-23T17:35:25.668Z] WARN [database] High memory usage detected {"heapUsedPercent":96.13202552655677}
+[2025-06-23T17:35:55.664Z] WARN [database] High memory usage detected {"heapUsedPercent":96.45489404976315}
+[2025-06-23T17:36:25.688Z] WARN [database] High memory usage detected {"heapUsedPercent":96.12522590175664}
+[2025-06-23T17:36:55.679Z] WARN [database] High memory usage detected {"heapUsedPercent":96.5034956947597}
+[2025-06-23T17:37:25.686Z] WARN [database] High memory usage detected {"heapUsedPercent":96.08170319130564}
+[2025-06-23T17:37:55.689Z] WARN [database] High memory usage detected {"heapUsedPercent":96.48047183398303}
+[2025-06-23T17:38:25.694Z] WARN [database] High memory usage detected {"heapUsedPercent":96.87464341446265}
+[2025-06-23T17:38:56.483Z] WARN [database] High memory usage detected {"heapUsedPercent":96.19862118789966}
+[2025-06-23T17:39:25.867Z] WARN [database] High memory usage detected {"heapUsedPercent":96.571607538121}
+[2025-06-23T17:39:55.715Z] WARN [database] High memory usage detected {"heapUsedPercent":96.92342943002951}
+[2025-06-23T17:40:25.714Z] WARN [database] High memory usage detected {"heapUsedPercent":95.06116300216166}
+[2025-06-23T17:40:55.713Z] WARN [database] High memory usage detected {"heapUsedPercent":95.40630426928495}
+[2025-06-23T17:43:06.520Z] WARN [database] High memory usage detected {"heapUsedPercent":96.45306084416853}
+[2025-06-23T17:43:07.249Z] WARN [database] High memory usage detected {"heapUsedPercent":96.52100683412357}
+[2025-06-23T17:43:07.255Z] WARN [database] High memory usage detected {"heapUsedPercent":96.58898146507478}
+[2025-06-23T17:43:07.257Z] WARN [database] High memory usage detected {"heapUsedPercent":96.65098922182031}
+[2025-06-23T17:43:25.724Z] WARN [database] High memory usage detected {"heapUsedPercent":96.04343731669762}
+[2025-06-23T17:43:55.778Z] WARN [database] High memory usage detected {"heapUsedPercent":96.5041181933718}
+[2025-06-23T17:44:25.740Z] WARN [database] High memory usage detected {"heapUsedPercent":96.69647112376576}
+[2025-06-23T17:44:55.731Z] WARN [database] High memory usage detected {"heapUsedPercent":96.88918684011145}
+[2025-06-23T17:45:25.741Z] WARN [database] High memory usage detected {"heapUsedPercent":97.08109106156516}
+[2025-06-23T17:45:55.764Z] WARN [database] High memory usage detected {"heapUsedPercent":97.27194511315867}
+[2025-06-23T17:46:25.738Z] WARN [database] High memory usage detected {"heapUsedPercent":96.51344561113012}
+[2025-06-23T17:46:55.735Z] WARN [database] High memory usage detected {"heapUsedPercent":96.70423283373253}
+[2025-06-23T17:47:25.739Z] WARN [database] High memory usage detected {"heapUsedPercent":96.89481956936163}
+[2025-06-23T17:47:55.740Z] WARN [database] High memory usage detected {"heapUsedPercent":97.08568316795385}
+[2025-06-23T17:48:25.751Z] WARN [database] High memory usage detected {"heapUsedPercent":97.27625080958549}
+[2025-06-23T17:48:55.756Z] WARN [database] High memory usage detected {"heapUsedPercent":96.67805496321732}
+[2025-06-23T17:49:25.764Z] WARN [database] High memory usage detected {"heapUsedPercent":96.86862260484897}
+[2025-06-23T17:49:55.772Z] WARN [database] High memory usage detected {"heapUsedPercent":97.05957212642976}
+[2025-06-23T17:50:25.766Z] WARN [database] High memory usage detected {"heapUsedPercent":97.25014931506011}
+[2025-06-23T17:50:55.769Z] WARN [database] High memory usage detected {"heapUsedPercent":95.50823680542145}
+[2025-06-23T17:51:25.786Z] WARN [database] High memory usage detected {"heapUsedPercent":95.69639268731292}
+[2025-06-23T17:51:55.772Z] WARN [database] High memory usage detected {"heapUsedPercent":95.88488801354157}
+[2025-06-23T17:52:25.778Z] WARN [database] High memory usage detected {"heapUsedPercent":96.07312875651733}
+[2025-06-23T17:52:55.782Z] WARN [database] High memory usage detected {"heapUsedPercent":96.26185037897075}
+[2025-06-23T17:53:25.780Z] WARN [database] High memory usage detected {"heapUsedPercent":96.45006283491841}
+[2025-06-23T17:53:55.788Z] WARN [database] High memory usage detected {"heapUsedPercent":96.65442878374428}
+[2025-06-23T17:54:25.784Z] WARN [database] High memory usage detected {"heapUsedPercent":96.84435453415846}
+[2025-06-23T17:54:55.793Z] WARN [database] High memory usage detected {"heapUsedPercent":97.03463242191307}
+[2025-06-23T17:55:25.795Z] WARN [database] High memory usage detected {"heapUsedPercent":97.22462479290517}
+[2025-06-23T17:55:55.801Z] WARN [database] High memory usage detected {"heapUsedPercent":96.41314181968328}
+[2025-06-23T17:56:25.804Z] WARN [database] High memory usage detected {"heapUsedPercent":96.6025435216895}
+[2025-06-23T17:56:55.796Z] WARN [database] High memory usage detected {"heapUsedPercent":96.7922962662732}
+[2025-06-23T17:57:25.806Z] WARN [database] High memory usage detected {"heapUsedPercent":96.98201106030797}
+[2025-06-23T17:57:55.818Z] WARN [database] High memory usage detected {"heapUsedPercent":97.17171636670552}
+[2025-06-23T17:58:25.841Z] WARN [database] High memory usage detected {"heapUsedPercent":97.36105165525115}
+[2025-06-23T17:58:55.814Z] WARN [database] High memory usage detected {"heapUsedPercent":96.66652814716312}
+[2025-06-23T17:59:25.836Z] WARN [database] High memory usage detected {"heapUsedPercent":96.85592984916934}
+[2025-06-23T17:59:55.818Z] WARN [database] High memory usage detected {"heapUsedPercent":97.0471626651608}
+[2025-06-23T18:00:25.828Z] WARN [database] High memory usage detected {"heapUsedPercent":97.23691540974448}
+[2025-06-23T18:00:55.829Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42700970926843}
+[2025-06-23T18:01:25.848Z] WARN [database] High memory usage detected {"heapUsedPercent":95.63896106719605}
+[2025-06-23T18:01:55.839Z] WARN [database] High memory usage detected {"heapUsedPercent":95.84648411260915}
+[2025-06-23T18:02:25.850Z] WARN [database] High memory usage detected {"heapUsedPercent":96.0497058223779}
+ ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+   ▲ Next.js 15.3.3 (Turbopack)
+   - Local:        http://localhost:9002
+   - Network:      http://0.0.0.0:9002
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     · esmExternals
+
+ ✓ Starting...
+ ⚠ Invalid next.config.ts options detected: 
+ ⚠     Unrecognized key(s) in object: 'serverComponentsExternalPackages' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ The "experimental.esmExternals" option has been modified. experimental.esmExternals is not recommended to be modified as it may disrupt module resolution. It should be removed from your next.config.ts.
+ ⚠ `experimental.serverComponentsExternalPackages` has been moved to `serverExternalPackages`. Please update your next.config.ts file accordingly.
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to /tmp/next-panic-1768e8c2aab4a71a32c23d82f01445c6.log.
+
+To help make Turbopack better, report this error by ]8;;https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20esmExternals%20%3D%20%22loose%22%20is%20not%20supported&body=Turbopack%20version%3A%20%601d586ca6%60%0A%0AError%20message%3A%0A%60%60%60%0AesmExternals%20%3D%20%22loose%22%20is%20not%20supported%0A%0ADebug%20info%3A%0A-%20Execution%20of%20get_entrypoints_with_issues_operation%20failed%0A-%20Execution%20of%20EntrypointsOperation%3A%3Anew%20failed%0A-%20Execution%20of%20Project%3A%3Aentrypoints%20failed%0A-%20Execution%20of%20Project%3A%3Ainstrumentation_endpoint%20failed%0A-%20Execution%20of%20Project%3A%3Anode_instrumentation_context%20failed%0A-%20Execution%20of%20AppProject%3A%3Aecmascript_client_reference_transition%20failed%0A-%20Execution%20of%20AppProject%3A%3Assr_transition%20failed%0A-%20Execution%20of%20AppProject%3A%3Assr_module_context%20failed%0A-%20Execution%20of%20AppProject%3A%3Ashared_transition%20failed%0A-%20Execution%20of%20get_server_module_options_context%20failed%0A-%20Execution%20of%20NextConfig%3A%3Aimport_externals%20failed%0A-%20esmExternals%20%3D%20%22loose%22%20is%20not%20supported%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace\clicking here.]8;;\
+-----
+
+[Error [TurbopackInternalError]: esmExternals = "loose" is not supported
+
+Debug info:
+- Execution of get_entrypoints_with_issues_operation failed
+- Execution of EntrypointsOperation::new failed
+- Execution of Project::entrypoints failed
+- Execution of Project::instrumentation_endpoint failed
+- Execution of Project::node_instrumentation_context failed
+- Execution of AppProject::ecmascript_client_reference_transition failed
+- Execution of AppProject::ssr_transition failed
+- Execution of AppProject::ssr_module_context failed
+- Execution of AppProject::shared_transition failed
+- Execution of get_server_module_options_context failed
+- Execution of NextConfig::import_externals failed
+- esmExternals = "loose" is not supported]
+[?25h

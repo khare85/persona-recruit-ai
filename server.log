@@ -610,3 +610,5 @@ To help make Turbopack better, report this error by ]8;;https://github.com/verc
 [2025-06-23T17:29:32.935Z] INFO [database] Application initialization complete
  ✓ Ready in 13.1s
 [2025-06-23T17:29:55.627Z] WARN [database] High memory usage detected {"heapUsedPercent":93.63294083124939}
+[2025-06-23T17:30:25.639Z] WARN [database] High memory usage detected {"heapUsedPercent":93.91922486393057}
+[2025-06-23T17:30:55.634Z] WARN [database] High memory usage detected {"heapUsedPercent":94.2973615095126}

@@ -1,0 +1,59 @@
+
+> nextn@0.1.0 dev
+> npx next dev --turbopack -p 9002 --hostname 0.0.0.0
+
+   ▲ Next.js 15.3.3 (Turbopack)
+   - Local:        http://localhost:9002
+   - Network:      http://0.0.0.0:9002
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Compiled instrumentation Node.js in 121ms
+ ✓ Compiled instrumentation Edge in 44ms
+[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...
+[FirestoreService] Firebase Admin SDK initialized successfully using Application Default Credentials.
+[FirestoreService] Firestore DB instance acquired.
+[FirestoreService] Firebase Storage bucket 'ai-talent-stream.firebasestorage.app' instance acquired.
+[2025-06-23T15:34:04.292Z] INFO [database] Initializing application...
+[2025-06-23T15:34:04.631Z] INFO [database] Health monitoring started
+[2025-06-23T15:34:04.633Z] INFO [database] Cache cleanup active
+[2025-06-23T15:34:09.696Z] INFO [database] Initial health check {"results":{"healthy":true,"checks":{"database":true,"memory":true,"eventLoop":true},"timestamp":"2025-06-23T15:34:09.696Z"}}
+[2025-06-23T15:34:09.697Z] INFO [database] Application initialization complete
+ ✓ Ready in 7.4s
+ ○ Compiling /api/health ...
+ ✓ Compiled /api/health in 5.2s
+[FirestoreService] Firebase Admin SDK was already initialized.
+[FirestoreService] Firestore DB instance acquired.
+[FirestoreService] Firebase Storage bucket 'ai-talent-stream.firebasestorage.app' instance acquired.
+[2025-06-23T15:34:26.336Z] INFO [api] Health check completed {"status":"degraded","responseTime":224,"checksCount":5}
+ GET /api/health 200 in 5919ms
+[2025-06-23T15:34:33.201Z] INFO [api] Health check completed {"status":"unhealthy","responseTime":221,"checksCount":5}
+ GET /api/health 503 in 443ms
+[2025-06-23T15:34:34.841Z] WARN [database] High memory usage detected {"heapUsedPercent":95.80660370576281}
+[2025-06-23T15:34:41.623Z] INFO [api] Health check completed {"status":"degraded","responseTime":1269,"checksCount":5}
+ GET /api/health 200 in 1441ms
+[2025-06-23T15:34:48.663Z] INFO [api] Health check completed {"status":"unhealthy","responseTime":258,"checksCount":5}
+ GET /api/health 503 in 617ms
+[2025-06-23T15:34:53.900Z] INFO [api] Health check completed {"status":"unhealthy","responseTime":198,"checksCount":5}
+ GET /api/health 503 in 379ms
+[2025-06-23T15:35:04.830Z] WARN [database] High memory usage detected {"heapUsedPercent":96.78716474559833}
+[2025-06-23T15:35:34.852Z] WARN [database] High memory usage detected {"heapUsedPercent":96.98834736166177}
+[2025-06-23T15:36:04.839Z] WARN [database] High memory usage detected {"heapUsedPercent":97.42877259453468}
+[2025-06-23T15:36:34.842Z] WARN [database] High memory usage detected {"heapUsedPercent":96.78271011851473}
+[2025-06-23T15:37:04.845Z] WARN [database] High memory usage detected {"heapUsedPercent":96.98335151820352}
+[2025-06-23T15:37:34.848Z] WARN [database] High memory usage detected {"heapUsedPercent":97.1845924191073}
+[2025-06-23T15:38:04.858Z] WARN [database] High memory usage detected {"heapUsedPercent":97.40411810706824}
+ ○ Compiling / ...
+ ✓ Compiled / in 12s
+[2025-06-23T15:38:35.046Z] WARN [database] High memory usage detected {"heapUsedPercent":92.85263305650716}
+Image with src "https://placehold.co/1600x900.png" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+Image with src "https://placehold.co/1600x900.png" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+ GET /?monospaceUid=340849 200 in 12653ms
+ GET /?monospaceUid=692838 200 in 342ms
+ ⚠ Cross origin request detected from 9000-firebase-studio-1749940755362.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[2025-06-23T15:39:04.856Z] WARN [database] High memory usage detected {"heapUsedPercent":94.27967104452115}
+[2025-06-23T15:39:34.892Z] WARN [database] High memory usage detected {"heapUsedPercent":94.50322340266281}
+[2025-06-23T15:40:04.852Z] WARN [database] High memory usage detected {"heapUsedPercent":94.83416977431229}

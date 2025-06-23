@@ -16,18 +16,18 @@ const jobUpdateSchema = z.object({
   status: z.enum(['Active', 'Closed', 'Draft']).optional()
 });
 
-// GET /api/jobs/[jobId] - Get a specific job
+// GET /api/jobs/[id] - Get a specific job
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { jobId } = params;
+    const { id } = params;
     
     // For now, find in mock data
     // TODO: Replace with Firestore query
     const jobs = getMockJobs();
-    const job = jobs.find(j => j.id === jobId);
+    const job = jobs.find(j => j.id === id);
     
     if (!job) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function GET(
     });
     
   } catch (error) {
-    console.error('GET /api/jobs/[jobId] error:', error);
+    console.error('GET /api/jobs/[id] error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch job' },
       { status: 500 }
@@ -50,13 +50,13 @@ export async function GET(
   }
 }
 
-// PUT /api/jobs/[jobId] - Update a job
+// PUT /api/jobs/[id] - Update a job
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { jobId } = params;
+    const { id } = params;
     const body = await request.json();
     const validation = jobUpdateSchema.safeParse(body);
     
@@ -73,7 +73,7 @@ export async function PUT(
     // For now, find in mock data
     // TODO: Replace with Firestore update
     const jobs = getMockJobs();
-    const jobIndex = jobs.findIndex(j => j.id === jobId);
+    const jobIndex = jobs.findIndex(j => j.id === id);
     
     if (jobIndex === -1) {
       return NextResponse.json(
@@ -96,7 +96,7 @@ export async function PUT(
     });
     
   } catch (error) {
-    console.error('PUT /api/jobs/[jobId] error:', error);
+    console.error('PUT /api/jobs/[id] error:', error);
     return NextResponse.json(
       { error: 'Failed to update job' },
       { status: 500 }
@@ -104,17 +104,17 @@ export async function PUT(
   }
 }
 
-// DELETE /api/jobs/[jobId] - Delete a job
+// DELETE /api/jobs/[id] - Delete a job
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { jobId } = params;
+    const { id } = params;
     
     // For now, just log
     // TODO: Implement Firestore deletion
-    console.log('Deleting job:', jobId);
+    console.log('Deleting job:', id);
     
     return NextResponse.json({
       success: true,
@@ -122,7 +122,7 @@ export async function DELETE(
     });
     
   } catch (error) {
-    console.error('DELETE /api/jobs/[jobId] error:', error);
+    console.error('DELETE /api/jobs/[id] error:', error);
     return NextResponse.json(
       { error: 'Failed to delete job' },
       { status: 500 }

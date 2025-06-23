@@ -160,9 +160,19 @@ const nextConfig = {
   // Trailing slash configuration
   trailingSlash: false,
 
-  // API route timeout
+  // API route timeout and limits
   serverRuntimeConfig: {
     apiTimeout: 30000, // 30 seconds
+    maxRequestSize: '5mb',
+  },
+
+  // API configuration
+  api: {
+    bodyParser: {
+      sizeLimit: '5mb',
+    },
+    responseLimit: '5mb',
+    externalResolver: true,
   },
 
   // Public runtime config

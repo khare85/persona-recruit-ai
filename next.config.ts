@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
       '@': './src',
     },
   },
+  // Instrumentation is enabled by default in Next.js 15
 };
 
 export default nextConfig;

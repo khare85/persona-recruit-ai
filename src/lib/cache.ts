@@ -355,11 +355,42 @@ export class CacheWarmer {
 }
 
 /**
- * Automatic cache cleanup
+ * Automatic cache cleanup with proper cleanup on shutdown
  */
-setInterval(() => {
-  memoryCache.cleanup();
-  userCache.cleanup();
-  searchCache.cleanup();
-  aiCache.cleanup();
-}, 5 * 60 * 1000); // Every 5 minutes
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+export function startCacheCleanup(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+  }
+  
+  cleanupInterval = setInterval(() => {
+    try {
+      memoryCache.cleanup();
+      userCache.cleanup();
+      searchCache.cleanup();
+      aiCache.cleanup();
+    } catch (error) {
+      console.error('Cache cleanup error:', error);
+    }
+  }, 5 * 60 * 1000); // Every 5 minutes
+}
+
+export function stopCacheCleanup(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
+
+// Start cleanup on module load
+startCacheCleanup();
+
+// Handle process termination
+process.on('SIGTERM', () => {
+  stopCacheCleanup();
+});
+
+process.on('SIGINT', () => {
+  stopCacheCleanup();
+});

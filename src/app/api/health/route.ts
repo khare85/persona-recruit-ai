@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiLogger } from '@/lib/logger';
 import { memoryCache, userCache, searchCache, aiCache } from '@/lib/cache';
+import { healthMonitor } from '@/lib/serverHealth';
+import { db } from '@/services/firestoreService';
 
 interface HealthCheck {
   service: string;
@@ -117,17 +119,47 @@ async function checkFirestore(): Promise<HealthCheck> {
   const startTime = Date.now();
   
   try {
-    // Simple Firestore connectivity test
-    // This would be replaced with actual Firestore health check
-    const isConnected = true; // Placeholder
+    // Use our health monitor's check results if available
+    const monitorStatus = healthMonitor.getStatus();
+    const dbHealthy = !monitorStatus.failedChecks.includes('database');
+    
+    if (dbHealthy && db) {
+      // Try a simple read operation
+      try {
+        const healthRef = db.collection('_health').doc('check');
+        await healthRef.get();
+        
+        return {
+          service: 'firestore',
+          status: 'healthy',
+          responseTime: Date.now() - startTime,
+          details: {
+            connected: true,
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            lastCheck: monitorStatus.lastCheck
+          }
+        };
+      } catch (dbError) {
+        apiLogger.warn('Firestore health check query failed', { error: dbError });
+        return {
+          service: 'firestore',
+          status: 'degraded',
+          responseTime: Date.now() - startTime,
+          details: {
+            connected: false,
+            error: 'Query failed but connection exists'
+          }
+        };
+      }
+    }
     
     return {
       service: 'firestore',
-      status: isConnected ? 'healthy' : 'unhealthy',
+      status: 'unhealthy',
       responseTime: Date.now() - startTime,
       details: {
-        connected: isConnected,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        connected: false,
+        failedChecks: monitorStatus.failedChecks
       }
     };
   } catch (error) {

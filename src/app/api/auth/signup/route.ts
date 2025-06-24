@@ -1,8 +1,9 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { env } from '@/lib/env';
+import { apiLogger } from '@/lib/logger';
 
 // Mock user database (in production, use real database)
 const mockUsers: Array<{
@@ -72,6 +73,14 @@ export async function POST(request: NextRequest) {
     mockUsers.push(newUser);
 
     // Generate JWT token
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      apiLogger.error('JWT_SECRET is not set in environment variables. This is insecure for production.');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Server configuration error: JWT_SECRET is missing.');
+      }
+    }
+
     const token = jwt.sign(
       { 
         userId: newUser.id, 
@@ -79,7 +88,7 @@ export async function POST(request: NextRequest) {
         role: newUser.role,
         companyId: newUser.companyId
       },
-      env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
+      jwtSecret || 'fallback-super-secret-key-for-development-only-32-chars',
       { expiresIn: '7d' }
     );
 
@@ -105,7 +114,7 @@ export async function POST(request: NextRequest) {
     // Set HTTP-only cookie for the token
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/'

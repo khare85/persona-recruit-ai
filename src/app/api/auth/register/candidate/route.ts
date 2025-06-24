@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withRateLimit } from '@/middleware/security';
@@ -99,14 +100,21 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     });
 
     // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      apiLogger.error('JWT_SECRET is not set in environment variables. This is insecure for production.');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Server configuration error: JWT_SECRET is missing.');
+      }
+    }
+    
     const authToken = jwt.sign(
       { 
         userId, 
         email: candidateData.email, 
         role: 'candidate' 
       },
-      jwtSecret,
+      jwtSecret || 'fallback-super-secret-key-for-development-only-32-chars',
       { expiresIn: '7d' }
     );
 

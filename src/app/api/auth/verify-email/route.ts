@@ -37,7 +37,12 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     });
 
     // Verify JWT token
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      apiLogger.error('JWT_SECRET is not set in environment variables');
+      throw new Error('Server configuration error: JWT_SECRET is not configured. Please add JWT_SECRET to your environment variables.');
+    }
+    
     let decoded: any;
     
     try {
@@ -162,7 +167,12 @@ export const GET = withRateLimit('auth', async (req: NextRequest): Promise<NextR
     }
 
     // Generate new verification token
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      apiLogger.error('JWT_SECRET is not set in environment variables');
+      throw new Error('Server configuration error: JWT_SECRET is not configured. Please add JWT_SECRET to your environment variables.');
+    }
+    
     const verificationToken = jwt.sign(
       { 
         userId: user.id, 

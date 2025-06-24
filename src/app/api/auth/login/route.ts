@@ -62,10 +62,8 @@ export async function POST(request: NextRequest) {
     // Generate JWT token
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      apiLogger.error('JWT_SECRET is not set in environment variables. This is insecure for production.');
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error('Server configuration error: JWT_SECRET is missing.');
-      }
+      apiLogger.error('JWT_SECRET is not set in environment variables');
+      throw new Error('Server configuration error: JWT_SECRET is not configured. Please add JWT_SECRET to your environment variables.');
     }
     
     const token = jwt.sign(
@@ -75,7 +73,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         status: user.status
       },
-      jwtSecret || 'fallback-super-secret-key-for-development-only-32-chars',
+      jwtSecret,
       { expiresIn: '7d' }
     );
 

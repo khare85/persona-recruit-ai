@@ -29,6 +29,8 @@ import {
   Crown,
   Shield
 } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Container } from '@/components/shared/Container';
 
 const inviteTeamMemberSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -252,16 +254,17 @@ export default function CompanyTeamPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <Users className="h-8 w-8 text-primary" />
-          Team Management
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your company's team members and send invitations to new recruiters and interviewers.
-        </p>
-      </div>
+    <DashboardLayout>
+      <Container className="py-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <Users className="h-8 w-8 text-primary" />
+            Team Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your company's team members and send invitations to new recruiters and interviewers.
+          </p>
+        </div>
 
       <Tabs defaultValue="members" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
@@ -523,6 +526,7 @@ export default function CompanyTeamPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </Container>
+    </DashboardLayout>
   );
 }

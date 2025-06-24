@@ -9,15 +9,41 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Building, Users, CreditCard, Bell, Shield, Globe, Mail, Key, AlertCircle, Check, MessageSquare, UserPlus, MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react';
+import { Settings, Building, Users, CreditCard, Bell, Shield, Globe, Mail, Key, AlertCircle, Check, MessageSquare, UserPlus, MoreHorizontal, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CompanySettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [autoScreening, setAutoScreening] = useState(true);
   const [publicProfile, setPublicProfile] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState({
+    name: 'TechCorp Inc.',
+    industry: 'Technology',
+    website: 'https://techcorp.com',
+    size: '500-1000 employees',
+    description: 'TechCorp Inc. is a leading technology company specializing in innovative software solutions for businesses worldwide.',
+    headquarters: 'San Francisco, CA'
+  });
+
+  const handleSettingChange = (field: string, value: string) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveGeneralSettings = async () => {
+    setIsLoading(true);
+    try {
+      // In real implementation, would save to API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Settings saved:', settings);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -57,19 +83,36 @@ export default function CompanySettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="company-name">Company Name</Label>
-                    <Input id="company-name" defaultValue="TechCorp Inc." />
+                    <Input 
+                      id="company-name" 
+                      value={settings.name}
+                      onChange={(e) => handleSettingChange('name', e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="industry">Industry</Label>
-                    <Input id="industry" defaultValue="Technology" />
+                    <Input 
+                      id="industry" 
+                      value={settings.industry}
+                      onChange={(e) => handleSettingChange('industry', e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="website">Website</Label>
-                    <Input id="website" type="url" defaultValue="https://techcorp.com" />
+                    <Input 
+                      id="website" 
+                      type="url" 
+                      value={settings.website}
+                      onChange={(e) => handleSettingChange('website', e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="size">Company Size</Label>
-                    <Input id="size" defaultValue="500-1000 employees" />
+                    <Input 
+                      id="size" 
+                      value={settings.size}
+                      onChange={(e) => handleSettingChange('size', e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -77,16 +120,30 @@ export default function CompanySettingsPage() {
                   <Textarea 
                     id="description" 
                     rows={4}
-                    defaultValue="TechCorp Inc. is a leading technology company specializing in innovative software solutions for businesses worldwide."
+                    value={settings.description}
+                    onChange={(e) => handleSettingChange('description', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="headquarters">Headquarters</Label>
-                  <Input id="headquarters" defaultValue="San Francisco, CA" />
+                  <Input 
+                    id="headquarters" 
+                    value={settings.headquarters}
+                    onChange={(e) => handleSettingChange('headquarters', e.target.value)}
+                  />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button>Save Changes</Button>
+                <Button onClick={saveGeneralSettings} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -161,15 +218,15 @@ export default function CompanySettingsPage() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">Edit</Button>
-                        <Button size="sm" variant="outline">Hiring Managers</Button>
+                        <Button size="sm" variant="outline" onClick={() => console.log('Edit department:', dept)}>Edit</Button>
+                        <Button size="sm" variant="outline" onClick={() => console.log('Manage hiring managers for:', dept)}>Hiring Managers</Button>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline">Add Department</Button>
+                <Button variant="outline" onClick={() => console.log('Add new department')}>Add Department</Button>
               </CardFooter>
             </Card>
 
@@ -194,14 +251,14 @@ export default function CompanySettingsPage() {
                       </div>
                       <div className="flex gap-2">
                         <Badge>{member.role === 'HR Director' ? 'Admin' : 'Member'}</Badge>
-                        <Button size="sm" variant="ghost">Remove</Button>
+                        <Button size="sm" variant="ghost" onClick={() => console.log('Remove team member:', member.email)}>Remove</Button>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
               <CardFooter>
-                <Button variant="outline">Invite Team Member</Button>
+                <Button variant="outline" onClick={() => console.log('Invite team member')}>Invite Team Member</Button>
               </CardFooter>
             </Card>
           </TabsContent>

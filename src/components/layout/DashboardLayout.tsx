@@ -10,7 +10,7 @@ import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign, Search,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home, SearchCheck, Sparkles, Info, MessageSquare, ClipboardCheck, Star,
+  Home, SearchCheck, Sparkles, Info, MessageSquare, ClipboardCheck, Star, Brain, Bookmark, TrendingUp, Bell
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,21 +26,28 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/profile', label: 'My Profile', icon: UserCog }, 
-  { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
+  { href: '/candidates/job-recommendations', label: 'Job Recommendations', icon: Brain },
+  { href: '/candidates/saved-jobs', label: 'Saved Jobs', icon: Bookmark },
   { href: '/candidates/my-applications', label: 'My Applications', icon: Briefcase },
+  { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
+  { href: '/candidates/messages', label: 'Messages', icon: Bell },
+  { href: '/candidates/career-insights', label: 'Career Insights', icon: TrendingUp },
+  { href: '/candidates/profile', label: 'My Profile', icon: UserCog }, 
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
-  { href: '/referrals', label: 'My Referrals', icon: Gift },
   { href: '/jobs', label: 'Search Jobs', icon: Search },
   { href: '/candidates/settings', label: 'Settings', icon: Settings },
 ];
 
 const recruiterNavItems = [
   { href: '/recruiter/dashboard', label: 'Recruiter Hub', icon: LayoutDashboard },
-  { href: '/jobs', label: 'Manage Jobs', icon: Briefcase },
+  { href: '/recruiter/jobs', label: 'My Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
+  { href: '/recruiter/applications', label: 'Applications', icon: UsersRound },
+  { href: '/recruiter/interviews', label: 'Interviews', icon: Calendar },
+  { href: '/recruiter/analytics', label: 'My Analytics', icon: BarChartBig },
+  { href: '/recruiter/schedule-interview', label: 'Schedule Interview', icon: CalendarClock },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },
-  { href: '/interviews', label: 'AI Interview Analysis', icon: Activity },
+  { href: '/recruiter/settings', label: 'Recruiter Settings', icon: Settings },
 ];
 
 const interviewerNavItems = [
@@ -87,6 +94,11 @@ function determineNavigation(pathname: string) {
   if (pathname.startsWith('/candidates/dashboard') ||
       pathname.startsWith('/candidates/my-') ||
       pathname.startsWith('/candidates/settings') ||
+      pathname.startsWith('/candidates/job-recommendations') ||
+      pathname.startsWith('/candidates/saved-jobs') ||
+      pathname.startsWith('/candidates/messages') ||
+      pathname.startsWith('/candidates/career-insights') ||
+      pathname.startsWith('/candidates/profile') ||
       (pathname.startsWith('/candidates/') && pathname.endsWith('/edit')) ||
       (pathname.startsWith('/candidates/') && !pathname.endsWith('/new') && !pathname.endsWith('/edit') && pathname.split('/').length === 3 && pathname.split('/')[2] !== 'new')
      ) {

@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockCandidates } from '@/services/mockDataService';
+import { databaseService } from '@/services/database.service';
 import { z } from 'zod';
 
 // Candidate schema for validation
@@ -24,53 +25,21 @@ const candidateSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const skills = searchParams.get('skills')?.split(',') || [];
-    const location = searchParams.get('location');
-    const experience = searchParams.get('experience');
-    const availability = searchParams.get('availability');
     const limit = parseInt(searchParams.get('limit') || '50');
+    const page = parseInt(searchParams.get('page') || '1');
     
-    // For now, return mock data
-    // TODO: Replace with Firestore query when candidates are stored there
-    let candidates = getMockCandidates();
-    
-    // Apply filters
-    if (skills.length > 0) {
-      candidates = candidates.filter(candidate => 
-        skills.some(skill => 
-          candidate.skills.some(candidateSkill => 
-            candidateSkill.toLowerCase().includes(skill.toLowerCase())
-          )
-        )
-      );
-    }
-    
-    if (location) {
-      candidates = candidates.filter(candidate => 
-        candidate.location.toLowerCase().includes(location.toLowerCase())
-      );
-    }
-    
-    if (experience) {
-      candidates = candidates.filter(candidate => 
-        candidate.experience.toLowerCase().includes(experience.toLowerCase())
-      );
-    }
-    
-    if (availability) {
-      candidates = candidates.filter(candidate => 
-        candidate.availability.toLowerCase().includes(availability.toLowerCase())
-      );
-    }
-    
-    // Limit results
-    candidates = candidates.slice(0, limit);
+    // In a real app, you'd have more sophisticated filtering here
+    const { items: candidates, total } = await databaseService.listUsers({
+      role: 'candidate',
+      limit,
+      offset: (page - 1) * limit,
+    });
     
     return NextResponse.json({
       success: true,
       data: {
         candidates,
-        total: candidates.length
+        total,
       }
     });
     
@@ -99,22 +68,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const candidateData = {
-      ...validation.data,
-      id: `candidate_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'Active',
-      applications: []
-    };
-    
-    // TODO: Save to Firestore with embeddings
-    // For now, just return the created candidate
-    console.log('Creating candidate:', candidateData);
+    // This endpoint should ideally not be used for creation,
+    // candidate registration handles this. This is a placeholder.
+    console.log('Creating candidate:', validation.data);
     
     return NextResponse.json({
       success: true,
-      data: candidateData
+      data: { id: `cand_${Date.now()}`, ...validation.data }
     }, { status: 201 });
     
   } catch (error) {

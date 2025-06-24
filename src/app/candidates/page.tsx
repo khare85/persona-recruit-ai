@@ -1,32 +1,39 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Briefcase, Star, List, Grid3X3 } from 'lucide-react';
-import { getMockCandidates } from '@/services/mockDataService';
-
-// Get mock candidates data
-const candidateListings = getMockCandidates().map(candidate => ({
-  id: candidate.id,
-  name: candidate.fullName,
-  avatarUrl: candidate.profilePictureUrl,
-  title: candidate.currentTitle,
-  topSkills: candidate.skills.slice(0, 4),
-  experience: `${candidate.experience} years`,
-  availability: candidate.availability,
-  matchScore: candidate.aiMatchScore || 85,
-  location: candidate.location
-}));
+import { PlusCircle, Search, Briefcase, Star, List, Grid3X3, Loader2 } from 'lucide-react';
+import type { MockCandidate } from '@/services/mockDataService';
 
 export default function CandidatesPage() {
   const [isGridView, setIsGridView] = useState(true);
+  const [candidates, setCandidates] = useState<MockCandidate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCandidates() {
+      try {
+        const response = await fetch('/api/candidates');
+        if (response.ok) {
+          const data = await response.json();
+          setCandidates(data.data.candidates);
+        }
+      } catch (error) {
+        console.error("Failed to fetch candidates:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchCandidates();
+  }, []);
+
   return (
     <Container>
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -41,7 +48,6 @@ export default function CandidatesPage() {
         </Link>
       </div>
 
-      {/* Search and Filters */}
       <Card className="mb-8 shadow-sm">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -67,7 +73,6 @@ export default function CandidatesPage() {
         </CardContent>
       </Card>
 
-      {/* View Toggle */}
       <div className="flex justify-end mb-6">
         <Button
           variant="outline"
@@ -87,56 +92,61 @@ export default function CandidatesPage() {
         </Button>
       </div>
 
-      {/* Candidate Listings */}
-      <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-6"}>
-        {candidateListings.map((candidate) => (
-          <Card key={candidate.id} className={`flex ${isGridView ? 'flex-col' : 'flex-row items-center p-6'} hover:shadow-lg transition-shadow duration-300`}>
-            <div className={`flex ${isGridView ? 'flex-col items-center text-center' : 'items-center mr-6'}`}>
-              <Avatar className={`mb-3 border-2 border-primary/50 ${isGridView ? 'w-24 h-24' : 'w-16 h-16'}`}>
-                <AvatarImage src={candidate.avatarUrl} alt={candidate.name} data-ai-hint="profile person" />
-                <AvatarFallback>{candidate.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className={isGridView ? 'text-center' : 'flex-grow'}>
-                <CardTitle className={`font-headline hover:text-primary transition-colors ${isGridView ? 'text-xl' : 'text-lg'}`}>
-                  <Link href={`/candidates/${candidate.id}`}>{candidate.name}</Link>
-                </CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">{candidate.title}</CardDescription>
-              </div>
-            </div>
-            <CardContent className={`flex-grow text-sm ${isGridView ? '' : 'flex items-center justify-between w-full'}`}>
-              <div className={isGridView ? 'flex-grow' : 'flex-grow flex items-center space-x-6'}>
-                {isGridView && (
-                   <div className="mb-3">
-                     <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
-                     <div className="flex flex-wrap gap-1">
-                       {candidate.topSkills.map(skill => (
-                         <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
-                       ))}
-                     </div>
-                   </div>
-                )}
-                <div className="flex items-center text-muted-foreground mb-1">
-                  <Briefcase className="h-3.5 w-3.5 mr-1.5 text-primary/80" /> Experience: {candidate.experience}
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                   <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500" /> AI Match: <span className="font-semibold ml-1 text-foreground">{candidate.matchScore}%</span>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-6"}>
+          {candidates.map((candidate) => (
+            <Card key={candidate.id} className={`flex ${isGridView ? 'flex-col' : 'flex-row items-center p-6'} hover:shadow-lg transition-shadow duration-300`}>
+              <div className={`flex ${isGridView ? 'flex-col items-center text-center' : 'items-center mr-6'}`}>
+                <Avatar className={`mb-3 border-2 border-primary/50 ${isGridView ? 'w-24 h-24' : 'w-16 h-16'}`}>
+                  <AvatarImage src={candidate.profilePictureUrl} alt={candidate.fullName} data-ai-hint="profile person" />
+                  <AvatarFallback>{candidate.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className={isGridView ? 'text-center' : 'flex-grow'}>
+                  <CardTitle className={`font-headline hover:text-primary transition-colors ${isGridView ? 'text-xl' : 'text-lg'}`}>
+                    <Link href={`/candidates/${candidate.id}`}>{candidate.fullName}</Link>
+                  </CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground">{candidate.currentTitle}</CardDescription>
                 </div>
               </div>
-            </CardContent>
-            <CardFooter className={`${isGridView ? 'flex-col items-stretch space-y-2' : 'flex-row items-center space-x-4 mt-0 p-0'}`}>
-              <Badge variant={candidate.availability === 'Immediate' ? 'default' : 'outline'} className={`${isGridView ? 'self-center' : ''} py-1 text-xs`}>
-                {candidate.availability === 'Immediate' ? `Available Now` : `Available: ${candidate.availability}`}
-              </Badge>
-              <Link href={`/candidates/${candidate.id}`} passHref className={isGridView ? "w-full" : ""}>
-                <Button variant="outline" className={isGridView ? "w-full" : ""}>
-                  View Profile
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-      {/* Pagination (Placeholder) */}
+              <CardContent className={`flex-grow text-sm ${isGridView ? '' : 'flex items-center justify-between w-full'}`}>
+                <div className={isGridView ? 'flex-grow' : 'flex-grow flex items-center space-x-6'}>
+                  {isGridView && (
+                    <div className="mb-3">
+                      <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {candidate.skills.slice(0, 4).map(skill => (
+                          <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center text-muted-foreground mb-1">
+                    <Briefcase className="h-3.5 w-3.5 mr-1.5 text-primary/80" /> Experience: {candidate.experience} years
+                  </div>
+                  <div className="flex items-center text-muted-foreground">
+                    <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500" /> AI Match: <span className="font-semibold ml-1 text-foreground">{candidate.aiMatchScore || 85}%</span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className={`${isGridView ? 'flex-col items-stretch space-y-2' : 'flex-row items-center space-x-4 mt-0 p-0'}`}>
+                <Badge variant={candidate.availability === 'Available immediately' ? 'default' : 'outline'} className={`${isGridView ? 'self-center' : ''} py-1 text-xs`}>
+                  {candidate.availability === 'Available immediately' ? `Available Now` : `Available: ${candidate.availability}`}
+                </Badge>
+                <Link href={`/candidates/${candidate.id}`} passHref className={isGridView ? "w-full" : ""}>
+                  <Button variant="outline" className={isGridView ? "w-full" : ""}>
+                    View Profile
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
       <div className="mt-12 flex justify-center">
         <Button variant="outline" className="mr-2">Previous</Button>
         <Button variant="outline">Next</Button>

@@ -1,6 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/services/firestoreService';
-import { getMockJobs } from '@/services/mockDataService';
+import { databaseService } from '@/services/database.service';
 import { z } from 'zod';
 
 // Job schema for validation
@@ -29,34 +29,22 @@ const jobSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const company = searchParams.get('company');
+    const companyId = searchParams.get('companyId');
     const department = searchParams.get('department');
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
     
-    // For now, return mock data
-    // TODO: Replace with Firestore query when jobs are stored there
-    let jobs = getMockJobs();
-    
-    // Apply filters
-    if (company) {
-      jobs = jobs.filter(job => job.company.toLowerCase() === company.toLowerCase());
-    }
-    if (department) {
-      jobs = jobs.filter(job => job.department.toLowerCase() === department.toLowerCase());
-    }
-    if (status) {
-      jobs = jobs.filter(job => job.status === status);
-    }
-    
-    // Limit results
-    jobs = jobs.slice(0, limit);
+    const { items: jobs, total } = await databaseService.listJobs({
+      companyId: companyId || undefined,
+      status: status || undefined,
+      limit,
+    });
     
     return NextResponse.json({
       success: true,
       data: {
         jobs,
-        total: jobs.length
+        total,
       }
     });
     
@@ -85,24 +73,28 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // In a real app, recruiterId and companyId would come from authenticated user session
     const jobData = {
       ...validation.data,
-      id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      company: validation.data.company || 'TechCorp Inc.', // Default company
+      recruiterId: 'recruiter-123',
+      companyId: 'company-123',
       postedDate: new Date().toISOString(),
-      applicants: 0,
-      urgency: validation.data.urgency || 'Medium',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      stats: {
+        views: 0,
+        applications: 0,
+        interviews: 0,
+        offers: 0
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     
-    // TODO: Save to Firestore
-    // For now, just return the created job
-    console.log('Creating job:', jobData);
+    const newJobId = await databaseService.createJob(jobData);
+    const newJob = await databaseService.getJobById(newJobId);
     
     return NextResponse.json({
       success: true,
-      data: jobData
+      data: newJob
     }, { status: 201 });
     
   } catch (error) {

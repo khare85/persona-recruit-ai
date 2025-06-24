@@ -1,32 +1,76 @@
+
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Building, Users, Briefcase, TrendingUp, DollarSign, Calendar, Search, Settings, PlusCircle, ExternalLink, Activity, BarChart3 } from 'lucide-react';
+import { Building, Users, Briefcase, DollarSign, Search, Settings, PlusCircle, ExternalLink, Activity, BarChart3, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { getMockDashboardMetrics } from '@/services/mockDataService';
 
-const mockCompanyData = {
-  companyName: "TechCorp Inc.",
-  ...getMockDashboardMetrics().company,
-  departments: [
-    { name: "Engineering", openPositions: 12, budget: 45000 },
-    { name: "Marketing", openPositions: 3, budget: 15000 },
-    { name: "Sales", openPositions: 3, budget: 18000 },
-    { name: "Product", openPositions: 2, budget: 12000 }
-  ]
-};
+interface CompanyDashboardData {
+  companyName: string;
+  totalEmployees: number;
+  activeJobs: number;
+  candidatesInPipeline: number;
+  monthlyBudget: number;
+  avgTimeToHire: number;
+  departments: Array<{ name: string; openPositions: number; budget: number; }>;
+  recentJobs: Array<{ id: string; title: string; applicants: number; views: number; }>;
+}
 
 export default function CompanyDashboardPage() {
+  const [data, setData] = useState<CompanyDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/company/dashboard');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const result = await response.json();
+        setData(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <Container className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </Container>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <DashboardLayout>
+        <Container>
+          <AlertCircle className="h-4 w-4" />
+          <p>{error || "Could not load dashboard data."}</p>
+        </Container>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <Container>
         <div className="mb-8">
           <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
             <Building className="mr-3 h-8 w-8 text-primary" />
-            {mockCompanyData.companyName} Hub
+            {data.companyName} Hub
           </h1>
           <p className="text-muted-foreground mt-1">
             Manage your company's recruitment strategy and track hiring performance across all departments.
@@ -40,7 +84,7 @@ export default function CompanyDashboardPage() {
               <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCompanyData.totalEmployees}</div>
+              <div className="text-2xl font-bold">{data.totalEmployees}</div>
               <span className="text-xs text-muted-foreground">+12 this quarter</span>
             </CardContent>
           </Card>
@@ -51,7 +95,7 @@ export default function CompanyDashboardPage() {
               <Briefcase className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCompanyData.activeJobs}</div>
+              <div className="text-2xl font-bold">{data.activeJobs}</div>
               <Link href="/jobs" className="text-xs text-primary hover:underline">View all positions</Link>
             </CardContent>
           </Card>
@@ -59,21 +103,21 @@ export default function CompanyDashboardPage() {
           <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Candidates in Pipeline</CardTitle>
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCompanyData.candidatesInPipeline}</div>
+              <div className="text-2xl font-bold">{data.candidatesInPipeline}</div>
               <Link href="/candidates" className="text-xs text-primary hover:underline">Review candidates</Link>
             </CardContent>
           </Card>
 
           <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Budget</CardTitle>
+              <CardTitle className="text-sm font-medium">Avg. Time to Hire</CardTitle>
               <DollarSign className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${mockCompanyData.monthlyBudget.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{data.avgTimeToHire} days</div>
               <span className="text-xs text-muted-foreground">Recruitment spend</span>
             </CardContent>
           </Card>
@@ -89,7 +133,7 @@ export default function CompanyDashboardPage() {
                 <CardDescription>Track hiring activity across all departments</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockCompanyData.departments.map((dept, index) => (
+                {data.departments.map((dept, index) => (
                   <div key={index} className="flex justify-between items-center p-3 border rounded-md">
                     <div>
                       <h4 className="font-semibold">{dept.name}</h4>
@@ -166,7 +210,7 @@ export default function CompanyDashboardPage() {
                     <ExternalLink className="mr-2 h-4 w-4 text-primary" />Company Job Board
                   </Button>
                 </Link>
-                <Link href="/jobs/1/applicants">
+                <Link href="/company/applications">
                   <Button variant="ghost" className="w-full justify-start">
                     <Users className="mr-2 h-4 w-4 text-primary" />Review Applicants
                   </Button>
@@ -176,31 +220,6 @@ export default function CompanyDashboardPage() {
                     <Settings className="mr-2 h-4 w-4" />Company Settings
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <Calendar className="mr-2 h-5 w-5 text-primary" />
-                  Hiring Metrics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Avg. Time to Hire</span>
-                    <span className="text-sm font-semibold">{mockCompanyData.avgTimeToHire} days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Offer Acceptance</span>
-                    <span className="text-sm font-semibold">87%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Quality Score</span>
-                    <span className="text-sm font-semibold">94/100</span>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>

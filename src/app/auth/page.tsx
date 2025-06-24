@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -53,68 +54,19 @@ export default function AuthenticationPage() {
       
       // Redirect based on user role
       const user = result.data.user;
-      if (user.role === 'admin') {
+      if (user.role === 'super_admin') {
         router.push('/admin/dashboard');
-      } else if (user.role === 'recruiter') {
+      } else if (user.role === 'company_admin') {
         router.push('/company/dashboard');
+      } else if (user.role === 'recruiter') {
+        router.push('/recruiter/dashboard');
+      } else if (user.role === 'interviewer') {
+        router.push('/interviewer/dashboard');
       } else {
         router.push('/candidates/dashboard');
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
-
-    const formData = new FormData(e.target as HTMLFormElement);
-    const fullName = formData.get('fullName') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const confirmPassword = formData.get('confirmPassword') as string;
-    const role = formData.get('role') as string;
-
-    try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          fullName, 
-          email, 
-          password, 
-          confirmPassword, 
-          role: role || 'candidate' 
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Signup failed');
-      }
-
-      setSuccess('Account created successfully! Redirecting...');
-      
-      // Store user data in localStorage for client-side access
-      localStorage.setItem('user', JSON.stringify(result.data.user));
-      
-      // Redirect based on user role
-      const user = result.data.user;
-      if (user.role === 'recruiter') {
-        router.push('/company/dashboard');
-      } else {
-        router.push('/candidates/dashboard');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Signup failed');
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +82,7 @@ export default function AuthenticationPage() {
         <div className="hidden lg:flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary to-accent text-primary-foreground">
           <Image
             src="https://placehold.co/600x400.png"
-            alt="Recruitment illustration for Persona Recruit AI"
+            alt="Recruitment illustration for AI Talent Stream"
             width={400}
             height={300}
             className="rounded-lg shadow-xl mb-8"
@@ -140,7 +92,7 @@ export default function AuthenticationPage() {
             Accelerate Your Recruitment with AI
           </h1>
           <p className="text-center text-lg opacity-90">
-            Unlock the power of AI with Persona Recruit AI to find, assess, and hire top talent faster than ever before.
+            Unlock the power of AI with AI Talent Stream to find, assess, and hire top talent faster than ever before.
           </p>
         </div>
 
@@ -148,7 +100,7 @@ export default function AuthenticationPage() {
           <div className="text-center mb-8 lg:hidden">
              <Link href="/" className="inline-flex items-center gap-2 text-primary font-semibold text-xl mb-4">
                 <UserPlus className="h-7 w-7" />
-                <span>Persona Recruit AI</span>
+                <span>AI Talent Stream</span>
             </Link>
             <h2 className="text-2xl font-semibold text-foreground">Welcome!</h2>
             <p className="text-muted-foreground">Sign in, create an account, or explore our demo.</p>
@@ -166,7 +118,7 @@ export default function AuthenticationPage() {
                     <CardHeader className="text-center px-0">
                       <CardTitle className="text-2xl">Welcome Back!</CardTitle>
                       <CardDescription>
-                        Enter your credentials to access your Persona Recruit AI account.
+                        Enter your credentials to access your AI Talent Stream account.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 px-0">
@@ -188,7 +140,7 @@ export default function AuthenticationPage() {
                             id="login-email" 
                             name="email"
                             type="email" 
-                            placeholder="admin@techcorp.com" 
+                            placeholder="admin@talentai.com" 
                             required 
                             disabled={isLoading}
                           />
@@ -235,76 +187,22 @@ export default function AuthenticationPage() {
                     <CardHeader className="text-center px-0">
                       <CardTitle className="text-2xl">Create an Account</CardTitle>
                       <CardDescription>
-                        Join Persona Recruit AI and revolutionize your hiring.
+                        Join AI Talent Stream and revolutionize your hiring.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 px-0">
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-                      {success && (
-                        <Alert className="border-green-200 bg-green-50 text-green-800">
-                          <AlertDescription>{success}</AlertDescription>
-                        </Alert>
-                      )}
-                      <form onSubmit={handleSignUp} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-name">Full Name</Label>
-                          <Input 
-                            id="signup-name" 
-                            name="fullName"
-                            placeholder="Your Name" 
-                            required 
-                            disabled={isLoading}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-email">Email</Label>
-                          <Input 
-                            id="signup-email" 
-                            name="email"
-                            type="email" 
-                            placeholder="you@example.com" 
-                            required 
-                            disabled={isLoading}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-password">Password</Label>
-                          <Input 
-                            id="signup-password" 
-                            name="password"
-                            type="password" 
-                            placeholder="At least 6 characters"
-                            minLength={6}
-                            required 
-                            disabled={isLoading}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                          <Input 
-                            id="signup-confirm-password" 
-                            name="confirmPassword"
-                            type="password" 
-                            placeholder="Confirm your password"
-                            required 
-                            disabled={isLoading}
-                          />
-                        </div>
-                        <input type="hidden" name="role" value="candidate" />
-                        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                          {isLoading ? (
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          ) : (
-                            <UserPlus className="mr-2 h-5 w-5" />
-                          )}
-                          {isLoading ? 'Creating account...' : 'Sign Up'}
+                      <Link href="/auth/register/candidate">
+                        <Button className="w-full" size="lg">
+                          <UserPlus className="mr-2 h-5 w-5" />
+                          Sign Up as a Candidate
                         </Button>
-                      </form>
+                      </Link>
+                      <div className="text-center text-sm text-muted-foreground">
+                        Are you a company?{" "}
+                        <Link href="/auth/register/company" className="text-primary hover:underline">
+                          Register here
+                        </Link>
+                      </div>
                       <p className="text-center text-sm text-muted-foreground">
                         Already have an account?{" "}
                         <Button variant="link" className="p-0 h-auto" onClick={() => setActiveTab("login")}>
@@ -328,7 +226,7 @@ export default function AuthenticationPage() {
           ) : (
             <Card className="border-0 shadow-none">
               <CardHeader className="text-center px-0">
-                <CardTitle className="text-2xl">Explore Persona Recruit AI</CardTitle>
+                <CardTitle className="text-2xl">Explore AI Talent Stream</CardTitle>
                 <CardDescription>
                   Select a persona to see how our platform accelerates recruitment for different roles.
                 </CardDescription>

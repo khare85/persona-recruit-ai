@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,31 +29,45 @@ import {
 } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
-import { InterviewTimelineSidebar, type InterviewTimelineItem } from '@/components/interviews/InterviewTimelineSidebar';
-import { getMockCandidate, getMockInterviewsForCandidate, type MockCandidate, type MockInterview } from '@/services/mockDataService';
+import { InterviewTimeline, type InterviewTimelineItem } from '@/components/interviews/InterviewTimeline';
 import { Loader2 } from 'lucide-react';
 
 export default function CandidateProfilePage({ params }: { params: { id: string } }) {
-  const [candidate, setCandidate] = useState<MockCandidate | null>(null);
-  const [interviews, setInterviews] = useState<MockInterview[]>([]);
+  const [candidate, setCandidate] = useState<any>(null);
+  const [timelineItems, setTimelineItems] = useState<InterviewTimelineItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadCandidateData = async () => {
+    async function loadCandidateData() {
       setIsLoading(true);
-      
-      // Get the candidate data
-      const candidateData = getMockCandidate(params.id);
-      if (candidateData) {
-        setCandidate(candidateData);
-        
-        // Get the candidate's interview history
-        const candidateInterviews = getMockInterviewsForCandidate(params.id);
-        setInterviews(candidateInterviews);
+      try {
+        const response = await fetch(`/api/candidates/${params.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCandidate(data.data);
+          
+          const interviews = data.data.interviews || [];
+          const timeline: InterviewTimelineItem[] = interviews.map((interview: any) => ({
+            id: interview.id,
+            date: interview.scheduledDate,
+            jobTitle: interview.jobTitle,
+            companyName: 'TechCorp Inc.', // Placeholder, would need to fetch
+            status: interview.status,
+            analysisId: interview.analysisId,
+            type: interview.type,
+            duration: interview.duration
+          }));
+          setTimelineItems(timeline);
+        } else {
+          setCandidate(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch candidate data', error);
+        setCandidate(null);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    };
+    }
 
     loadCandidateData();
   }, [params.id]);
@@ -79,18 +94,6 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
     );
   }
 
-  // Transform interviews to timeline items
-  const timelineItems: InterviewTimelineItem[] = interviews.map(interview => ({
-    id: interview.id,
-    date: interview.date,
-    jobTitle: interview.jobTitle,
-    companyName: interview.companyName,
-    status: interview.status,
-    analysisId: interview.analysisId,
-    type: interview.type,
-    duration: interview.duration
-  }));
-
   return (
     <Container className="max-w-7xl mx-auto py-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -103,7 +106,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                 <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-lg">
                   <AvatarImage src={candidate.profilePictureUrl || undefined} alt={candidate.fullName} />
                   <AvatarFallback className="text-3xl bg-background text-primary">
-                    {candidate.fullName.split(' ').map(n => n[0]).join('')}
+                    {candidate.fullName.split(' ').map((n:string) => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-center md:text-left text-primary-foreground">
@@ -262,7 +265,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {candidate.skills.map((skill, index) => (
+                {candidate.skills.map((skill: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-sm">
                     {skill}
                   </Badge>
@@ -298,7 +301,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                   <div className="mt-3">
                     <p className="text-sm font-medium mb-2">Previous Companies:</p>
                     <div className="flex flex-wrap gap-2">
-                      {candidate.previousCompanies.map((company, index) => (
+                      {candidate.previousCompanies.map((company: string, index: number) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {company}
                         </Badge>
@@ -327,7 +330,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                 <div>
                   <h4 className="font-medium mb-2">Certifications</h4>
                   <div className="flex flex-wrap gap-2">
-                    {candidate.certifications.map((cert, index) => (
+                    {candidate.certifications.map((cert: string, index: number) => (
                       <Badge key={index} variant="secondary" className="text-xs">
                         {cert}
                       </Badge>
@@ -367,7 +370,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
                   <span className="text-sm font-medium">Languages</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {candidate.languages.map((lang, index) => (
+                  {candidate.languages.map((lang: string, index: number) => (
                     <Badge key={index} variant="outline" className="text-xs">
                       {lang}
                     </Badge>

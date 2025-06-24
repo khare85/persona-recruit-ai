@@ -1,27 +1,72 @@
+
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { ShieldCheck, Users, Building, Server, Activity, DollarSign, BarChart3, Settings, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ShieldCheck, Users, Building, Server, Activity, DollarSign, BarChart3, Settings, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
-import { getMockDashboardMetrics } from '@/services/mockDataService';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const mockAdminData = {
-  ...getMockDashboardMetrics().admin,
-  recentActivity: [
-    { type: "user", message: "New user registration: sarah.johnson@email.com", time: "2 minutes ago" },
-    { type: "company", message: "CloudScale Solutions upgraded to Enterprise plan", time: "15 minutes ago" },
-    { type: "system", message: "AI model training completed successfully", time: "1 hour ago" },
-    { type: "support", message: "Support ticket #2847 resolved", time: "2 hours ago" },
-    { type: "user", message: "Marcus Chen completed video interview", time: "3 hours ago" },
-    { type: "company", message: "DesignFirst Studio posted 3 new jobs", time: "4 hours ago" }
-  ]
-};
+interface AdminDashboardData {
+  totalUsers: number;
+  totalCompanies: number;
+  systemHealth: number;
+  monthlyRevenue: number;
+  activeJobs: number;
+  supportTickets: number;
+  recentActivity: Array<{ type: string; message: string; time: string }>;
+}
 
 export default function AdminDashboardPage() {
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/admin/dashboard');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const result = await response.json();
+        setData(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <Container className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </Container>
+      </AdminLayout>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <AdminLayout>
+        <Container>
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error || "Could not load dashboard data."}</AlertDescription>
+          </Alert>
+        </Container>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <Container>
@@ -42,7 +87,7 @@ export default function AdminDashboardPage() {
               <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockAdminData.totalUsers.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{data.totalUsers.toLocaleString()}</div>
               <span className="text-xs text-muted-foreground">+47 this week</span>
             </CardContent>
           </Card>
@@ -53,7 +98,7 @@ export default function AdminDashboardPage() {
               <Building className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockAdminData.totalCompanies}</div>
+              <div className="text-2xl font-bold">{data.totalCompanies}</div>
               <span className="text-xs text-muted-foreground">+3 this month</span>
             </CardContent>
           </Card>
@@ -64,7 +109,7 @@ export default function AdminDashboardPage() {
               <Server className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockAdminData.systemHealth}%</div>
+              <div className="text-2xl font-bold">{data.systemHealth}%</div>
               <Badge variant="default" className="text-xs bg-green-100 text-green-800">
                 <CheckCircle className="mr-1 h-3 w-3" />
                 Healthy
@@ -78,7 +123,7 @@ export default function AdminDashboardPage() {
               <DollarSign className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${mockAdminData.monthlyRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">${data.monthlyRevenue.toLocaleString()}</div>
               <span className="text-xs text-muted-foreground">+12% vs last month</span>
             </CardContent>
           </Card>
@@ -94,7 +139,7 @@ export default function AdminDashboardPage() {
                 <CardDescription>Latest platform activity and system events</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockAdminData.recentActivity.map((activity, index) => (
+                {data.recentActivity.map((activity, index) => (
                   <div key={index} className="flex items-center space-x-3 p-3 border rounded-md">
                     <div className={`w-2 h-2 rounded-full ${
                       activity.type === 'user' ? 'bg-blue-500' :
@@ -121,11 +166,11 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 border rounded-md">
-                    <div className="text-2xl font-bold">{mockAdminData.activeJobs}</div>
+                    <div className="text-2xl font-bold">{data.activeJobs}</div>
                     <div className="text-sm text-muted-foreground">Active Jobs</div>
                   </div>
                   <div className="text-center p-4 border rounded-md">
-                    <div className="text-2xl font-bold">{mockAdminData.supportTickets}</div>
+                    <div className="text-2xl font-bold">{data.supportTickets}</div>
                     <div className="text-sm text-muted-foreground">Open Tickets</div>
                   </div>
                   <div className="text-center p-4 border rounded-md">

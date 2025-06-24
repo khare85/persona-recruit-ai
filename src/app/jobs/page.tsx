@@ -1,29 +1,38 @@
 
+"use client";
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, MapPin, Search, PlusCircle } from 'lucide-react';
+import { Briefcase, MapPin, Search, PlusCircle, Loader2 } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import { Badge } from '@/components/ui/badge';
-import { getMockJobs } from '@/services/mockDataService';
-
-// Get mock jobs data
-const jobListings = getMockJobs().map(job => ({
-  id: job.id,
-  title: job.title,
-  company: job.companyName,
-  location: job.location,
-  type: job.jobType,
-  postedDate: job.postedDate,
-  description: job.description,
-  skills: job.requirements.slice(0, 4),
-  salary: job.salaryRange,
-  applicants: job.applicationCount
-}));
+import type { MockJob } from '@/services/mockDataService'; // Using type for structure
 
 export default function JobsPage() {
+  const [jobs, setJobs] = useState<MockJob[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        const response = await fetch('/api/jobs');
+        if (response.ok) {
+          const data = await response.json();
+          setJobs(data.data.jobs);
+        }
+      } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchJobs();
+  }, []);
+
   return (
     <Container>
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -38,7 +47,6 @@ export default function JobsPage() {
         </Link>
       </div>
 
-      {/* Search and Filters */}
       <Card className="mb-8 shadow-sm">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
@@ -81,62 +89,68 @@ export default function JobsPage() {
         </CardContent>
       </Card>
 
-      {/* Job Listings */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {jobListings.map((job) => (
-          <Card key={job.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl font-headline hover:text-primary transition-colors">
-                  <Link href={`/jobs/${job.id}`}>{job.title}</Link>
-                </CardTitle>
-                <Badge variant={job.type === 'Full-time' ? 'default' : 'secondary'}>{job.type}</Badge>
-              </div>
-              <CardDescription className="text-sm text-muted-foreground">
-                {job.company}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="flex items-center text-sm text-muted-foreground mb-2">
-                <MapPin className="h-4 w-4 mr-2 text-primary" />
-                {job.location}
-              </div>
-              <p className="text-sm text-foreground/80 mb-3 line-clamp-3">
-                {job.description}
-              </p>
-              <div className="mb-3">
-                <h4 className="text-xs font-semibold text-muted-foreground mb-1">Skills:</h4>
-                <div className="flex flex-wrap gap-1">
-                  {job.skills.slice(0, 3).map(skill => (
-                    <Badge key={skill} variant="outline" className="text-xs">{skill}</Badge>
-                  ))}
-                  {job.skills.length > 3 && <Badge variant="outline" className="text-xs">+{job.skills.length - 3} more</Badge>}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {jobs.map((job) => (
+            <Card key={job.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-xl font-headline hover:text-primary transition-colors">
+                    <Link href={`/jobs/${job.id}`}>{job.title}</Link>
+                  </CardTitle>
+                  <Badge variant={job.jobType === 'Full-time' ? 'default' : 'secondary'}>{job.jobType}</Badge>
                 </div>
-              </div>
-               <p className="text-sm font-medium text-primary">{job.salary}</p>
-            </CardContent>
-            <CardFooter className="flex justify-between items-center">
-              <p className="text-xs text-muted-foreground">
-                Posted: {new Date(job.postedDate).toLocaleDateString()}<br />
-                <span className="text-primary font-medium">{job.applicants} applicants</span>
-              </p>
-              <div className="flex gap-2">
-                <Link href={`/jobs/${job.id}/applicants`} passHref>
-                  <Button variant="outline" size="sm">
-                    Applicants ({job.applicants})
-                  </Button>
-                </Link>
-                <Link href={`/jobs/${job.id}`} passHref>
-                  <Button variant="link" className="text-primary p-0 h-auto">
-                    View Details &rarr;
-                  </Button>
-                </Link>
-              </div>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-       {/* Pagination (Placeholder) */}
+                <CardDescription className="text-sm text-muted-foreground">
+                  {job.companyName}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <div className="flex items-center text-sm text-muted-foreground mb-2">
+                  <MapPin className="h-4 w-4 mr-2 text-primary" />
+                  {job.location}
+                </div>
+                <p className="text-sm text-foreground/80 mb-3 line-clamp-3">
+                  {job.description}
+                </p>
+                <div className="mb-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-1">Skills:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {job.requirements.slice(0, 3).map(skill => (
+                      <Badge key={skill} variant="outline" className="text-xs">{skill}</Badge>
+                    ))}
+                    {job.requirements.length > 3 && <Badge variant="outline" className="text-xs">+{job.requirements.length - 3} more</Badge>}
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-primary">{job.salaryRange}</p>
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  Posted: {new Date(job.postedDate).toLocaleDateString()}<br />
+                  <span className="text-primary font-medium">{job.applicationCount} applicants</span>
+                </p>
+                <div className="flex gap-2">
+                  <Link href={`/jobs/${job.id}/applicants`} passHref>
+                    <Button variant="outline" size="sm">
+                      Applicants ({job.applicationCount})
+                    </Button>
+                  </Link>
+                  <Link href={`/jobs/${job.id}`} passHref>
+                    <Button variant="link" className="text-primary p-0 h-auto">
+                      View Details &rarr;
+                    </Button>
+                  </Link>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination (Placeholder) */}
       <div className="mt-12 flex justify-center">
         <Button variant="outline" className="mr-2">Previous</Button>
         <Button variant="outline">Next</Button>

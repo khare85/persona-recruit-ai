@@ -1,42 +1,91 @@
+
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Award, BarChart3, Briefcase, CalendarCheck2, DollarSign, Edit, FileText, FileUp, Gift, LayoutDashboardIcon, Link as LinkIcon, Linkedin, Mail, MapPin, MessageSquare, Phone, Settings, UserCircle2, UserCog, Video, Zap, FolderOpen, CalendarClock } from 'lucide-react';
+import { Award, Briefcase, CalendarCheck2, Gift, LayoutDashboardIcon, Settings, Zap, FolderOpen, CalendarClock, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { getMockDashboardMetrics, getMockJobs } from '@/services/mockDataService';
 
-const mockCandidateDashboardData = {
-  candidateId: "CAND-SARAH-001",
-  fullName: "Sarah Johnson",
-  ...getMockDashboardMetrics().candidate,
-  referredBy: "David Kim (Software Engineer at TechCorp)",
-  availability: "Available in 2 weeks",
-};
-
-const mockRecommendedJobs = getMockJobs().slice(0, 3).map(job => ({
-  id: job.id,
-  title: job.title,
-  company: job.companyName,
-  jobIdForLink: job.id
-}));
+interface CandidateDashboardData {
+  applicationsApplied: number;
+  upcomingInterviews: number;
+  offersReceived: number;
+  aiRecommendedJobs: number;
+  recentJobs: Array<{
+    id: string;
+    title: string;
+    company: string;
+    jobIdForLink: string;
+  }>;
+}
 
 export default function CandidateDashboardPage() {
+  const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/candidates/dashboard');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const result = await response.json();
+        setDashboardData(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <Container className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </Container>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <DashboardLayout>
+        <Container className="flex items-center justify-center h-full">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <CardTitle>Error Loading Dashboard</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-muted-foreground">{error || 'Could not load your dashboard data.'}</p>
+              <Button className="w-full mt-4" onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        </Container>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <Container>
         <div className="mb-8">
           <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
             <LayoutDashboardIcon className="mr-3 h-8 w-8 text-primary" />
-            Welcome, {mockCandidateDashboardData.fullName}!
+            Welcome!
           </h1>
           <p className="text-muted-foreground mt-1">
             This is your personal dashboard. Manage your job search, profile, and interviews.
-            <span className="block text-xs mt-1">Candidate ID: <code className="bg-muted px-1 py-0.5 rounded">{mockCandidateDashboardData.candidateId}</code></span>
           </p>
         </div>
 
@@ -47,7 +96,7 @@ export default function CandidateDashboardPage() {
               <Briefcase className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCandidateDashboardData.applicationsApplied}</div>
+              <div className="text-2xl font-bold">{dashboardData.applicationsApplied}</div>
               <Link href="/jobs" className="text-xs text-primary hover:underline">Browse more jobs</Link>
             </CardContent>
           </Card>
@@ -57,7 +106,7 @@ export default function CandidateDashboardPage() {
               <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCandidateDashboardData.upcomingInterviews}</div>
+              <div className="text-2xl font-bold">{dashboardData.upcomingInterviews}</div>
               <Link href="/candidates/my-interviews" className="text-xs text-primary hover:underline">View schedule</Link>
             </CardContent>
           </Card>
@@ -67,7 +116,7 @@ export default function CandidateDashboardPage() {
               <Award className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCandidateDashboardData.offersReceived}</div>
+              <div className="text-2xl font-bold">{dashboardData.offersReceived}</div>
                <span className="text-xs text-muted-foreground">Details in 'My Interviews'</span>
             </CardContent>
           </Card>
@@ -77,58 +126,21 @@ export default function CandidateDashboardPage() {
               <Zap className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockCandidateDashboardData.aiRecommendedJobs}</div>
-              <Link href="/candidates/1#job-recommendations" className="text-xs text-primary hover:underline">See recommendations</Link>
+              <div className="text-2xl font-bold">{dashboardData.aiRecommendedJobs}</div>
+              <Link href="/jobs" className="text-xs text-primary hover:underline">See recommendations</Link>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center"><UserCog className="mr-2 h-6 w-6 text-primary" /> My Profile & Availability</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  {mockCandidateDashboardData.referredBy && (
-                      <div className="p-3 bg-accent/10 border border-accent rounded-md">
-                          <p className="text-sm font-medium text-accent-foreground flex items-center"><Gift className="mr-2 h-4 w-4"/> Referred By</p>
-                          <p className="text-sm text-muted-foreground">{mockCandidateDashboardData.referredBy}</p>
-                      </div>
-                  )}
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                  <Link href="/candidates/1/edit" passHref className="flex-grow">
-                      <Button variant="outline" className="w-full sm:w-auto">
-                          <Edit className="mr-2 h-4 w-4" /> Enrich Your Profile
-                      </Button>
-                  </Link>
-                  <div className="w-full sm:w-auto sm:min-w-[200px]">
-                      <Label htmlFor="availability" className="text-xs text-muted-foreground mb-1 block">Update Availability</Label>
-                      <Select defaultValue={mockCandidateDashboardData.availability.toLowerCase().replace(/\s+/g, '-')}>
-                          <SelectTrigger id="availability">
-                          <SelectValue placeholder="Set your availability" />
-                          </SelectTrigger>
-                          <SelectContent>
-                          <SelectItem value="immediate">Immediate</SelectItem>
-                          <SelectItem value="available-in-7-days">Available in 7 days</SelectItem>
-                          <SelectItem value="available-in-14-days">Available in 14 days</SelectItem>
-                          <SelectItem value="available-in-30-days">Available in 30 days</SelectItem>
-                          <SelectItem value="open-to-offers">Open to offers</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-                </div>
-                 <p className="text-xs text-muted-foreground italic">Keep your profile and availability up-to-date for the best matches.</p>
-              </CardContent>
-            </Card>
-
              <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> AI Recommended Jobs For You</CardTitle>
                 <CardDescription>Based on your profile and skills, here are some roles you might be interested in.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                  {mockRecommendedJobs.map(job => (
+                  {dashboardData.recentJobs.map(job => (
                       <div key={job.id} className="p-3 border rounded-md hover:bg-muted/50 transition-colors">
                           <div className="flex justify-between items-start">
                               <h4 className="font-semibold text-md">{job.title}</h4>
@@ -153,6 +165,7 @@ export default function CandidateDashboardPage() {
               <CardHeader><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                   <Link href="/candidates/my-interviews" passHref><Button variant="ghost" className="w-full justify-start"><CalendarClock className="mr-2 h-4 w-4 text-primary" />My Interviews</Button></Link>
+                  <Link href="/candidates/my-applications" passHref><Button variant="ghost" className="w-full justify-start"><Briefcase className="mr-2 h-4 w-4 text-primary" />My Applications</Button></Link>
                   <Link href="/candidates/my-documents" passHref><Button variant="ghost" className="w-full justify-start"><FolderOpen className="mr-2 h-4 w-4 text-primary" />My Documents</Button></Link>
                   <Link href="/referrals" passHref><Button variant="ghost" className="w-full justify-start"><Gift className="mr-2 h-4 w-4 text-primary" />My Referrals</Button></Link>
                   <Link href="/candidates/settings" passHref><Button variant="ghost" className="w-full justify-start"><Settings className="mr-2 h-4 w-4 text-primary" />Profile Settings</Button></Link>

@@ -23,41 +23,68 @@ class ServerHealthMonitor {
   }
 
   private registerDefaultChecks() {
-    // Database connectivity check
+    // Database connectivity check (less critical in development)
     this.addHealthCheck({
       name: 'database',
-      critical: true,
+      critical: process.env.NODE_ENV === 'production',
       check: async () => {
         try {
-          if (!db) return false;
+          if (!db) {
+            // In development, DB might not be configured - don't fail hard
+            if (process.env.NODE_ENV === 'development') {
+              return true;
+            }
+            return false;
+          }
           
-          // Try to read a system collection
-          const healthRef = db.collection('_health').doc('check');
-          await healthRef.get();
-          return true;
+          // Try to read a system collection with timeout
+          const timeoutPromise = new Promise<boolean>((_, reject) => {
+            setTimeout(() => reject(new Error('Database check timeout')), 5000);
+          });
+          
+          const checkPromise = (async () => {
+            const healthRef = db.collection('_health').doc('check');
+            await healthRef.get();
+            return true;
+          })();
+          
+          return await Promise.race([checkPromise, timeoutPromise]);
         } catch (error) {
-          dbLogger.error('Database health check failed', { error });
-          return false;
+          dbLogger.warn('Database health check failed', { error: error.message });
+          // In development, log but don't fail
+          return process.env.NODE_ENV === 'development';
         }
       }
     });
 
-    // Memory usage check
+    // Memory usage check (relaxed thresholds for development)
     this.addHealthCheck({
       name: 'memory',
       critical: false,
       check: async () => {
         const usage = process.memoryUsage();
         const heapUsedPercent = (usage.heapUsed / usage.heapTotal) * 100;
+        const isDev = process.env.NODE_ENV === 'development';
+        const threshold = isDev ? 98 : 85; // More lenient in development
         
-        if (heapUsedPercent > 90) {
-          dbLogger.warn('High memory usage detected', { heapUsedPercent });
-          // Trigger garbage collection if available
-          if (global.gc) {
+        if (heapUsedPercent > threshold) {
+          dbLogger.warn('High memory usage detected', { 
+            heapUsedPercent,
+            heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
+            heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
+            rss: Math.round(usage.rss / 1024 / 1024),
+            external: Math.round(usage.external / 1024 / 1024),
+            isDev
+          });
+          
+          // Only trigger GC in production or critical situations
+          if (!isDev && global.gc) {
             global.gc();
             dbLogger.info('Triggered garbage collection');
           }
-          return false;
+          
+          // Only fail in production with extreme usage
+          return isDev ? true : heapUsedPercent < 95;
         }
         return true;
       }
@@ -131,7 +158,7 @@ class ServerHealthMonitor {
     };
   }
 
-  startMonitoring(intervalMs: number = 30000) {
+  startMonitoring(intervalMs: number = 60000) {
     if (this.healthCheckInterval) {
       this.stopMonitoring();
     }

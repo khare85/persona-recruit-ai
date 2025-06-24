@@ -364,16 +364,25 @@ export function startCacheCleanup(): void {
     clearInterval(cleanupInterval);
   }
   
+  const isDev = process.env.NODE_ENV === 'development';
+  const cleanupIntervalMs = isDev ? 10 * 60 * 1000 : 5 * 60 * 1000; // 10 min in dev, 5 min in prod
+  
   cleanupInterval = setInterval(() => {
     try {
-      memoryCache.cleanup();
-      userCache.cleanup();
-      searchCache.cleanup();
-      aiCache.cleanup();
+      const cleaned = [
+        memoryCache.cleanup(),
+        userCache.cleanup(), 
+        searchCache.cleanup(),
+        aiCache.cleanup()
+      ].reduce((sum, count) => sum + count, 0);
+      
+      if (cleaned > 0) {
+        console.log(`[Cache] Cleaned up ${cleaned} expired entries`);
+      }
     } catch (error) {
       console.error('Cache cleanup error:', error);
     }
-  }, 5 * 60 * 1000); // Every 5 minutes
+  }, cleanupIntervalMs);
 }
 
 export function stopCacheCleanup(): void {

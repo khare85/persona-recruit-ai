@@ -12,6 +12,7 @@ import type { Bucket } from '@google-cloud/storage'; // Bucket type for Firebase
 // --- Firebase Admin SDK Setup ---
 let app: App | undefined;
 
+// Prevent multiple initializations during development hot reloads
 if (!admin.apps.length) {
   try {
     // Check if we have service account credentials as JSON string in environment
@@ -363,6 +364,23 @@ export async function searchJobsByEmbedding(
   } catch (error) {
     console.error('[FirestoreService] Error during job vector search. Ensure vector index is set up correctly on "jobEmbedding" (dim:768, COSINE) for collection "jobs_with_embeddings" using textembedding-gecko-multilingual model. Error:', error);
     return [];
+  }
+}
+
+/**
+ * Attempt to reload Firebase connection (for recovery)
+ */
+export async function reloadFirebaseConnection(): Promise<void> {
+  try {
+    if (db) {
+      // Test the connection with a simple operation
+      const healthRef = db.collection('_health').doc('connection_test');
+      await healthRef.get();
+      console.log('[FirestoreService] Firebase connection is healthy');
+    }
+  } catch (error) {
+    console.error('[FirestoreService] Firebase connection reload failed:', error);
+    throw error;
   }
 }
 

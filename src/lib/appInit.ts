@@ -16,8 +16,10 @@ export async function initializeApp() {
   try {
     dbLogger.info('Initializing application...');
 
-    // Start health monitoring
-    healthMonitor.startMonitoring(30000); // Check every 30 seconds
+    // Start health monitoring with environment-appropriate intervals
+    const isDev = process.env.NODE_ENV === 'development';
+    const healthCheckInterval = isDev ? 120000 : 60000; // 2 minutes in dev, 1 minute in prod
+    healthMonitor.startMonitoring(healthCheckInterval);
     dbLogger.info('Health monitoring started');
 
     // Cache cleanup is already started in cache.ts

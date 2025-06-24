@@ -1,3 +1,4 @@
+
 import admin from 'firebase-admin';
 import { db } from './firestoreService';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
@@ -34,24 +35,16 @@ class DatabaseService {
     this.ensureDb();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     
-    if (id) {
-      await this.db!.collection(collection).doc(id).set({
-        ...data,
-        id,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      });
-      return id;
-    } else {
-      const docRef = await this.db!.collection(collection).add({
-        ...data,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      });
-      // Update the document with its own ID
-      await docRef.update({ id: docRef.id });
-      return docRef.id;
-    }
+    const docRef = id ? this.db!.collection(collection).doc(id) : this.db!.collection(collection).doc();
+    
+    await docRef.set({
+      ...data,
+      id: docRef.id, // Ensure the ID is part of the document data
+      createdAt: timestamp,
+      updatedAt: timestamp
+    });
+
+    return docRef.id;
   }
 
   private async update<T>(collection: string, id: string, data: Partial<T>): Promise<void> {
@@ -136,25 +129,55 @@ class DatabaseService {
   // User Management
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
-      // Hash password
-      const passwordHash = await bcrypt.hash(userData.passwordHash, 12);
+      const plainPassword = userData.passwordHash; // Misnamed in seeding, this is the plain password
       
-      const user = {
+      // 1. Create user in Firebase Authentication
+      let authUser;
+      try {
+        authUser = await admin.auth().createUser({
+          email: userData.email,
+          password: plainPassword,
+          displayName: `${userData.firstName} ${userData.lastName}`,
+          emailVerified: userData.emailVerified || false,
+        });
+        dbLogger.info('User created in Firebase Auth', { uid: authUser.uid, email: userData.email });
+      } catch (authError: any) {
+        if (authError.code === 'auth/email-already-exists') {
+          dbLogger.warn('User already exists in Firebase Auth, fetching existing user.', { email: userData.email });
+          authUser = await admin.auth().getUserByEmail(userData.email);
+        } else {
+          dbLogger.error('Error creating user in Firebase Auth', { error: String(authError), email: userData.email });
+          throw authError;
+        }
+      }
+
+      // 2. Create user document in Firestore (for custom login and roles)
+      const passwordHash = await bcrypt.hash(plainPassword, 12);
+      
+      const userFirestoreData = {
         ...userData,
         passwordHash,
-        emailVerified: false,
-        status: 'pending' as const
+        emailVerified: authUser.emailVerified,
+        status: 'active' as const,
       };
-
-      const userId = await this.create(COLLECTIONS.USERS, user);
       
-      dbLogger.info('User created', { userId, email: userData.email, role: userData.role });
+      // Use the UID from Firebase Auth as the document ID in Firestore for consistency
+      const userId = authUser.uid;
+      await this.db.collection(COLLECTIONS.USERS).doc(userId).set({
+        ...userFirestoreData,
+        id: userId,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      dbLogger.info('User document created in Firestore', { userId, email: userData.email, role: userData.role });
       return userId;
     } catch (error) {
-      dbLogger.error('Error creating user', { error: String(error), email: userData.email });
+      dbLogger.error('Error in createUser database service', { error: String(error), email: userData.email });
       throw error;
     }
   }
+
 
   async getUserById(id: string): Promise<User | null> {
     return this.get<User>(COLLECTIONS.USERS, id);
@@ -207,7 +230,7 @@ class DatabaseService {
   async updateUserLastLogin(id: string): Promise<void> {
     try {
       await this.update(COLLECTIONS.USERS, id, {
-        lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
+        lastLogin: new Date()
       });
       dbLogger.info('User last login updated', { userId: id });
     } catch (error) {
@@ -280,6 +303,28 @@ class DatabaseService {
       throw error;
     }
   }
+  
+  async getCompanyAdmins(companyId: string): Promise<User[]> {
+    this.ensureDb();
+    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+        .where('companyId', '==', companyId)
+        .where('role', '==', 'company_admin')
+        .where('deletedAt', '==', null)
+        .get();
+    
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  }
+
+  async getCompanyRecruiters(companyId: string): Promise<User[]> {
+    this.ensureDb();
+    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+        .where('companyId', '==', companyId)
+        .where('role', '==', 'recruiter')
+        .where('deletedAt', '==', null)
+        .get();
+    
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  }
 
   async getCompanyById(id: string): Promise<Company | null> {
     return this.get<Company>(COLLECTIONS.COMPANIES, id);
@@ -304,9 +349,6 @@ class DatabaseService {
     if (options?.status) {
       where.push({ field: 'status', operator: '==', value: options.status });
     }
-
-    // Note: For search functionality, we'd need to implement full-text search
-    // For now, this returns all companies with basic filtering
 
     return this.list<Company>(COLLECTIONS.COMPANIES, {
       limit: options?.limit,
@@ -391,6 +433,12 @@ class DatabaseService {
   async getJobById(id: string): Promise<Job | null> {
     return this.get<Job>(COLLECTIONS.JOBS, id);
   }
+  
+  async getRecentJobs(limit: number): Promise<Job[]> {
+    const { items } = await this.list<Job>(COLLECTIONS.JOBS, { limit, orderBy: { field: 'publishedAt', direction: 'desc' } });
+    return items;
+  }
+
 
   async updateJob(id: string, data: Partial<Job>): Promise<void> {
     return this.update(COLLECTIONS.JOBS, id, data);
@@ -640,8 +688,19 @@ class DatabaseService {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  async updateJobApplication(id: string, data: any): Promise<void> {
-    return this.update(COLLECTIONS.JOB_APPLICATIONS, id, data);
+  async createAuditLog(logData: {
+    userId: string;
+    action: string;
+    resourceType: string;
+    resourceIds: string[];
+    details: any;
+    timestamp: string;
+  }): Promise<void> {
+    try {
+      await this.create('auditLogs', logData);
+    } catch (error) {
+      dbLogger.error('Failed to create audit log', { error: String(error), userId: logData.userId });
+    }
   }
 
   // Analytics methods
@@ -841,22 +900,6 @@ class DatabaseService {
         applicationsGrowthRate: 25.7
       }
     };
-  }
-
-  // Audit log for tracking actions
-  async createAuditLog(logData: {
-    userId: string;
-    action: string;
-    resourceType: string;
-    resourceIds: string[];
-    details: any;
-    timestamp: string;
-  }): Promise<void> {
-    try {
-      await this.create('auditLogs', logData);
-    } catch (error) {
-      dbLogger.error('Failed to create audit log', { error: String(error), userId: logData.userId });
-    }
   }
 }
 

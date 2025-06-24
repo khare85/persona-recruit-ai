@@ -14,22 +14,29 @@ let app: App | undefined;
 
 if (!admin.apps.length) {
   try {
-    // For deployment to Firebase App Hosting (and other GCP managed environments like Cloud Functions, Cloud Run),
-    // `applicationDefault()` automatically finds the credentials provided by the environment.
-    // This also works for local development if Application Default Credentials (ADC) are set up
-    // (e.g., by running `gcloud auth application-default login`).
-    // Ensure the service account used (either by ADC locally or by the App Hosting backend)
-    // has the necessary IAM permissions for Firestore, Storage, Document AI, etc.
-    console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...');
-    admin.initializeApp({
-       credential: admin.credential.applicationDefault(),
-       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
-    });
+    // Check if we have service account credentials as JSON string in environment
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      console.log('[FirestoreService] Initializing Firebase Admin SDK using service account from environment...');
+      const serviceAccountJson = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccountJson),
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
+      });
+    } else {
+      // Fallback to Application Default Credentials for local development or GCP environments
+      console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...');
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
+      });
+    }
     app = admin.app(); // Get the default app instance
-    console.log('[FirestoreService] Firebase Admin SDK initialized successfully using Application Default Credentials.');
+    console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
   } catch (error) {
-    console.error('[FirestoreService] Error initializing Firebase Admin SDK with Application Default Credentials. This method is expected to work in GCP managed environments and correctly configured local ADC setups. Error details:', error);
-    console.error('[FirestoreService] Firebase Admin SDK initialization failed. Ensure credentials (Application Default Credentials) are correctly configured and the service account has necessary permissions.');
+    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Error details:', error);
+    console.error('[FirestoreService] Firebase Admin SDK initialization failed. Ensure credentials are correctly configured.');
     // If initialization fails, 'app' will remain undefined, and subsequent db/storage operations will be gracefully handled.
   }
 } else {

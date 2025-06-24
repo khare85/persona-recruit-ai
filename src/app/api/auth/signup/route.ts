@@ -4,17 +4,8 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { apiLogger } from '@/lib/logger';
+import { databaseService } from '@/services/database.service';
 
-// Mock user database (in production, use real database)
-const mockUsers: Array<{
-  id: string;
-  email: string;
-  password: string;
-  fullName: string;
-  role: 'admin' | 'recruiter' | 'candidate';
-  companyId: string | null;
-  createdAt: string;
-}> = [];
 
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
@@ -46,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { fullName, email, password, role, companyId } = validation.data;
 
     // Check if user already exists
-    const existingUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const existingUser = await databaseService.getUserByEmail(email);
     
     if (existingUser) {
       return NextResponse.json(
@@ -55,22 +46,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Parse full name into first and last name
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0];
 
-    // Create new user
-    const newUser = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Create new user in database (Firebase Auth + Firestore)
+    const userId = await databaseService.createUser({
       email: email.toLowerCase(),
-      password: hashedPassword,
-      fullName,
-      role,
-      companyId: companyId || null,
-      createdAt: new Date().toISOString()
-    };
-
-    // Add to mock database
-    mockUsers.push(newUser);
+      firstName,
+      lastName,
+      role: role as 'recruiter' | 'candidate',
+      status: 'active',
+      emailVerified: false,
+      passwordHash: password // Will be hashed in the service
+    });
 
     // Generate JWT token
     const jwtSecret = process.env.JWT_SECRET;
@@ -81,23 +71,25 @@ export async function POST(request: NextRequest) {
 
     const token = jwt.sign(
       { 
-        userId: newUser.id, 
-        email: newUser.email, 
-        role: newUser.role,
-        companyId: newUser.companyId
+        userId: userId, 
+        email: email.toLowerCase(), 
+        role: role,
+        companyId: companyId || null
       },
       jwtSecret,
       { expiresIn: '7d' }
     );
 
-    // Create response with user data (excluding password)
+    // Create response with user data
     const userResponse = {
-      id: newUser.id,
-      email: newUser.email,
-      fullName: newUser.fullName,
-      role: newUser.role,
-      companyId: newUser.companyId,
-      createdAt: newUser.createdAt
+      id: userId,
+      email: email.toLowerCase(),
+      fullName,
+      firstName,
+      lastName,
+      role,
+      companyId: companyId || null,
+      createdAt: new Date().toISOString()
     };
 
     const response = NextResponse.json({
@@ -121,7 +113,7 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Signup API Error:', error);
+    apiLogger.error('Signup API Error', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

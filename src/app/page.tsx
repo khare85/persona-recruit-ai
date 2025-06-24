@@ -37,8 +37,8 @@ export default function HomePage() {
                 src="https://placehold.co/1600x900.png" 
                 data-ai-hint="abstract technology recruitment" 
                 alt="Abstract technology background for AI Talent Stream" 
-                layout="fill" 
-                objectFit="cover" 
+                fill
+                style={{objectFit: 'cover'}}
                 className="blur-md" 
                 priority
             />

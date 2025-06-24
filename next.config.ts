@@ -30,6 +30,28 @@ const nextConfig: NextConfig = {
   ],
   // Configure webpack for better memory management
   webpack: (config, { dev, isServer }) => {
+    // Development optimizations for memory usage
+    if (dev) {
+      config.optimization.minimize = false;
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
+          },
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: -10,
+            chunks: 'all',
+          },
+        },
+      };
+    }
+    
+    // Production optimizations
     if (!dev && !isServer) {
       config.optimization.splitChunks.cacheGroups = {
         default: false,

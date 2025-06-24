@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
+import { useState, useEffect } from 'react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -201,7 +201,7 @@ export default function AdminSupportPage() {
   };
 
   return (
-    <AdminLayout>
+    <DashboardLayout>
       <Container className="py-8">
         <div className="mb-8">
           <div className="flex justify-between items-start">
@@ -472,6 +472,6 @@ export default function AdminSupportPage() {
           </TabsContent>
         </Tabs>
       </Container>
-    </AdminLayout>
+    </DashboardLayout>
   );
 }

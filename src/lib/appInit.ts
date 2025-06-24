@@ -14,20 +14,24 @@ export async function initializeApp() {
   }
 
   try {
-    dbLogger.info('Initializing application...');
-
-    // Start health monitoring with environment-appropriate intervals
     const isDev = process.env.NODE_ENV === 'development';
-    const healthCheckInterval = isDev ? 120000 : 60000; // 2 minutes in dev, 1 minute in prod
-    healthMonitor.startMonitoring(healthCheckInterval);
-    dbLogger.info('Health monitoring started');
+    dbLogger.info('Initializing application...', { isDev });
 
-    // Cache cleanup is already started in cache.ts
-    dbLogger.info('Cache cleanup active');
-
-    // Run initial health check
-    const initialHealth = await healthMonitor.runHealthChecks();
-    dbLogger.info('Initial health check', { results: initialHealth });
+    // Only start monitoring in production to prevent memory issues in dev
+    if (!isDev) {
+      healthMonitor.startMonitoring(60000); // 1 minute in prod
+      dbLogger.info('Health monitoring started');
+      
+      // Start cache cleanup in production
+      startCacheCleanup();
+      dbLogger.info('Cache cleanup active');
+      
+      // Run initial health check
+      const initialHealth = await healthMonitor.runHealthChecks();
+      dbLogger.info('Initial health check', { results: initialHealth });
+    } else {
+      dbLogger.info('Development mode: skipping health monitoring and cache cleanup');
+    }
 
     initialized = true;
     dbLogger.info('Application initialization complete');

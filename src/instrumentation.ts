@@ -5,8 +5,10 @@
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    // Server-side initialization
-    const { initializeApp } = await import('@/lib/appInit');
-    await initializeApp();
+    // Only initialize in production to prevent memory issues in development
+    if (process.env.NODE_ENV === 'production') {
+      const { initializeApp } = await import('@/lib/appInit');
+      await initializeApp();
+    }
   }
 }

@@ -310,26 +310,28 @@ export const cacheKeys = {
 };
 
 /**
- * Create cache instances
+ * Create cache instances with environment-specific sizes
  */
+const isDev = process.env.NODE_ENV === 'development';
+
 export const memoryCache = new MemoryCache({
-  maxSize: 1000,
-  ttl: 3600 // 1 hour
+  maxSize: isDev ? 50 : 1000,
+  ttl: isDev ? 300 : 3600 // 5 min in dev, 1 hour in prod
 });
 
 export const userCache = new MemoryCache({
-  maxSize: 500,
-  ttl: 1800 // 30 minutes
+  maxSize: isDev ? 25 : 500,
+  ttl: isDev ? 300 : 1800 // 5 min in dev, 30 min in prod
 });
 
 export const searchCache = new SerializedCache({
-  maxSize: 200,
-  ttl: 300 // 5 minutes
+  maxSize: isDev ? 10 : 200,
+  ttl: isDev ? 60 : 300 // 1 min in dev, 5 min in prod
 });
 
 export const aiCache = new SerializedCache({
-  maxSize: 1000,
-  ttl: 7200 // 2 hours
+  maxSize: isDev ? 25 : 1000,
+  ttl: isDev ? 600 : 7200 // 10 min in dev, 2 hours in prod
 });
 
 /**
@@ -392,8 +394,10 @@ export function stopCacheCleanup(): void {
   }
 }
 
-// Start cleanup on module load
-startCacheCleanup();
+// Start cleanup on module load only in production
+if (process.env.NODE_ENV === 'production') {
+  startCacheCleanup();
+}
 
 // Handle process termination
 process.on('SIGTERM', () => {

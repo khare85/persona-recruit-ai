@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Development-specific optimizations
+  ...(process.env.NODE_ENV === 'development' && {
+    // Disable source maps in dev to save memory
+    productionBrowserSourceMaps: false,
+    // Reduce memory usage for dev builds
+    swcMinify: false,
+  }),
   images: {
     remotePatterns: [
       {

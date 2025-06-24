@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { aiAnalyticsService } from '@/services/aiAnalytics.service';
 import { dbLogger } from '@/lib/logger';
 import { verifyUserRole } from '@/utils/auth';
-
+import { getActiveAlerts, createAlert, updateAlertAcknowledgment, deleteAlert } from '@/services/aiAnalytics.service';
 /**
  * GET /api/ai-analytics/alerts
  * Retrieve active alerts for performance and bias monitoring
@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       offset: parseInt(searchParams.get('offset') || '0')
     };
 
-    // Get active alerts (this would be implemented in the service)
     const alerts = await getActiveAlerts(filters);
 
     dbLogger.info('AI analytics alerts retrieved via API', {
@@ -94,7 +93,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create alert (this would be implemented in the service)
     const alertId = await createAlert({
       type,
       severity,
@@ -155,7 +153,7 @@ export async function PUT(
     const alertId = params.id;
 
     // Update alert acknowledgment (this would be implemented in the service)
-    await updateAlertAcknowledgment(alertId, {
+    await aiAnalyticsService.updateAlertAcknowledgment(alertId, {
       acknowledged,
       acknowledgedBy: userInfo.user.id,
       acknowledgedAt: new Date(),
@@ -204,7 +202,7 @@ export async function DELETE(
     const alertId = params.id;
 
     // Delete alert (this would be implemented in the service)
-    await deleteAlert(alertId, userInfo.user.id);
+    await aiAnalyticsService.deleteAlert(alertId, userInfo.user.id);
 
     dbLogger.info('AI analytics alert dismissed via API', {
       alertId,
@@ -226,97 +224,4 @@ export async function DELETE(
       error: 'Failed to dismiss alert'
     }, { status: 500 });
   }
-}
-
-// Helper functions (these would be implemented in the service layer)
-
-async function getActiveAlerts(filters: any) {
-  // Mock implementation - would query database
-  const mockAlerts = [
-    {
-      id: '1',
-      type: 'bias',
-      severity: 'high',
-      message: 'Gender bias detected in candidate screening process',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      acknowledged: false,
-      companyId: filters.companyId,
-      operationType: 'candidate_screening',
-      data: {
-        biasType: 'gender_bias',
-        affectedGroup: 'female',
-        disparityRatio: 0.72
-      }
-    },
-    {
-      id: '2',
-      type: 'performance',
-      severity: 'medium',
-      message: 'AI model latency exceeded threshold',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-      acknowledged: false,
-      companyId: filters.companyId,
-      operationType: 'resume_processing',
-      data: {
-        threshold: 2000,
-        actualValue: 3500,
-        model: 'gemini-2.0-flash'
-      }
-    },
-    {
-      id: '3',
-      type: 'fairness',
-      severity: 'critical',
-      message: 'Fairness score below acceptable threshold',
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-      acknowledged: true,
-      acknowledgedBy: 'admin-user-id',
-      acknowledgedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      companyId: filters.companyId,
-      operationType: 'job_matching',
-      data: {
-        fairnessScore: 0.65,
-        threshold: 0.8,
-        affectedGroups: ['age:55+', 'education:high-school']
-      }
-    }
-  ];
-
-  // Apply filters
-  let filteredAlerts = mockAlerts;
-
-  if (filters.severity) {
-    filteredAlerts = filteredAlerts.filter(a => a.severity === filters.severity);
-  }
-
-  if (filters.type) {
-    filteredAlerts = filteredAlerts.filter(a => a.type === filters.type);
-  }
-
-  if (filters.acknowledged !== undefined) {
-    filteredAlerts = filteredAlerts.filter(a => a.acknowledged === filters.acknowledged);
-  }
-
-  if (filters.companyId) {
-    filteredAlerts = filteredAlerts.filter(a => a.companyId === filters.companyId);
-  }
-
-  return filteredAlerts.slice(filters.offset, filters.offset + filters.limit);
-}
-
-async function createAlert(alertData: any): Promise<string> {
-  // Mock implementation - would save to database
-  const alertId = 'alert_' + Date.now();
-  dbLogger.info('Alert created', { alertId, ...alertData });
-  return alertId;
-}
-
-async function updateAlertAcknowledgment(alertId: string, acknowledgmentData: any): Promise<void> {
-  // Mock implementation - would update database
-  dbLogger.info('Alert acknowledgment updated', { alertId, ...acknowledgmentData });
-}
-
-async function deleteAlert(alertId: string, userId: string): Promise<void> {
-  // Mock implementation - would soft delete from database
-  dbLogger.info('Alert dismissed', { alertId, dismissedBy: userId });
 }

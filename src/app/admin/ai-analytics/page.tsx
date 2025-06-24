@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AIPerformanceDashboard, AnalyticsFilters } from '@/types/analytics.types';
 import { PerformanceOverview } from '@/components/ai-analytics/PerformanceOverview';
-import { BiasMonitoring } from '@/components/ai-analytics/BiasMonitoring';
-import { FairnessMetrics } from '@/components/ai-analytics/FairnessMetrics';
-import { AlertsPanel } from '@/components/ai-analytics/AlertsPanel';
-import { ExportControls } from '@/components/ai-analytics/ExportControls';
+import { BiasMonitoring } from '@/components/ai-analytics/BiasMonitoring'; // Corrected import path
+import { FairnessMetrics } from '@/components/ai-analytics/FairnessMetrics'; // Corrected import path
+import { AlertsPanel } from '@/components/ai-analytics/AlertsPanel'; // Corrected import path
+import { ExportControls } from '@/components/ai-analytics/ExportControls'; // Corrected import path
 import { TimeRangeSelector } from '@/components/ai-analytics/TimeRangeSelector';
 import { AlertTriangle, Activity, Shield, TrendingUp, Download, RefreshCw } from 'lucide-react';
 

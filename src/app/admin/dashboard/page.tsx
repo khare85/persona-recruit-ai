@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
                     <Users className="mr-2 h-4 w-4 text-primary" />User Management
                   </Button>
                 </Link>
-                <Link href="/admin/companies">
+                <Link href="/admin/company-management">
                   <Button variant="ghost" className="w-full justify-start">
                     <Building className="mr-2 h-4 w-4 text-primary" />Company Management
                   </Button>

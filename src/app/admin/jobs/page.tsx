@@ -21,6 +21,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 
 interface JobStats {
   totalJobs: number;
@@ -63,8 +64,12 @@ export default function AdminJobsPage() {
 
   const fetchJobsData = async () => {
     try {
-      // Fetch all jobs across all companies
-      const response = await fetch('/api/jobs');
+      // Fetch all jobs across all companies with admin authentication
+      const response = await fetch('/api/jobs', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch jobs data');
       }
@@ -125,38 +130,75 @@ export default function AdminJobsPage() {
     }
   };
 
+  const handleViewJob = (jobId: string) => {
+    window.open(`/jobs/${jobId}`, '_blank');
+  };
+
+  const handleEditJob = (jobId: string) => {
+    // Navigate to edit job page (would need to be implemented)
+    alert(`Edit job functionality would navigate to job ${jobId} edit page`);
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm('Are you sure you want to delete this job? This action cannot be undone.')) return;
+    
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete job');
+      }
+
+      // Refresh the jobs list
+      fetchJobsData();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job');
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading jobs data...</p>
+      <AdminLayout>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading jobs data...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <CardTitle>Error Loading Jobs</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
-          </CardContent>
-        </Card>
-      </div>
+      <AdminLayout>
+        <div className="container mx-auto p-6">
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <CardTitle>Error Loading Jobs</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <AdminLayout>
+      <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
           <Briefcase className="h-8 w-8 text-primary" />
@@ -310,13 +352,13 @@ export default function AdminJobsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleViewJob(job.id)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditJob(job.id)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDeleteJob(job.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -327,6 +369,7 @@ export default function AdminJobsPage() {
           </Table>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

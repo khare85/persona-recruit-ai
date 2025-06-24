@@ -58,8 +58,8 @@ export default function SupportPage() {
       icon: Settings,
       title: "Technical Support",
       description: "Help with platform functionality, integrations, and troubleshooting",
-      color: "bg-blue-50 border-blue-200",
-      iconColor: "text-blue-600"
+      color: "bg-green-50 border-green-200",
+      iconColor: "text-green-600"
     },
     {
       icon: Users,
@@ -94,7 +94,7 @@ export default function SupportPage() {
         },
         {
           question: "What integrations are available?",
-          answer: "AI Talent Stream integrates with popular HR tools including Slack, Microsoft Teams, Google Workspace, Zoom, ATS systems like Greenhouse and Lever, and job boards like LinkedIn, Indeed, and Glassdoor. We also offer API access for custom integrations."
+          answer: "Pra recruit AI integrates with popular HR tools including Slack, Microsoft Teams, Google Workspace, Zoom, ATS systems like Greenhouse and Lever, and job boards like LinkedIn, Indeed, and Glassdoor. We also offer API access for custom integrations."
         },
         {
           question: "How does AI matching work?",
@@ -145,7 +145,7 @@ export default function SupportPage() {
       description: "Chat with our support team",
       availability: "Available 24/7",
       action: "Start Chat",
-      color: "bg-blue-600"
+      color: "bg-green-600"
     },
     {
       icon: Phone,
@@ -163,7 +163,7 @@ export default function SupportPage() {
       availability: "Response within 4 hours",
       action: "Send Email",
       color: "bg-purple-600",
-      detail: "support@aitalentstream.com"
+      detail: "support@prarecruitai.com"
     },
     {
       icon: Calendar,
@@ -212,17 +212,17 @@ export default function SupportPage() {
   })).filter(category => category.questions.length > 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
       {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Talent Stream
+              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Pra recruit AI
               </span>
             </Link>
             <div className="flex items-center space-x-4">
@@ -230,7 +230,7 @@ export default function SupportPage() {
                 <Button variant="outline" size="sm">Back to Home</Button>
               </Link>
               <Link href="/auth">
-                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600">
                   Sign In
                 </Button>
               </Link>
@@ -242,19 +242,19 @@ export default function SupportPage() {
       {/* Hero Section */}
       <section className="pt-16 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge className="mb-6 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200">
+          <Badge className="mb-6 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200">
             <Headphones className="h-3 w-3 mr-1" />
             24/7 Support
           </Badge>
           <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
             How Can We
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Help You?</span>
+            <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"> Help You?</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8">
             Get instant help from our expert support team. We're here to ensure your recruitment success.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
               <MessageSquare className="mr-2 h-5 w-5" />
               Start Live Chat
             </Button>
@@ -320,7 +320,7 @@ export default function SupportPage() {
                 <Card key={categoryIndex}>
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <HelpCircle className="mr-2 h-5 w-5 text-blue-600" />
+                      <HelpCircle className="mr-2 h-5 w-5 text-green-600" />
                       {category.title}
                     </CardTitle>
                   </CardHeader>
@@ -575,7 +575,7 @@ export default function SupportPage() {
 
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? (
@@ -600,15 +600,15 @@ export default function SupportPage() {
           <TabsContent value="resources" className="space-y-8">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Resources & Documentation</h2>
-              <p className="text-lg text-gray-600">Everything you need to master AI Talent Stream</p>
+              <p className="text-lg text-gray-600">Everything you need to master Pra recruit AI</p>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
               <Card className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                      <Book className="h-5 w-5 text-blue-600" />
+                    <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <Book className="h-5 w-5 text-green-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Documentation</h3>
                   </div>
@@ -625,8 +625,8 @@ export default function SupportPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                      <Video className="h-5 w-5 text-green-600" />
+                    <div className="h-10 w-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
+                      <Video className="h-5 w-5 text-emerald-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Video Tutorials</h3>
                   </div>
@@ -643,8 +643,8 @@ export default function SupportPage() {
               <Card className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                      <Users className="h-5 w-5 text-purple-600" />
+                    <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <Users className="h-5 w-5 text-green-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Community</h3>
                   </div>

@@ -103,8 +103,8 @@ export default function HomePage() {
       period: "/month",
       description: "Perfect for small teams and startups",
       icon: Rocket,
-      color: "border-blue-200 bg-blue-50",
-      buttonColor: "bg-blue-600 hover:bg-blue-700",
+      color: "border-green-200 bg-green-50",
+      buttonColor: "bg-green-600 hover:bg-green-700",
       features: [
         "Up to 5 job postings",
         "100 candidate profiles",
@@ -125,8 +125,8 @@ export default function HomePage() {
       period: "/month",
       description: "Ideal for growing companies",
       icon: Crown,
-      color: "border-purple-200 bg-purple-50",
-      buttonColor: "bg-purple-600 hover:bg-purple-700",
+      color: "border-emerald-200 bg-emerald-50",
+      buttonColor: "bg-emerald-600 hover:bg-emerald-700",
       popular: true,
       features: [
         "Unlimited job postings",
@@ -147,8 +147,8 @@ export default function HomePage() {
       period: "pricing",
       description: "For large organizations with complex needs",
       icon: Infinity,
-      color: "border-gold-200 bg-gold-50",
-      buttonColor: "bg-gold-600 hover:bg-gold-700",
+      color: "border-green-200 bg-green-50",
+      buttonColor: "bg-green-600 hover:bg-green-700",
       features: [
         "Unlimited everything",
         "White-label solution",
@@ -166,7 +166,7 @@ export default function HomePage() {
 
   const testimonials = [
     {
-      quote: "AI Talent Stream revolutionized our hiring process. We reduced time-to-hire by 70% and improved candidate quality significantly.",
+      quote: "Persona Recruit AI revolutionized our hiring process. We reduced time-to-hire by 70% and improved candidate quality significantly.",
       author: "Sarah Johnson",
       role: "VP of Talent",
       company: "TechCorp Inc.",
@@ -199,28 +199,28 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Talent Stream
+              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Persona Recruit AI
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</Link>
-              <Link href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</Link>
-              <Link href="/support" className="text-gray-600 hover:text-blue-600 transition-colors">Support</Link>
+              <Link href="#features" className="text-gray-600 hover:text-green-600 transition-colors">Features</Link>
+              <Link href="#pricing" className="text-gray-600 hover:text-green-600 transition-colors">Pricing</Link>
+              <Link href="/support" className="text-gray-600 hover:text-green-600 transition-colors">Support</Link>
               <Link href="/auth">
                 <Button variant="outline" size="sm">Sign In</Button>
               </Link>
               <Link href="/auth">
-                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
                   Get Started
                 </Button>
               </Link>
@@ -234,13 +234,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <Badge className="mb-6 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200">
+              <Badge className="mb-6 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200">
                 <Zap className="h-3 w-3 mr-1" />
                 Accelerating Recruitment with AI
               </Badge>
               <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
                 Transform Your
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
+                <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent block">
                   Hiring Process
                 </span>
                 with AI Intelligence
@@ -251,7 +251,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Link href="/auth">
-                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-3">
+                  <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-lg px-8 py-3">
                     Start Free Trial
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -278,7 +278,7 @@ export default function HomePage() {
             </div>
             <div className={`transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-2xl opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-2xl opacity-20"></div>
                 <Image
                   src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop&crop=center"
                   alt="AI Recruitment Dashboard"
@@ -299,8 +299,8 @@ export default function HomePage() {
                 </div>
                 <div className="absolute -top-6 -right-6 bg-white p-4 rounded-xl shadow-lg">
                   <div className="flex items-center space-x-3">
-                    <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Clock className="h-6 w-6 text-blue-600" />
+                    <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <Clock className="h-6 w-6 text-green-600" />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">70% Faster</p>
@@ -321,8 +321,8 @@ export default function HomePage() {
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="flex justify-center mb-4">
-                  <div className="h-12 w-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl flex items-center justify-center">
-                    <stat.icon className="h-6 w-6 text-blue-600" />
+                  <div className="h-12 w-12 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl flex items-center justify-center">
+                    <stat.icon className="h-6 w-6 text-green-600" />
                   </div>
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">{stat.number}</h3>
@@ -337,13 +337,13 @@ export default function HomePage() {
       <section id="features" className="py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-700 border-blue-200">
+            <Badge className="mb-4 bg-green-100 text-green-700 border-green-200">
               <Brain className="h-3 w-3 mr-1" />
               Powered by AI
             </Badge>
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Everything You Need to
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Accelerate Recruitment</span>
+              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"> Accelerate Recruitment</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Our comprehensive platform combines cutting-edge AI technology with intuitive design 
@@ -353,33 +353,29 @@ export default function HomePage() {
 
           <div className="grid lg:grid-cols-2 gap-12 mb-20">
             {features.map((feature, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <div className="aspect-video relative">
-                  <Image
-                    src={feature.image}
-                    alt={feature.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <span className="text-sm font-semibold text-blue-600">{feature.stats}</span>
-                  </div>
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center mr-4">
-                      <feature.icon className="h-5 w-5 text-blue-600" />
+              <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-8">
+                  <div className="flex items-start mb-6">
+                    <div className="h-12 w-12 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                      <feature.icon className="h-6 w-6 text-green-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900">{feature.title}</h3>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-semibold text-gray-900">{feature.title}</h3>
+                        <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                          {feature.stats}
+                        </Badge>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                    </div>
                   </div>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           {/* Platform Overview */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 lg:p-12 text-white">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl p-8 lg:p-12 text-white">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h3 className="text-3xl font-bold mb-6">Complete Recruitment Ecosystem</h3>
@@ -409,7 +405,7 @@ export default function HomePage() {
                     <span>Analytics & Reporting</span>
                   </div>
                 </div>
-                <Button variant="secondary" size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                <Button variant="secondary" size="lg" className="bg-white text-green-600 hover:bg-gray-100">
                   Explore All Features
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -477,7 +473,7 @@ export default function HomePage() {
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
                   className={`h-3 w-3 rounded-full transition-colors ${
-                    index === currentTestimonial ? 'bg-blue-600' : 'bg-gray-300'
+                    index === currentTestimonial ? 'bg-green-600' : 'bg-gray-300'
                   }`}
                 />
               ))}
@@ -490,7 +486,7 @@ export default function HomePage() {
       <section id="pricing" className="py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-purple-100 text-purple-700 border-purple-200">
+            <Badge className="mb-4 bg-green-100 text-green-700 border-green-200">
               <Crown className="h-3 w-3 mr-1" />
               Flexible Pricing
             </Badge>
@@ -504,10 +500,10 @@ export default function HomePage() {
 
           <div className="grid lg:grid-cols-3 gap-8">
             {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`relative ${plan.color} ${plan.popular ? 'ring-2 ring-purple-500 scale-105' : ''}`}>
+              <Card key={index} className={`relative ${plan.color} ${plan.popular ? 'ring-2 ring-emerald-500 scale-105' : ''}`}>
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-purple-600 text-white px-4 py-1">Most Popular</Badge>
+                    <Badge className="bg-emerald-600 text-white px-4 py-1">Most Popular</Badge>
                   </div>
                 )}
                 <CardHeader className="text-center pb-8">
@@ -542,7 +538,7 @@ export default function HomePage() {
 
           <div className="mt-12 text-center">
             <p className="text-gray-600 mb-4">All plans include our core features and 24/7 support</p>
-            <Link href="/support" className="text-blue-600 hover:underline">
+            <Link href="/support" className="text-green-600 hover:underline">
               Need help choosing? Contact our sales team →
             </Link>
           </div>
@@ -550,18 +546,18 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-20 bg-gradient-to-r from-green-600 to-emerald-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Accelerate Your Recruitment?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join thousands of companies that have transformed their hiring process with AI Talent Stream.
+          <p className="text-xl text-green-100 mb-8">
+            Join thousands of companies that have transformed their hiring process with Persona Recruit AI.
             Start your free trial today and experience the future of recruitment.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth">
-              <Button size="lg" variant="secondary" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3">
+              <Button size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3">
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -582,10 +578,10 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
                   <Sparkles className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold">AI Talent Stream</span>
+                <span className="text-xl font-bold">Persona Recruit AI</span>
               </div>
               <p className="text-gray-400 mb-4">
                 Accelerating recruitment with AI-powered intelligence. 
@@ -629,7 +625,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">© 2024 AI Talent Stream. All rights reserved.</p>
+            <p className="text-gray-400">© 2024 Persona Recruit AI. All rights reserved.</p>
             <p className="text-gray-400 mt-4 md:mt-0">Made with ❤️ for better recruitment</p>
           </div>
         </div>

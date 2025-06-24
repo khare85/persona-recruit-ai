@@ -15,12 +15,19 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf .next && rm -rf node_modules/.cache"
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "setup:storage": "node scripts/setup-firebase-storage.js",
+    "check:storage": "node scripts/check-firebase-storage.js",
+    "setup:storage:secretmanager": "node scripts/setup-firebase-storage-secretmanager.js",
+    "check:storage:secretmanager": "node scripts/check-firebase-storage-secretmanager.js",
+    "setup:storage:flexible": "FIREBASE_SERVICE_ACCOUNT_SECRET=GOOGLE_APPLICATION_CREDENTIALS_JSON node scripts/setup-firebase-storage-secretmanager-flexible.js",
+    "check:firestore": "node scripts/check-firestore-secretmanager.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
     "@genkit-ai/next": "^1.8.0",
     "@google-cloud/documentai": "^9.2.0",
+    "@google-cloud/secret-manager": "^6.0.1",
     "@google-cloud/storage": "^7.16.0",
     "@hookform/resolvers": "^4.1.3",
     "@radix-ui/react-accordion": "^1.2.3",

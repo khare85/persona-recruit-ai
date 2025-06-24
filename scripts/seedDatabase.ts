@@ -60,6 +60,31 @@ async function seedDatabase() {
 
     console.log('✅ Created recruiter user:', recruiterUserId);
 
+    // Create interviewer user
+    const interviewerUserId = await databaseService.createUser({
+      email: 'interviewer@techcorp.com',
+      firstName: 'Alex',
+      lastName: 'Interviewer',
+      role: 'interviewer',
+      status: 'active',
+      emailVerified: true,
+      passwordHash: 'interviewer123'
+    });
+    
+    // Create interviewer profile
+    await databaseService.createInterviewerProfile({
+        userId: interviewerUserId,
+        companyId: companyId,
+        department: 'Engineering',
+        title: 'Senior Software Engineer',
+        expertise: ['Frontend Development', 'System Design', 'React'],
+        interviewTypes: ['technical', 'behavioral'],
+        totalInterviews: 42,
+        averageRating: 4.8
+    });
+
+    console.log('✅ Created interviewer user and profile:', interviewerUserId);
+
     // Create candidate user
     const candidateUserId = await databaseService.createUser({
       email: 'candidate@example.com',
@@ -141,8 +166,9 @@ async function seedDatabase() {
 
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📋 Test credentials:');
-    console.log('Admin: admin@talentai.com / admin123');
+    console.log('Super Admin: admin@talentai.com / admin123');
     console.log('Recruiter: recruiter@techcorp.com / recruiter123');
+    console.log('Interviewer: interviewer@techcorp.com / interviewer123');
     console.log('Candidate: candidate@example.com / candidate123');
 
   } catch (error) {

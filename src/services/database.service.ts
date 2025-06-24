@@ -1,4 +1,5 @@
 
+
 import admin from 'firebase-admin';
 import { db } from './firestoreService';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
@@ -11,12 +12,12 @@ import bcrypt from 'bcryptjs';
 export const COLLECTIONS = {
   USERS: 'users',
   CANDIDATE_PROFILES: 'candidateProfiles',
+  INTERVIEWER_PROFILES: 'interviewerProfiles',
   COMPANIES: 'companies',
   COMPANY_INVITATIONS: 'companyInvitations',
   JOBS: 'jobs',
   JOB_APPLICATIONS: 'jobApplications',
-  INTERVIEWS: 'interviews',
-  NOTIFICATIONS: 'notifications'
+  INTERVIEWS: 'interviews'
 } as const;
 
 // Database service class
@@ -280,6 +281,17 @@ class DatabaseService {
 
   async updateCandidateProfile(userId: string, data: Partial<CandidateProfile>): Promise<void> {
     return this.update(COLLECTIONS.CANDIDATE_PROFILES, userId, data);
+  }
+
+  // Interviewer Profile Management
+  async createInterviewerProfile(profile: Omit<InterviewerProfile, 'createdAt' | 'updatedAt'>): Promise<void> {
+    try {
+      await this.create(COLLECTIONS.INTERVIEWER_PROFILES, profile, profile.userId);
+      dbLogger.info('Interviewer profile created', { userId: profile.userId });
+    } catch (error) {
+      dbLogger.error('Error creating interviewer profile', { error: String(error), userId: profile.userId });
+      throw error;
+    }
   }
 
   // Company Management

@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { apiLogger } from '@/lib/logger';
 
 // Mock applications database - DEPRECATED: Only kept for reference, not used in API
+const mockApplications = [
   {
     id: 'APP-001',
     candidateId: '1',

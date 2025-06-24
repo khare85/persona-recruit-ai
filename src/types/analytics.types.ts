@@ -277,16 +277,4 @@ export interface AnalyticsFilters {
   withDemographics?: boolean;
 }
 
-// Export types for easy consumption
-export type {
-  AIOperationMetric,
-  DemographicData,
-  BiasFlag,
-  FairnessMetric,
-  ActionItem,
-  AIPerformanceDashboard,
-  BiasDetectionRule,
-  AuditTrail,
-  AnalyticsEvent,
-  AnalyticsFilters
-};
+// Types are already exported above with their interface declarations

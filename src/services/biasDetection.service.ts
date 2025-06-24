@@ -556,7 +556,7 @@ class BiasDetectionService {
     }
     
     // Add specific recommendations based on flags
-    const flagTypes = [...new Set(flags.map(f => f.type))];
+    const flagTypes = Array.from(new Set(flags.map(f => f.type)));
     flagTypes.forEach(type => {
       switch (type) {
         case 'gender_bias':
@@ -577,7 +577,7 @@ class BiasDetectionService {
       }
     });
     
-    return [...new Set(recommendations)]; // Remove duplicates
+    return Array.from(new Set(recommendations)); // Remove duplicates
   }
 
   // Additional helper methods...

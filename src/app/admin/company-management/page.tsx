@@ -211,6 +211,109 @@ export default function AdminCompaniesPage() {
     }
   };
 
+  const handleViewCompany = (companyId: string) => {
+    router.push(`/admin/companies/${companyId}`);
+  };
+
+  const handleEditCompany = (companyId: string) => {
+    router.push(`/admin/companies/${companyId}/edit`);
+  };
+
+  const handleSuspendCompany = async (companyId: string) => {
+    if (!confirm('Are you sure you want to suspend this company?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/companies/${companyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+        body: JSON.stringify({ status: 'suspended' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to suspend company');
+      }
+
+      fetchCompanies(); // Refresh the list
+    } catch (error) {
+      console.error('Error suspending company:', error);
+      alert('Failed to suspend company');
+    }
+  };
+
+  const handleActivateCompany = async (companyId: string) => {
+    try {
+      const response = await fetch(`/api/admin/companies/${companyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+        body: JSON.stringify({ status: 'active' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to activate company');
+      }
+
+      fetchCompanies(); // Refresh the list
+    } catch (error) {
+      console.error('Error activating company:', error);
+      alert('Failed to activate company');
+    }
+  };
+
+  const handleDeleteCompany = async (companyId: string) => {
+    if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/companies/${companyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete company');
+      }
+
+      fetchCompanies(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      alert('Failed to delete company');
+    }
+  };
+
+  const handleExportData = () => {
+    // Convert companies data to CSV
+    const csvHeaders = ['Company Name', 'Domain', 'Industry', 'Location', 'Size', 'Status', 'Users', 'Active Jobs'];
+    const csvData = filteredCompanies.map(company => [
+      company.name,
+      company.domain,
+      company.industry,
+      company.location,
+      company.size,
+      company.status,
+      company.userCount,
+      company.activeJobs
+    ]);
+
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `companies_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (loading || !user) {
     return <div>Loading...</div>;
   }
@@ -321,11 +424,11 @@ export default function AdminCompaniesPage() {
             </TabsList>
 
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExportData}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => alert('Import functionality coming soon!')}>
                 <Upload className="mr-2 h-4 w-4" />
                 Import
               </Button>
@@ -463,32 +566,41 @@ export default function AdminCompaniesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewCompany(company.id)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditCompany(company.id)}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Company
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => alert('Billing details coming soon!')}>
                                 <DollarSign className="mr-2 h-4 w-4" />
                                 Billing Details
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {company.status === 'active' ? (
-                                <DropdownMenuItem className="text-orange-600">
+                                <DropdownMenuItem 
+                                  className="text-orange-600"
+                                  onClick={() => handleSuspendCompany(company.id)}
+                                >
                                   <Ban className="mr-2 h-4 w-4" />
                                   Suspend Account
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem className="text-green-600">
+                                <DropdownMenuItem 
+                                  className="text-green-600"
+                                  onClick={() => handleActivateCompany(company.id)}
+                                >
                                   <CheckCircle className="mr-2 h-4 w-4" />
                                   Activate Account
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => handleDeleteCompany(company.id)}
+                              >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Company
                               </DropdownMenuItem>

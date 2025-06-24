@@ -1,35 +1,62 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Clock, MapPin, Building2, Video, CheckCircle, XCircle, AlertCircle, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, MapPin, Building2, Video, CheckCircle, XCircle, AlertCircle, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getMockInterviewsForCandidate, getMockInterviewAnalysis } from '@/services/mockDataService';
 import { format } from 'date-fns';
 
-// For demo, assume we're viewing candidate ID 1 (Sarah Johnson)
-const DEMO_CANDIDATE_ID = '1';
-
 export default function MyInterviewsPage() {
-  const interviews = getMockInterviewsForCandidate(DEMO_CANDIDATE_ID);
+  const { user } = useAuth();
+  const [interviews, setInterviews] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchInterviews() {
+      if (!user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/interviews?candidateId=${user.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch interviews');
+        }
+        const result = await response.json();
+        setInterviews(result.data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchInterviews();
+  }, [user?.id]);
   
   // Group interviews by status
-  const upcomingInterviews = interviews.filter(i => i.status === 'Scheduled' || i.status === 'Pending');
-  const completedInterviews = interviews.filter(i => i.status === 'Completed');
-  const cancelledInterviews = interviews.filter(i => i.status === 'Cancelled');
+  const upcomingInterviews = interviews.filter(i => 
+    i.status === 'scheduled' || i.status === 'pending' || i.status === 'confirmed'
+  );
+  const completedInterviews = interviews.filter(i => i.status === 'completed');
+  const cancelledInterviews = interviews.filter(i => i.status === 'cancelled');
 
   const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'Scheduled':
+    const normalizedStatus = status?.toLowerCase();
+    switch(normalizedStatus) {
+      case 'scheduled':
+      case 'confirmed':
         return <Calendar className="h-4 w-4" />;
-      case 'Completed':
+      case 'completed':
         return <CheckCircle className="h-4 w-4" />;
-      case 'Cancelled':
+      case 'cancelled':
         return <XCircle className="h-4 w-4" />;
-      case 'Pending':
+      case 'pending':
         return <AlertCircle className="h-4 w-4" />;
       default:
         return null;
@@ -37,19 +64,51 @@ export default function MyInterviewsPage() {
   };
 
   const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'Scheduled':
+    const normalizedStatus = status?.toLowerCase();
+    switch(normalizedStatus) {
+      case 'scheduled':
+      case 'confirmed':
         return 'default';
-      case 'Completed':
+      case 'completed':
         return 'secondary';
-      case 'Cancelled':
+      case 'cancelled':
         return 'destructive';
-      case 'Pending':
+      case 'pending':
         return 'outline';
       default:
         return 'default';
     }
   };
+
+  if (isLoading) {
+    return (
+      <Container className="max-w-6xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading your interviews...</p>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="max-w-6xl">
+        <Card className="max-w-md mx-auto mt-8">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle>Error Loading Interviews</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </Container>
+    );
+  }
 
   return (
     <Container className="max-w-6xl">

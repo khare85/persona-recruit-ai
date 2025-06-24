@@ -6,6 +6,7 @@ import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
+import admin from 'firebase-admin';
 
 const inviteTeamMemberSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -52,36 +53,67 @@ export const POST = withRateLimit('invite',
           invitedBy: req.user?.id
         });
 
-        // TODO: Check if email is already registered
-        // TODO: Check company invitation limits
-        // TODO: Create pending invitation record
-        // TODO: Send invitation email
-        // TODO: Generate secure invitation token
+        // Check if email is already registered or invited
+        const existingUserSnapshot = await admin.firestore()
+          .collection('users')
+          .where('email', '==', inviteData.email)
+          .limit(1)
+          .get();
+
+        if (!existingUserSnapshot.empty) {
+          return NextResponse.json(
+            { error: 'User with this email already exists' },
+            { status: 400 }
+          );
+        }
+
+        const existingInviteSnapshot = await admin.firestore()
+          .collection('companyInvitations')
+          .where('companyId', '==', companyId)
+          .where('email', '==', inviteData.email)
+          .where('status', '==', 'pending')
+          .where('deletedAt', '==', null)
+          .limit(1)
+          .get();
+
+        if (!existingInviteSnapshot.empty) {
+          return NextResponse.json(
+            { error: 'Invitation already sent to this email' },
+            { status: 400 }
+          );
+        }
 
         const invitationToken = `comp_inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         const newInvitation = {
-          id: `invitation_${Date.now()}`,
           companyId,
           email: inviteData.email,
           firstName: inviteData.firstName,
           lastName: inviteData.lastName,
           role: inviteData.role,
           department: inviteData.department,
-          status: 'Pending' as const,
-          invitedAt: new Date().toISOString(),
+          status: 'pending',
+          invitedAt: admin.firestore.FieldValue.serverTimestamp(),
           invitedBy: req.user?.id,
-          invitationType: 'company_admin' as const,
+          invitationType: 'company_admin',
           invitationToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          deletedAt: null
         };
+
+        // Save invitation to database
+        const inviteRef = await admin.firestore()
+          .collection('companyInvitations')
+          .add(newInvitation);
 
         // TODO: Send email invitation with token
         // TODO: Get company name for email template
         const companyName = 'Your Company'; // TODO: Get from database
 
         apiLogger.info('Company team member invitation created', {
-          invitationId: newInvitation.id,
+          invitationId: inviteRef.id,
           companyId,
           email: inviteData.email,
           role: inviteData.role,
@@ -92,15 +124,15 @@ export const POST = withRateLimit('invite',
           success: true,
           data: { 
             invitation: {
-              id: newInvitation.id,
-              email: newInvitation.email,
-              firstName: newInvitation.firstName,
-              lastName: newInvitation.lastName,
-              role: newInvitation.role,
-              department: newInvitation.department,
-              status: newInvitation.status,
-              invitedAt: newInvitation.invitedAt,
-              expiresAt: newInvitation.expiresAt,
+              id: inviteRef.id,
+              email: inviteData.email,
+              firstName: inviteData.firstName,
+              lastName: inviteData.lastName,
+              role: inviteData.role,
+              department: inviteData.department,
+              status: 'pending',
+              invitedAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
               // Include invitation link for testing
               invitationLink: `/auth/accept-invitation?token=${invitationToken}`
             }
@@ -139,37 +171,34 @@ export const GET = withRateLimit('standard',
           requestedBy: req.user?.id
         });
 
-        // TODO: Get invitations from database
-        const mockInvitations = [
-          {
-            id: 'inv_1',
-            email: 'recruiter@company.com',
-            firstName: 'Jane',
-            lastName: 'Smith',
-            role: 'recruiter',
-            department: 'HR',
-            status: 'Pending',
-            invitedAt: '2024-06-20T10:00:00Z',
-            expiresAt: '2024-06-27T10:00:00Z',
-            invitedBy: req.user?.id
-          },
-          {
-            id: 'inv_2',
-            email: 'interviewer@company.com',
-            firstName: 'Mike',
-            lastName: 'Johnson',
-            role: 'interviewer',
-            department: 'Engineering',
-            status: 'Accepted',
-            invitedAt: '2024-06-18T14:30:00Z',
-            acceptedAt: '2024-06-19T09:15:00Z',
-            invitedBy: req.user?.id
-          }
-        ];
+        // Get invitations from database
+        const invitationsSnapshot = await admin.firestore()
+          .collection('companyInvitations')
+          .where('companyId', '==', companyId)
+          .where('deletedAt', '==', null)
+          .orderBy('invitedAt', 'desc')
+          .get();
 
-        let filteredInvitations = mockInvitations;
+        const invitations = invitationsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            role: data.role,
+            department: data.department,
+            status: data.status,
+            invitedAt: data.invitedAt?.toDate?.()?.toISOString() || data.invitedAt,
+            expiresAt: data.expiresAt?.toDate?.()?.toISOString() || data.expiresAt,
+            acceptedAt: data.acceptedAt?.toDate?.()?.toISOString() || data.acceptedAt,
+            invitedBy: data.invitedBy
+          };
+        });
+
+        let filteredInvitations = invitations;
         if (status) {
-          filteredInvitations = mockInvitations.filter(inv => 
+          filteredInvitations = invitations.filter(inv => 
             inv.status.toLowerCase() === status.toLowerCase()
           );
         }
@@ -179,11 +208,11 @@ export const GET = withRateLimit('standard',
           data: { 
             invitations: filteredInvitations,
             summary: {
-              total: mockInvitations.length,
-              pending: mockInvitations.filter(inv => inv.status === 'Pending').length,
-              accepted: mockInvitations.filter(inv => inv.status === 'Accepted').length,
-              expired: mockInvitations.filter(inv => 
-                inv.status === 'Pending' && new Date() > new Date(inv.expiresAt)
+              total: invitations.length,
+              pending: invitations.filter(inv => inv.status === 'pending').length,
+              accepted: invitations.filter(inv => inv.status === 'accepted').length,
+              expired: invitations.filter(inv => 
+                inv.status === 'pending' && new Date() > new Date(inv.expiresAt)
               ).length
             }
           },

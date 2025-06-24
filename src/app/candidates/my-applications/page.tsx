@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,8 @@ import {
   Video,
   Eye,
   MessageSquare,
-  DollarSign
+  DollarSign,
+  Loader2
 } from 'lucide-react';
 
 interface Application {
@@ -95,9 +97,51 @@ const mockApplications: Application[] = [
 ];
 
 export default function MyApplicationsPage() {
-  const [applications] = useState<Application[]>(mockApplications);
+  const { user } = useAuth();
+  const [applications, setApplications] = useState<Application[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchApplications() {
+      if (!user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/applications?candidateId=${user.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch applications');
+        }
+        const result = await response.json();
+        
+        // Map the API response to match our Application interface
+        const mappedApplications = result.data.map((app: any) => ({
+          id: app.id,
+          jobId: app.jobId,
+          jobTitle: app.jobTitle || 'Unknown Position',
+          company: app.companyName || 'Unknown Company',
+          companyLogo: '/company-placeholder.png',
+          location: app.location || 'Not specified',
+          salary: app.salary || 'Not disclosed',
+          appliedAt: app.appliedAt || app.createdAt,
+          status: app.status || 'submitted',
+          applicationMethod: app.coverLetter ? 'full_application' : 'quick_apply',
+          lastActivity: app.updatedAt || app.appliedAt || app.createdAt,
+          interviews: app.interviews || [],
+          coverNote: app.coverLetter
+        }));
+        
+        setApplications(mappedApplications);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchApplications();
+  }, [user?.id]);
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,6 +184,34 @@ export default function MyApplicationsPage() {
   const activeCount = applications.filter(app => 
     ['submitted', 'under_review', 'interview_scheduled'].includes(app.status)
   ).length;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your applications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle>Error Loading Applications</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { databaseService } from '@/services/database.service';
+import { handleApiError } from '@/lib/errors';
+import { withAuth } from '@/middleware/auth';
+import { apiLogger } from '@/lib/logger';
 
-// Mock applications database
+// Mock applications database (will be removed once fully migrated)
 const applications = [
   {
     id: 'APP-001',
@@ -66,7 +70,7 @@ const applications = [
   }
 ];
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const candidateId = searchParams.get('candidateId');
@@ -76,51 +80,76 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Filter applications
-    let filteredApplications = applications.filter(app => {
-      if (candidateId && app.candidateId !== candidateId) return false;
-      if (jobId && app.jobId !== jobId) return false;
-      if (companyId && app.companyId !== companyId) return false;
-      if (status && app.status !== status) return false;
-      return true;
-    });
+    apiLogger.info('Fetching applications', { candidateId, jobId, companyId, status });
+
+    let applications: any[] = [];
+
+    // Fetch based on filters
+    if (candidateId) {
+      applications = await databaseService.getCandidateApplications(candidateId);
+    } else if (jobId) {
+      applications = await databaseService.getJobApplications(jobId, status || undefined);
+    } else if (companyId) {
+      applications = await databaseService.getCompanyApplications({
+        companyId,
+        status: status || undefined,
+        limit: limit * page // Get enough for pagination
+      });
+    } else {
+      // For now, return empty array if no filter provided
+      // In production, might want to restrict this or add pagination at DB level
+      applications = [];
+    }
 
     // Sort by most recent
-    filteredApplications.sort((a, b) => 
-      new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
-    );
+    applications.sort((a, b) => {
+      const dateA = new Date(a.appliedAt || a.createdAt).getTime();
+      const dateB = new Date(b.appliedAt || b.createdAt).getTime();
+      return dateB - dateA;
+    });
 
     // Paginate
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedApplications = filteredApplications.slice(startIndex, endIndex);
+    const paginatedApplications = applications.slice(startIndex, endIndex);
+
+    // Enrich application data with job and company info if needed
+    const enrichedApplications = await Promise.all(
+      paginatedApplications.map(async (app) => {
+        const job = await databaseService.getJobById(app.jobId);
+        const company = job ? await databaseService.getCompanyById(job.companyId) : null;
+        
+        return {
+          ...app,
+          jobTitle: job?.title || 'Unknown Position',
+          companyName: company?.name || 'Unknown Company',
+          location: job?.location || 'Not specified',
+          salary: job?.salaryRange || 'Not disclosed'
+        };
+      })
+    );
 
     return NextResponse.json({
-      data: paginatedApplications,
+      data: enrichedApplications,
       pagination: {
         page,
         limit,
-        total: filteredApplications.length,
-        totalPages: Math.ceil(filteredApplications.length / limit),
-        hasNext: endIndex < filteredApplications.length,
+        total: applications.length,
+        totalPages: Math.ceil(applications.length / limit),
+        hasNext: endIndex < applications.length,
         hasPrev: page > 1
       }
     });
 
   } catch (error) {
-    console.error('Error fetching applications:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch applications' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest) => {
   try {
     const body = await request.json();
-    
-    const { candidateId, jobId, coverLetter, resumeFileId } = body;
+    const { candidateId, jobId, coverLetter, resumeUrl } = body;
 
     // Validate required fields
     if (!candidateId || !jobId) {
@@ -130,11 +159,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if candidate already applied for this job
-    const existingApplication = applications.find(
-      app => app.candidateId === candidateId && app.jobId === jobId
-    );
+    apiLogger.info('Creating job application', { candidateId, jobId });
 
+    // Check if candidate already applied for this job
+    const existingApplication = await databaseService.getJobApplicationByCandidate(jobId, candidateId);
+    
     if (existingApplication) {
       return NextResponse.json(
         { error: 'You have already applied for this job' },
@@ -142,67 +171,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get job details to validate it exists
+    const job = await databaseService.getJobById(jobId);
+    if (!job) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
+
     // Create new application
-    const newApplication = {
-      id: `APP-${String(applications.length + 1).padStart(3, '0')}`,
+    const applicationData = {
       candidateId,
-      candidateName: 'Demo Candidate', // In production, fetch from user data
-      candidateEmail: 'demo@example.com',
       jobId,
-      jobTitle: 'Demo Job Title', // In production, fetch from job data
-      companyId: '1', // In production, get from job data
-      companyName: 'Demo Company',
-      status: 'applied',
-      appliedAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
-      resumeUrl: resumeFileId ? `/api/files/${resumeFileId}` : null,
+      status: 'submitted',
       coverLetter: coverLetter || '',
-      aiScore: null, // Will be calculated by AI service
-      aiAnalysis: null,
+      resumeUrl: resumeUrl || null,
+      appliedAt: new Date(),
       timeline: [
         {
           date: new Date().toISOString(),
           event: 'Application submitted',
-          status: 'applied'
+          status: 'submitted'
         }
-      ],
-      interviewScheduled: false,
-      feedback: []
+      ]
     };
 
-    // Save to database (in production)
-    applications.push(newApplication);
+    const applicationId = await databaseService.createJobApplication(applicationData);
+    const newApplication = await databaseService.getApplicationById(applicationId);
 
-    // Trigger AI analysis (in production, queue this as a background job)
-    setTimeout(() => {
-      // Simulate AI analysis
-      const analysisResult = {
-        skillsMatch: Math.floor(Math.random() * 30) + 70,
-        experienceMatch: Math.floor(Math.random() * 30) + 70,
-        culturalFit: Math.floor(Math.random() * 30) + 70
-      };
-      analysisResult.overallScore = Math.round(
-        (analysisResult.skillsMatch + analysisResult.experienceMatch + analysisResult.culturalFit) / 3
-      );
+    apiLogger.info('Job application created successfully', { applicationId });
 
-      newApplication.aiScore = analysisResult.overallScore;
-      newApplication.aiAnalysis = {
-        ...analysisResult,
-        strengths: ['Strong technical background', 'Good communication skills'],
-        concerns: ['Limited experience in some areas']
-      };
-    }, 1000);
+    // TODO: Trigger AI analysis as a background job
+    // This would analyze the candidate's fit for the role
 
     return NextResponse.json({
+      success: true,
       message: 'Application submitted successfully',
-      application: newApplication
+      data: newApplication
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating application:', error);
-    return NextResponse.json(
-      { error: 'Failed to submit application' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
-}
+});

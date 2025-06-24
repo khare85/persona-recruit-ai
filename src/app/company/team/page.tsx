@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -119,11 +119,40 @@ const mockInvitations: Invitation[] = [
 ];
 
 export default function CompanyTeamPage() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
-  const [invitations, setInvitations] = useState<Invitation[]>(mockInvitations);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchTeamData();
+  }, []);
+
+  const fetchTeamData = async () => {
+    try {
+      // Fetch invitations
+      const invitationsResponse = await fetch('/api/company/invite');
+      if (invitationsResponse.ok) {
+        const invitationsResult = await invitationsResponse.json();
+        setInvitations(invitationsResult.data.invitations || []);
+      }
+
+      // For now, use mock team members since we need a separate API for company team members
+      // In a real app, this would fetch from /api/company/team-members
+      setTeamMembers(mockTeamMembers);
+    } catch (error) {
+      console.error('Failed to fetch team data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load team data. Please refresh the page.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const form = useForm<InviteTeamMemberData>({
     resolver: zodResolver(inviteTeamMemberSchema),
@@ -166,7 +195,8 @@ export default function CompanyTeamPage() {
         invitationLink: result.data.invitation.invitationLink
       };
 
-      setInvitations([newInvitation, ...invitations]);
+      // Refresh the invitations data instead of manually updating state
+      await fetchTeamData();
       setIsInviteDialogOpen(false);
       form.reset();
 

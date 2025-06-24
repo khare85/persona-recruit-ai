@@ -32,7 +32,7 @@ export const GET = withAuth(
 
       const metrics = {
         activeJobs: recruiterJobs.filter(j => j.status === 'active').length,
-        totalApplications: recruiterApplications.length,
+        candidatesViewed: recruiterApplications.length,
         interviewsScheduled: recruiterInterviews.filter(i => i.status === 'scheduled').length,
         hires: recruiterApplications.filter(a => a.status === 'hired').length,
         recentJobs: recruiterJobs.slice(0, 3).map(j => ({

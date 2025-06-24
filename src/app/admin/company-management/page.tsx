@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -49,108 +51,169 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-// Mock company data
-const mockCompanies = [
-  {
-    id: '1',
-    name: 'TechCorp Inc.',
-    industry: 'Technology',
-    size: '200-500',
-    location: 'San Francisco, CA',
-    status: 'active',
-    plan: 'enterprise',
-    joinDate: '2024-01-15',
-    employees: 247,
-    activeJobs: 12,
-    monthlySpend: 15000,
-    totalHires: 45,
-    contactEmail: 'admin@techcorp.com',
-    contactPerson: 'Jennifer Walsh'
-  },
-  {
-    id: '2',
-    name: 'CloudScale Solutions',
-    industry: 'Cloud Services',
-    size: '100-200',
-    location: 'Austin, TX',
-    status: 'active',
-    plan: 'professional',
-    joinDate: '2024-02-10',
-    employees: 156,
-    activeJobs: 8,
-    monthlySpend: 8500,
-    totalHires: 23,
-    contactEmail: 'hr@cloudscale.com',
-    contactPerson: 'Mark Thompson'
-  },
-  {
-    id: '3',
-    name: 'DesignFirst Studio',
-    industry: 'Design',
-    size: '50-100',
-    location: 'Remote',
-    status: 'active',
-    plan: 'starter',
-    joinDate: '2024-03-05',
-    employees: 78,
-    activeJobs: 5,
-    monthlySpend: 2500,
-    totalHires: 12,
-    contactEmail: 'info@designfirst.com',
-    contactPerson: 'Sarah Chen'
-  },
-  {
-    id: '4',
-    name: 'DataDriven Analytics',
-    industry: 'Data & Analytics',
-    size: '100-200',
-    location: 'Seattle, WA',
-    status: 'suspended',
-    plan: 'professional',
-    joinDate: '2024-01-20',
-    employees: 134,
-    activeJobs: 0,
-    monthlySpend: 0,
-    totalHires: 18,
-    contactEmail: 'contact@datadriven.com',
-    contactPerson: 'Alex Rodriguez'
-  },
-  {
-    id: '5',
-    name: 'NextGen Robotics',
-    industry: 'Robotics',
-    size: '500+',
-    location: 'Boston, MA',
-    status: 'active',
-    plan: 'enterprise',
-    joinDate: '2024-02-28',
-    employees: 623,
-    activeJobs: 25,
-    monthlySpend: 28000,
-    totalHires: 67,
-    contactEmail: 'talent@nextgenrobotics.com',
-    contactPerson: 'Dr. Emily Foster'
-  }
-];
+interface Company {
+  id: string;
+  name: string;
+  domain: string;
+  website?: string;
+  size: string;
+  industry: string;
+  location: string;
+  description?: string;
+  founded?: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  userCount: number;
+  activeJobs: number;
+}
 
-const companyStats = {
-  total: 142,
-  active: 127,
-  suspended: 8,
-  pending: 7,
-  enterprise: 23,
-  professional: 67,
-  starter: 52,
-  totalRevenue: 324500,
-  avgSpend: 2287
-};
+interface CompanyStats {
+  total: number;
+  active: number;
+  suspended: number;
+  pending: number;
+  enterprise: number;
+  professional: number;
+  starter: number;
+  totalRevenue: number;
+  avgSpend: number;
+}
 
 export default function AdminCompaniesPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companyStats, setCompanyStats] = useState<CompanyStats | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [industryFilter, setIndustryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [planFilter, setPlanFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddingCompany, setIsAddingCompany] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newCompany, setNewCompany] = useState({
+    name: '',
+    domain: '',
+    website: '',
+    size: '1-10',
+    industry: '',
+    location: '',
+    description: '',
+    founded: new Date().getFullYear()
+  });
+
+  // Redirect if not super admin
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'super_admin')) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  // Fetch companies on mount
+  useEffect(() => {
+    if (user?.role === 'super_admin') {
+      fetchCompanies();
+    }
+  }, [user]);
+
+  const fetchCompanies = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/admin/companies', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch companies');
+      }
+
+      const data = await response.json();
+      setCompanies(data.data.companies);
+      
+      // Calculate stats from the data
+      const stats = {
+        total: data.data.companies.length,
+        active: data.data.companies.filter((c: Company) => c.status === 'active').length,
+        suspended: data.data.companies.filter((c: Company) => c.status === 'suspended').length,
+        pending: data.data.companies.filter((c: Company) => c.status === 'pending').length,
+        enterprise: 0, // TODO: Calculate based on plan
+        professional: 0, // TODO: Calculate based on plan
+        starter: 0, // TODO: Calculate based on plan
+        totalRevenue: 0, // TODO: Calculate from billing data
+        avgSpend: 0 // TODO: Calculate from billing data
+      };
+      setCompanyStats(stats);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddCompany = () => {
+    setShowAddModal(true);
+  };
+
+  const handleCreateCompany = async () => {
+    try {
+      setIsAddingCompany(true);
+      const response = await fetch('/api/admin/companies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+        body: JSON.stringify(newCompany),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create company');
+      }
+
+      const data = await response.json();
+      console.log('Company created:', data);
+      
+      // Reset form and close modal
+      setNewCompany({
+        name: '',
+        domain: '',
+        website: '',
+        size: '1-10',
+        industry: '',
+        location: '',
+        description: '',
+        founded: new Date().getFullYear()
+      });
+      setShowAddModal(false);
+      
+      // Refresh companies list
+      fetchCompanies();
+    } catch (error) {
+      console.error('Error creating company:', error);
+      alert('Failed to create company: ' + (error as Error).message);
+    } finally {
+      setIsAddingCompany(false);
+    }
+  };
+
+  if (loading || !user) {
+    return <div>Loading...</div>;
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -178,14 +241,14 @@ export default function AdminCompaniesPage() {
     }
   };
 
-  const filteredCompanies = mockCompanies.filter(company => {
+  const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          company.industry.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesIndustry = industryFilter === 'all' || company.industry === industryFilter;
     const matchesStatus = statusFilter === 'all' || company.status === statusFilter;
-    const matchesPlan = planFilter === 'all' || company.plan === planFilter;
+    // const matchesPlan = planFilter === 'all' || company.plan === planFilter; // TODO: Add plan field
     
-    return matchesSearch && matchesIndustry && matchesStatus && matchesPlan;
+    return matchesSearch && matchesIndustry && matchesStatus;
   });
 
   return (
@@ -209,7 +272,7 @@ export default function AdminCompaniesPage() {
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{companyStats.total}</div>
+              <div className="text-2xl font-bold">{companyStats?.total || 0}</div>
               <p className="text-xs text-muted-foreground">+3 this month</p>
             </CardContent>
           </Card>
@@ -220,7 +283,7 @@ export default function AdminCompaniesPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{companyStats.active}</div>
+              <div className="text-2xl font-bold">{companyStats?.active || 0}</div>
               <p className="text-xs text-muted-foreground">89% of total</p>
             </CardContent>
           </Card>
@@ -231,7 +294,7 @@ export default function AdminCompaniesPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${companyStats.totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">${companyStats?.totalRevenue?.toLocaleString() || '0'}</div>
               <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
@@ -242,7 +305,7 @@ export default function AdminCompaniesPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${companyStats.avgSpend}</div>
+              <div className="text-2xl font-bold">${companyStats?.avgSpend || '0'}</div>
               <p className="text-xs text-muted-foreground">Per company</p>
             </CardContent>
           </Card>
@@ -266,7 +329,7 @@ export default function AdminCompaniesPage() {
                 <Upload className="mr-2 h-4 w-4" />
                 Import
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={handleAddCompany}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Company
               </Button>
@@ -362,16 +425,20 @@ export default function AdminCompaniesPage() {
                               {company.location} • {company.industry}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {company.contactPerson} • {company.contactEmail}
+                              {company.domain} • {company.website || 'No website'}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{getPlanBadge(company.plan)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                            {company.size}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{getStatusBadge(company.status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Users className="mr-1 h-3 w-3 text-muted-foreground" />
-                            {company.employees}
+                            {company.userCount}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -383,10 +450,10 @@ export default function AdminCompaniesPage() {
                         <TableCell>
                           <div className="flex items-center">
                             <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
-                            ${company.monthlySpend.toLocaleString()}
+                            $0
                           </div>
                         </TableCell>
-                        <TableCell>{company.totalHires}</TableCell>
+                        <TableCell>0</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -472,6 +539,123 @@ export default function AdminCompaniesPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Add Company Modal */}
+        <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add New Company</DialogTitle>
+              <DialogDescription>
+                Create a new company account in the system.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Company Name *</Label>
+                  <Input
+                    id="name"
+                    value={newCompany.name}
+                    onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
+                    placeholder="Tech Corp Inc."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="domain">Domain *</Label>
+                  <Input
+                    id="domain"
+                    value={newCompany.domain}
+                    onChange={(e) => setNewCompany({...newCompany, domain: e.target.value})}
+                    placeholder="techcorp.com"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={newCompany.website}
+                    onChange={(e) => setNewCompany({...newCompany, website: e.target.value})}
+                    placeholder="https://techcorp.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="size">Company Size *</Label>
+                  <Select value={newCompany.size} onValueChange={(value) => setNewCompany({...newCompany, size: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1-10">1-10 employees</SelectItem>
+                      <SelectItem value="11-50">11-50 employees</SelectItem>
+                      <SelectItem value="51-200">51-200 employees</SelectItem>
+                      <SelectItem value="201-1000">201-1000 employees</SelectItem>
+                      <SelectItem value="1000+">1000+ employees</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="industry">Industry *</Label>
+                  <Input
+                    id="industry"
+                    value={newCompany.industry}
+                    onChange={(e) => setNewCompany({...newCompany, industry: e.target.value})}
+                    placeholder="Technology"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location *</Label>
+                  <Input
+                    id="location"
+                    value={newCompany.location}
+                    onChange={(e) => setNewCompany({...newCompany, location: e.target.value})}
+                    placeholder="San Francisco, CA"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={newCompany.description}
+                  onChange={(e) => setNewCompany({...newCompany, description: e.target.value})}
+                  placeholder="Brief description of the company..."
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="founded">Founded Year</Label>
+                <Input
+                  id="founded"
+                  type="number"
+                  min="1800"
+                  max={new Date().getFullYear()}
+                  value={newCompany.founded}
+                  onChange={(e) => setNewCompany({...newCompany, founded: parseInt(e.target.value)})}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAddModal(false)}
+                disabled={isAddingCompany}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateCompany}
+                disabled={isAddingCompany || !newCompany.name || !newCompany.domain || !newCompany.industry || !newCompany.location}
+              >
+                {isAddingCompany ? 'Creating...' : 'Create Company'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Container>
     </AdminLayout>
   );

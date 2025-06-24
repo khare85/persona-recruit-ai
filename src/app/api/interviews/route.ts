@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { databaseService } from '@/services/database.service';
+import { handleApiError } from '@/lib/errors';
+import { withAuth } from '@/middleware/auth';
+import { apiLogger } from '@/lib/logger';
 
 // Mock interviews database
 const interviews = [
@@ -84,70 +88,75 @@ const interviews = [
   }
 ];
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const candidateId = searchParams.get('candidateId');
     const interviewerId = searchParams.get('interviewerId');
     const jobId = searchParams.get('jobId');
     const status = searchParams.get('status');
-    const dateFrom = searchParams.get('dateFrom');
-    const dateTo = searchParams.get('dateTo');
+    const companyId = searchParams.get('companyId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Filter interviews
-    let filteredInterviews = interviews.filter(interview => {
-      if (candidateId && interview.candidateId !== candidateId) return false;
-      if (interviewerId && interview.interviewerId !== interviewerId) return false;
-      if (jobId && interview.jobId !== jobId) return false;
-      if (status && interview.status !== status) return false;
-      
-      if (dateFrom) {
-        const interviewDate = new Date(interview.scheduledDate);
-        const fromDate = new Date(dateFrom);
-        if (interviewDate < fromDate) return false;
-      }
-      
-      if (dateTo) {
-        const interviewDate = new Date(interview.scheduledDate);
-        const toDate = new Date(dateTo);
-        if (interviewDate > toDate) return false;
-      }
-      
-      return true;
-    });
+    apiLogger.info('Fetching interviews', { candidateId, interviewerId, jobId, status, companyId });
+
+    // Build filters object for database service
+    const filters: any = {};
+    if (candidateId) filters.candidateId = candidateId;
+    if (interviewerId) filters.interviewerId = interviewerId;
+    if (jobId) filters.jobId = jobId;
+    if (status) filters.status = status;
+    if (companyId) filters.companyId = companyId;
+
+    // Fetch from database
+    const interviews = await databaseService.getInterviews(filters);
 
     // Sort by scheduled date
-    filteredInterviews.sort((a, b) => 
-      new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
-    );
+    interviews.sort((a, b) => {
+      const dateA = new Date(a.scheduledFor || a.createdAt).getTime();
+      const dateB = new Date(b.scheduledFor || b.createdAt).getTime();
+      return dateA - dateB;
+    });
 
     // Paginate
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedInterviews = filteredInterviews.slice(startIndex, endIndex);
+    const paginatedInterviews = interviews.slice(startIndex, endIndex);
+
+    // Enrich interview data with job and candidate info if needed
+    const enrichedInterviews = await Promise.all(
+      paginatedInterviews.map(async (interview) => {
+        const job = interview.jobId ? await databaseService.getJobById(interview.jobId) : null;
+        const candidate = interview.candidateId ? await databaseService.getUserById(interview.candidateId) : null;
+        const company = job ? await databaseService.getCompanyById(job.companyId) : null;
+        
+        return {
+          ...interview,
+          jobTitle: job?.title || 'Unknown Position',
+          companyName: company?.name || 'Unknown Company',
+          candidateName: candidate ? `${candidate.firstName} ${candidate.lastName}` : 'Unknown Candidate',
+          candidateEmail: candidate?.email || 'unknown@example.com'
+        };
+      })
+    );
 
     return NextResponse.json({
-      data: paginatedInterviews,
+      data: enrichedInterviews,
       pagination: {
         page,
         limit,
-        total: filteredInterviews.length,
-        totalPages: Math.ceil(filteredInterviews.length / limit),
-        hasNext: endIndex < filteredInterviews.length,
+        total: interviews.length,
+        totalPages: Math.ceil(interviews.length / limit),
+        hasNext: endIndex < interviews.length,
         hasPrev: page > 1
       }
     });
 
   } catch (error) {
-    console.error('Error fetching interviews:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch interviews' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
-}
+});
 
 export async function POST(request: NextRequest) {
   try {

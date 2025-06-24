@@ -1,5 +1,3 @@
-"use client";
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth, withRole } from '@/middleware/auth';
@@ -7,6 +5,7 @@ import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
+import { databaseService } from '@/services/database.service';
 
 const createCompanySchema = z.object({
   name: z.string().min(2).max(100).transform(sanitizeString),
@@ -42,70 +41,38 @@ export const GET = withRateLimit('standard',
           userId: req.user?.id
         });
 
-        // TODO: Replace with actual database queries
-        const mockCompanies = [
-          {
-            id: '1',
-            name: 'TechCorp Inc.',
-            domain: 'techcorp.com',
-            website: 'https://techcorp.com',
-            size: '201-1000',
-            industry: 'Technology',
-            location: 'San Francisco, CA',
-            description: 'Leading technology company specializing in AI and machine learning solutions.',
-            founded: 2015,
-            status: 'Active',
-            createdAt: '2024-01-15T10:00:00Z',
-            updatedAt: '2024-06-20T14:30:00Z',
-            userCount: 25,
-            activeJobs: 8
-          },
-          {
-            id: '2',
-            name: 'InnovateLabs',
-            domain: 'innovatelabs.io',
-            website: 'https://innovatelabs.io',
-            size: '51-200',
-            industry: 'Software Development',
-            location: 'Austin, TX',
-            status: 'Active',
-            createdAt: '2024-02-20T14:30:00Z',
-            updatedAt: '2024-06-18T09:15:00Z',
-            userCount: 12,
-            activeJobs: 5
-          }
-        ];
+        // Get companies from database
+        const companiesResult = await databaseService.listCompanies({
+          limit,
+          offset: (page - 1) * limit,
+          search,
+          status: status || undefined
+        });
 
-        // Apply filters
-        let filteredCompanies = mockCompanies;
-        
-        if (search) {
-          filteredCompanies = filteredCompanies.filter(company =>
-            company.name.toLowerCase().includes(search.toLowerCase()) ||
-            company.domain.toLowerCase().includes(search.toLowerCase()) ||
-            company.industry.toLowerCase().includes(search.toLowerCase())
-          );
-        }
-
-        if (status) {
-          filteredCompanies = filteredCompanies.filter(company => 
-            company.status.toLowerCase() === status.toLowerCase()
-          );
-        }
-
-        // Pagination
-        const offset = (page - 1) * limit;
-        const paginatedCompanies = filteredCompanies.slice(offset, offset + limit);
+        const companiesWithStats = await Promise.all(
+          companiesResult.items.map(async (company) => {
+            // Get user count and active jobs for each company
+            const userCount = await databaseService.getCompanyUserCount(company.id);
+            const activeJobsCount = await databaseService.getCompanyActiveJobsCount(company.id);
+            
+            return {
+              ...company,
+              userCount,
+              activeJobs: activeJobsCount
+            };
+          })
+        );
 
         return NextResponse.json({
           success: true,
           data: {
-            companies: paginatedCompanies,
+            companies: companiesWithStats,
             pagination: {
               page,
               limit,
-              total: filteredCompanies.length,
-              totalPages: Math.ceil(filteredCompanies.length / limit)
+              total: companiesResult.total,
+              totalPages: Math.ceil(companiesResult.total / limit),
+              hasMore: companiesResult.hasMore
             },
             filters: {
               search,
@@ -150,17 +117,43 @@ export const POST = withRateLimit('create',
           createdBy: req.user?.id
         });
 
-        // TODO: Check if domain already exists
-        // TODO: Create company in database
-        const newCompany = {
-          id: `company_${Date.now()}`,
-          ...companyData,
-          status: 'Active' as const,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          userCount: 0,
-          activeJobs: 0
+        // Check if domain already exists
+        const existingCompany = await databaseService.getCompanyByDomain(companyData.domain);
+        if (existingCompany) {
+          return NextResponse.json(
+            { error: 'A company with this domain already exists' },
+            { status: 409 }
+          );
+        }
+
+        // Create company in database
+        const companyToCreate = {
+          name: companyData.name,
+          domain: companyData.domain,
+          size: companyData.size,
+          industry: companyData.industry,
+          location: companyData.location,
+          status: 'active' as const
         };
+
+        // Add optional fields only if they exist
+        if (companyData.website) {
+          companyToCreate.website = companyData.website;
+        }
+        if (companyData.description) {
+          companyToCreate.description = companyData.description;
+        }
+        if (companyData.founded) {
+          companyToCreate.founded = companyData.founded;
+        }
+
+        const companyId = await databaseService.createCompany(companyToCreate);
+
+        // Get the created company
+        const newCompany = await databaseService.getCompanyById(companyId);
+        if (!newCompany) {
+          throw new Error('Failed to retrieve created company');
+        }
 
         apiLogger.info('Company created successfully', {
           companyId: newCompany.id,

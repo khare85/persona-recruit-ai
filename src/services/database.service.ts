@@ -42,7 +42,8 @@ class DatabaseService {
       ...data,
       id: docRef.id, // Ensure the ID is part of the document data
       createdAt: timestamp,
-      updatedAt: timestamp
+      updatedAt: timestamp,
+      deletedAt: null // Explicitly set for soft delete support
     });
 
     return docRef.id;
@@ -85,6 +86,32 @@ class DatabaseService {
     this.ensureDb();
     let query: any = this.db!.collection(collection);
 
+    // For companies, use a simpler query to avoid index requirements for now
+    if (collection === COLLECTIONS.COMPANIES) {
+      // Simple query without complex sorting
+      if (!options?.includeDeleted) {
+        query = query.where('deletedAt', '==', null);
+      }
+      
+      // Apply simple pagination
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+      
+      const snapshot = await query.get();
+      const items = snapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        ...doc.data()
+      } as T));
+
+      return { 
+        items, 
+        total: items.length, // Simplified - in production use count query
+        hasMore: false 
+      };
+    }
+
+    // Original logic for other collections
     // Apply where conditions
     if (options?.where) {
       options.where.forEach(condition => {
@@ -370,6 +397,42 @@ class DatabaseService {
     });
   }
 
+  async getCompanyByDomain(domain: string): Promise<Company | null> {
+    this.ensureDb();
+    const snapshot = await this.db!.collection(COLLECTIONS.COMPANIES)
+      .where('domain', '==', domain)
+      .where('deletedAt', '==', null)
+      .limit(1)
+      .get();
+    
+    if (snapshot.empty) return null;
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Company;
+  }
+
+  async getCompanyUserCount(companyId: string): Promise<number> {
+    this.ensureDb();
+    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+      .where('companyId', '==', companyId)
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    
+    return snapshot.data().count;
+  }
+
+  async getCompanyActiveJobsCount(companyId: string): Promise<number> {
+    this.ensureDb();
+    const snapshot = await this.db!.collection(COLLECTIONS.JOBS)
+      .where('companyId', '==', companyId)
+      .where('status', '==', 'active')
+      .where('deletedAt', '==', null)
+      .count()
+      .get();
+    
+    return snapshot.data().count;
+  }
+
   // Company Invitation Management
   async createCompanyInvitation(invitation: Omit<CompanyInvitation, 'id' | 'sentAt'>): Promise<string> {
     try {
@@ -573,6 +636,42 @@ class DatabaseService {
     return { id: doc.id, ...doc.data() } as JobApplication;
   }
 
+  async getCompanyApplications(options: { companyId: string; status?: string; limit?: number }): Promise<JobApplication[]> {
+    this.ensureDb();
+    
+    // First get all jobs for the company
+    const jobsSnapshot = await this.db!.collection(COLLECTIONS.JOBS)
+      .where('companyId', '==', options.companyId)
+      .where('deletedAt', '==', null)
+      .get();
+    
+    if (jobsSnapshot.empty) return [];
+    
+    const jobIds = jobsSnapshot.docs.map(doc => doc.id);
+    
+    // For simplicity, get all applications and filter client-side
+    // In production, you'd want to optimize this with proper indexing
+    const applicationsSnapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+      .where('deletedAt', '==', null)
+      .limit(options.limit || 1000)
+      .get();
+    
+    let applications = applicationsSnapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...doc.data()
+    } as JobApplication));
+    
+    // Filter by company jobs
+    applications = applications.filter(app => jobIds.includes(app.jobId));
+    
+    // Filter by status if provided
+    if (options.status) {
+      applications = applications.filter(app => app.status === options.status);
+    }
+    
+    return applications;
+  }
+
   // Utility methods
   async verifyPassword(hashedPassword: string, plainPassword: string): Promise<boolean> {
     return bcrypt.compare(plainPassword, hashedPassword);
@@ -598,7 +697,8 @@ class DatabaseService {
   async getInterviews(filters: any = {}): Promise<any[]> {
     // Implementation would depend on your specific filtering needs
     this.ensureDb();
-    let query = this.db!.collection(COLLECTIONS.INTERVIEWS);
+    let query = this.db!.collection(COLLECTIONS.INTERVIEWS)
+      .where('deletedAt', '==', null);
     
     // Add filters as needed
     if (filters.startDate) {
@@ -615,6 +715,9 @@ class DatabaseService {
     }
     if (filters.status) {
       query = query.where('status', '==', filters.status);
+    }
+    if (filters.companyId) {
+      query = query.where('companyId', '==', filters.companyId);
     }
     
     const snapshot = await query.get();

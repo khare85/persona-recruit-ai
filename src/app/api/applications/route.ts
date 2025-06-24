@@ -4,8 +4,7 @@ import { handleApiError } from '@/lib/errors';
 import { withAuth } from '@/middleware/auth';
 import { apiLogger } from '@/lib/logger';
 
-// Mock applications database (will be removed once fully migrated)
-const applications = [
+// Mock applications database - DEPRECATED: Only kept for reference, not used in API
   {
     id: 'APP-001',
     candidateId: '1',

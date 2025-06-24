@@ -1,6 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { databaseService } from '@/services/database.service';
+import { withAuth, withRole } from '@/middleware/auth';
+import { handleApiError } from '@/lib/errors';
 import { z } from 'zod';
 
 // Job schema for validation
@@ -58,50 +60,55 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/jobs - Create a new job
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validation = jobSchema.safeParse(body);
-    
-    if (!validation.success) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid job data', 
-          details: validation.error.errors 
+export const POST = withAuth(
+  withRole(['recruiter', 'company_admin'], async (request: NextRequest): Promise<NextResponse> => {
+    try {
+      const body = await request.json();
+      const validation = jobSchema.safeParse(body);
+      
+      if (!validation.success) {
+        return NextResponse.json(
+          { 
+            error: 'Invalid job data', 
+            details: validation.error.errors 
+          },
+          { status: 400 }
+        );
+      }
+      
+      const user = (request as any).user;
+      if (!user.companyId) {
+        return NextResponse.json(
+          { error: 'User must be associated with a company to post jobs' },
+          { status: 400 }
+        );
+      }
+
+      const jobData = {
+        ...validation.data,
+        recruiterId: user.id,
+        companyId: user.companyId,
+        postedDate: new Date().toISOString(),
+        stats: {
+          views: 0,
+          applications: 0,
+          interviews: 0,
+          offers: 0
         },
-        { status: 400 }
-      );
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      const newJobId = await databaseService.createJob(jobData);
+      const newJob = await databaseService.getJobById(newJobId);
+      
+      return NextResponse.json({
+        success: true,
+        data: newJob
+      }, { status: 201 });
+      
+    } catch (error) {
+      return handleApiError(error);
     }
-    
-    // In a real app, recruiterId and companyId would come from authenticated user session
-    const jobData = {
-      ...validation.data,
-      recruiterId: 'recruiter-123',
-      companyId: 'company-123',
-      postedDate: new Date().toISOString(),
-      stats: {
-        views: 0,
-        applications: 0,
-        interviews: 0,
-        offers: 0
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    const newJobId = await databaseService.createJob(jobData);
-    const newJob = await databaseService.getJobById(newJobId);
-    
-    return NextResponse.json({
-      success: true,
-      data: newJob
-    }, { status: 201 });
-    
-  } catch (error) {
-    console.error('POST /api/jobs error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create job' },
-      { status: 500 }
-    );
-  }
-}
+  })
+);

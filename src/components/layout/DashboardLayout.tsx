@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
-  UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign,
+  UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign, Search,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
   Home, SearchCheck, Sparkles, Info, MessageSquare, ClipboardCheck, Star,
 } from 'lucide-react';
@@ -26,11 +26,12 @@ const defaultNavItems = [
 
 const candidateNavItems = [
   { href: '/candidates/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
-  { href: '/candidates/1', label: 'My Profile', icon: UserCog }, 
+  { href: '/candidates/profile', label: 'My Profile', icon: UserCog }, 
   { href: '/candidates/my-interviews', label: 'My Interviews', icon: CalendarClock },
+  { href: '/candidates/my-applications', label: 'My Applications', icon: Briefcase },
   { href: '/candidates/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/referrals', label: 'My Referrals', icon: Gift },
-  { href: '/jobs', label: 'Search Jobs', icon: Briefcase },
+  { href: '/jobs', label: 'Search Jobs', icon: Search },
   { href: '/candidates/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -68,11 +69,12 @@ const companyNavItems = [
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Super Admin', icon: ShieldCheck },
   { href: '/admin/company-management', label: 'Company Management', icon: Building },
+  { href: '/admin/jobs', label: 'Job Management', icon: Briefcase },
   { href: '/admin/analytics', label: 'Platform Analytics', icon: BarChartBig },
-  { href: '/admin/dashboard#users', label: 'User Management', icon: UsersRound }, 
-  { href: '/admin/dashboard#system', label: 'System Health', icon: Server },
-  { href: '/admin/dashboard#billing', label: 'Billing & Subs', icon: DollarSign },
-  { href: '/admin/dashboard#settings', label: 'Platform Settings', icon: Settings },
+  { href: '/admin/users', label: 'User Management', icon: UsersRound }, 
+  { href: '/admin/system', label: 'System Health', icon: Server },
+  { href: '/admin/billing', label: 'Billing & Subs', icon: DollarSign },
+  { href: '/admin/settings', label: 'Platform Settings', icon: Settings },
 ];
 
 

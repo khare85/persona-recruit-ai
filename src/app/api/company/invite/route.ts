@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth, withRole } from '@/middleware/auth';
@@ -101,7 +102,7 @@ export const POST = withRateLimit('invite',
               invitedAt: newInvitation.invitedAt,
               expiresAt: newInvitation.expiresAt,
               // Include invitation link for testing
-              invitationLink: `${process.env.NEXT_PUBLIC_APP_URL}/auth/accept-invitation?token=${invitationToken}`
+              invitationLink: `/auth/accept-invitation?token=${invitationToken}`
             }
           },
           message: `Team member invitation sent to ${inviteData.email}`

@@ -15,7 +15,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation'; // Corrected import
 
-export type UserRole = 'candidate' | 'employer' | 'admin';
+export type UserRole = 'super_admin' | 'company_admin' | 'recruiter' | 'interviewer' | 'candidate';
 
 interface User extends FirebaseUser {
   role?: UserRole;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -69,8 +70,8 @@ interface Invitation {
 const mockTeamMembers: TeamMember[] = [
   {
     id: '1',
-    email: 'john.admin@company.com',
-    firstName: 'John',
+    email: 'admin@techcorp.com',
+    firstName: 'Jane',
     lastName: 'Admin',
     role: 'company_admin',
     department: 'Administration',
@@ -80,9 +81,9 @@ const mockTeamMembers: TeamMember[] = [
   },
   {
     id: '2',
-    email: 'sarah.recruiter@company.com',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
+    email: 'recruiter@techcorp.com',
+    firstName: 'John',
+    lastName: 'Smith',
     role: 'recruiter',
     department: 'HR',
     status: 'Active',
@@ -91,7 +92,7 @@ const mockTeamMembers: TeamMember[] = [
   },
   {
     id: '3',
-    email: 'mike.interviewer@company.com',
+    email: 'interviewer@techcorp.com',
     firstName: 'Mike',
     lastName: 'Wilson',
     role: 'interviewer',
@@ -105,11 +106,11 @@ const mockTeamMembers: TeamMember[] = [
 const mockInvitations: Invitation[] = [
   {
     id: 'inv_1',
-    email: 'newrecruiter@company.com',
-    firstName: 'Jane',
-    lastName: 'Smith',
+    email: 'new.recruiter@example.com',
+    firstName: 'Emily',
+    lastName: 'Jones',
     role: 'recruiter',
-    department: 'HR',
+    department: 'Sales',
     status: 'Pending',
     invitedAt: '2024-06-20T10:00:00Z',
     expiresAt: '2024-06-27T10:00:00Z',

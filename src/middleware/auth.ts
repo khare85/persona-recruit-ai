@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
@@ -7,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-pr
 export interface AuthenticatedUser {
   id: string;
   email: string;
-  role: 'admin' | 'recruiter' | 'candidate' | 'interviewer' | 'company_admin';
+  role: 'super_admin' | 'company_admin' | 'recruiter' | 'candidate' | 'interviewer';
   companyId?: string;
 }
 
@@ -107,7 +108,7 @@ export function withCompanyScope(
     const user = req.user!;
     
     // Admin can access all company data
-    if (user.role === 'admin') {
+    if (user.role === 'super_admin') {
       return handler(req, ...args);
     }
 

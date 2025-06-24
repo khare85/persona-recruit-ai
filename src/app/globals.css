@@ -11,7 +11,7 @@ body {
     --background: 0 0% 100%; /* Pure white */
     --foreground: 224 71.4% 4.1%; /* Dark blue text */
 
-    --card: 210 20% 98%; /* Very light cool gray for cards */
+    --card: 0 0% 100%; /* Pure white for cards */
     --card-foreground: 224 71.4% 4.1%; /* Dark blue text for cards */
 
     --popover: 0 0% 100%; /* White popover background */
@@ -23,7 +23,7 @@ body {
     --secondary: 145 40% 90%; /* Lighter shade of primary for secondary elements */
     --secondary-foreground: 145 40% 10%; /* Darker text for secondary elements */
 
-    --muted: 210 20% 94%; /* Light gray for muted elements */
+    --muted: 210 20% 96%; /* Very light gray for muted elements */
     --muted-foreground: 210 20% 40%; /* Darker gray for muted text */
 
     --accent: 207 70% 53%; /* Complementary blue #3498DB */

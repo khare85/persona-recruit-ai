@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -156,10 +157,12 @@ export default function EditCompanyPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="mb-8">
-              <Button onClick={() => router.back()} variant="ghost" size="sm" className="mb-4">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Company Details
-              </Button>
+              <Link href={`/admin/company-management/${id}`} passHref>
+                <Button variant="ghost" size="sm" className="mb-4">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Company Details
+                </Button>
+              </Link>
               <h1 className="text-3xl font-bold text-foreground flex items-center">
                 <Building className="mr-3 h-8 w-8 text-primary" />
                 Edit Company: {form.getValues('name')}

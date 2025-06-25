@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/config/firebase';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -185,26 +186,6 @@ export default function AdminCompaniesPage() {
     }
   };
 
-  const handleViewCompany = (companyId: string) => {
-    router.push(`/admin/company-management/${companyId}`);
-  };
-
-  const handleEditCompany = (companyId: string) => {
-    router.push(`/admin/company-management/${companyId}/edit`);
-  };
-
-  const handleSuspendCompany = async (companyId: string) => {
-    // Implement API call
-  };
-
-  const handleActivateCompany = async (companyId: string) => {
-    // Implement API call
-  };
-
-  const handleDeleteCompany = async (companyId: string) => {
-    // Implement API call
-  };
-  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -368,37 +349,20 @@ export default function AdminCompaniesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleViewCompany(company.id)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditCompany(company.id)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Company
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {company.status === 'active' ? (
-                                <DropdownMenuItem 
-                                  className="text-orange-600"
-                                  onClick={() => handleSuspendCompany(company.id)}
-                                >
-                                  <Ban className="mr-2 h-4 w-4" />
-                                  Suspend Account
+                              <Link href={`/admin/company-management/${company.id}`} passHref>
+                                <DropdownMenuItem>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
                                 </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem 
-                                  className="text-green-600"
-                                  onClick={() => handleActivateCompany(company.id)}
-                                >
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Activate Account
+                              </Link>
+                              <Link href={`/admin/company-management/${company.id}/edit`} passHref>
+                                <DropdownMenuItem>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit Company
                                 </DropdownMenuItem>
-                              )}
+                              </Link>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => handleDeleteCompany(company.id)}
-                              >
+                              <DropdownMenuItem className="text-red-600">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Company
                               </DropdownMenuItem>

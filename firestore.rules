@@ -1,164 +1,91 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isOwner(userId) {
+
+    function isUser(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+
+    function hasRole(role) {
+      return isAuthenticated() && request.auth.token.role == role;
     }
     
-    function hasRole(roles) {
-      return isAuthenticated() && getUserData().role in roles;
+    function belongsToCompany(companyId) {
+        return isAuthenticated() && request.auth.token.companyId == companyId;
     }
-    
-    function isCompanyMember(companyId) {
-      return isAuthenticated() && getUserData().companyId == companyId;
-    }
-    
-    function isSuperAdmin() {
-      return hasRole(['super_admin']);
-    }
-    
-    function isCompanyAdmin() {
-      return hasRole(['company_admin', 'super_admin']);
-    }
-    
-    function isRecruiter() {
-      return hasRole(['recruiter', 'company_admin', 'super_admin']);
-    }
-    
-    function isCandidate() {
-      return hasRole(['candidate']);
-    }
-    
-    // Users collection
+
+    // Users can read their own data, admins can read all
     match /users/{userId} {
-      allow read: if isOwner(userId) || isSuperAdmin() || 
-                     (isCompanyAdmin() && isCompanyMember(resource.data.companyId));
-      allow create: if isAuthenticated();
-      allow update: if isOwner(userId) || isSuperAdmin() ||
-                       (isCompanyAdmin() && isCompanyMember(resource.data.companyId));
-      allow delete: if isSuperAdmin();
+      allow read, update: if isUser(userId);
+      allow create: if !exists(/databases/$(database)/documents/users/$(request.resource.data.id));
+      allow list, read: if hasRole('super_admin') || hasRole('company_admin');
+    }
+
+    // Candidate profiles can be written by owner, read by recruiters/admins
+    match /candidateProfiles/{userId} {
+        allow read, write: if isUser(userId);
+        allow read: if hasRole('recruiter') || hasRole('company_admin') || hasRole('super_admin');
     }
     
-    // Companies collection
+    // Interviewer profiles
+    match /interviewerProfiles/{userId} {
+        allow read, write: if isUser(userId);
+        allow read: if hasRole('company_admin') || hasRole('super_admin');
+    }
+
+    // Companies can be read by anyone, written by company admins or super admins
     match /companies/{companyId} {
       allow read: if isAuthenticated();
-      allow create: if isSuperAdmin();
-      allow update: if isSuperAdmin() || isCompanyMember(companyId);
-      allow delete: if isSuperAdmin();
+      allow create, write: if hasRole('super_admin') || belongsToCompany(companyId);
     }
     
     // Company invitations
     match /companyInvitations/{invitationId} {
-      allow read: if isAuthenticated();
-      allow create: if isSuperAdmin() || isCompanyAdmin();
-      allow update: if isSuperAdmin() || isCompanyMember(resource.data.companyId);
-      allow delete: if isSuperAdmin() || isCompanyMember(resource.data.companyId);
+        allow read: if isAuthenticated();
+        allow create, write: if hasRole('company_admin') || hasRole('super_admin');
     }
-    
-    // Jobs collection
+
+    // Jobs can be read by anyone, written by recruiters/admins of that company
     match /jobs/{jobId} {
-      allow read: if isAuthenticated();
-      allow create: if isRecruiter();
-      allow update: if isSuperAdmin() || 
-                       isCompanyMember(resource.data.companyId) ||
-                       request.auth.uid == resource.data.recruiterId;
-      allow delete: if isSuperAdmin() || 
-                       isCompanyMember(resource.data.companyId) ||
-                       request.auth.uid == resource.data.recruiterId;
+      allow read: if true;
+      allow create: if hasRole('recruiter') || hasRole('company_admin');
+      allow update, delete: if hasRole('recruiter') || hasRole('company_admin') || hasRole('super_admin');
     }
     
-    // Job applications
-    match /jobApplications/{applicationId} {
-      allow read: if isOwner(resource.data.candidateId) ||
-                     request.auth.uid == resource.data.recruiterId ||
-                     isCompanyMember(resource.data.companyId) ||
-                     isSuperAdmin();
-      allow create: if isCandidate() && isOwner(request.resource.data.candidateId);
-      allow update: if isOwner(resource.data.candidateId) ||
-                       request.auth.uid == resource.data.recruiterId ||
-                       isCompanyMember(resource.data.companyId) ||
-                       isSuperAdmin();
-      allow delete: if isSuperAdmin();
-    }
-    
-    // Candidate profiles
-    match /candidateProfiles/{candidateId} {
-      allow read: if isOwner(candidateId) || isRecruiter() || isSuperAdmin();
-      allow create, update: if isOwner(candidateId);
-      allow delete: if isOwner(candidateId) || isSuperAdmin();
-    }
-    
-    // Interviewer profiles
-    match /interviewerProfiles/{interviewerId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isOwner(interviewerId) || isCompanyAdmin();
-      allow delete: if isSuperAdmin() || isCompanyAdmin();
-    }
-    
-    // Interviews collection
-    match /interviews/{interviewId} {
-      allow read: if isOwner(resource.data.candidateId) ||
-                     request.auth.uid == resource.data.interviewerId ||
-                     request.auth.uid == resource.data.recruiterId ||
-                     isCompanyMember(resource.data.companyId) ||
-                     isSuperAdmin();
-      allow create: if isRecruiter() || hasRole(['interviewer']);
-      allow update: if request.auth.uid == resource.data.interviewerId ||
-                       request.auth.uid == resource.data.recruiterId ||
-                       isCompanyMember(resource.data.companyId) ||
-                       isSuperAdmin();
-      allow delete: if isSuperAdmin() || isCompanyMember(resource.data.companyId);
-    }
-    
-    // Notifications
-    match /notifications/{notificationId} {
-      allow read, update: if isOwner(resource.data.userId);
-      allow create: if isAuthenticated();
-      allow delete: if isOwner(resource.data.userId) || isSuperAdmin();
-    }
-    
-    // User preferences
-    match /userPreferences/{userId} {
-      allow read, write: if isOwner(userId);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Audit logs (read-only for most users)
-    match /auditLogs/{logId} {
-      allow read: if isSuperAdmin() || 
-                     (isCompanyAdmin() && resource.data.companyId == getUserData().companyId);
-      allow create: if isAuthenticated();
-      allow update, delete: if false; // Audit logs are immutable
-    }
-    
-    // AI embeddings collections (system access only)
+    // Vector embedding collections are admin-only for writes
     match /candidates_with_embeddings/{candidateId} {
-      allow read: if isRecruiter() || isSuperAdmin();
-      allow write: if false; // Only system can write embeddings
+        allow read, write: if hasRole('super_admin'); // Or a trusted server role
     }
     
     match /jobs_with_embeddings/{jobId} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Only system can write embeddings
+        allow read, write: if hasRole('super_admin'); // Or a trusted server role
+    }
+
+    // Applications can be created by candidates, and read/written by company staff
+    match /jobApplications/{applicationId} {
+      allow create: if hasRole('candidate');
+      allow read, update: if isUser(request.resource.data.candidateId) || 
+                            belongsToCompany(request.resource.data.companyId) || 
+                            hasRole('super_admin');
+    }
+
+    // Interviews can be managed by company staff and viewed by participants
+    match /interviews/{interviewId} {
+      allow create: if hasRole('recruiter') || hasRole('company_admin');
+      allow read, update: if isUser(request.resource.data.candidateId) || 
+                             isUser(request.resource.data.interviewerId) ||
+                             belongsToCompany(request.resource.data.companyId) || 
+                             hasRole('super_admin');
     }
     
-    // Health check collection (system only)
-    match /_health/{document=**} {
-      allow read, write: if false; // System access only
-    }
-    
-    // Default deny all other documents
+    // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;
     }

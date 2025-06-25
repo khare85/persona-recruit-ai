@@ -1,173 +1,45 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Helper functions
+    // Helper function for authentication
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+
+    // User profile files (avatars, resumes, videos)
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Company assets (logos, documents)
+    match /companies/{companyId}/{allPaths=**} {
+      allow read: if true; // Public read for logos
+      allow write: if isAuthenticated() && 
+                    (request.auth.token.role == 'super_admin' || 
+                     (request.auth.token.role == 'company_admin' && request.auth.token.companyId == companyId));
     }
     
-    function getUserData() {
-      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    // Candidate-specific uploads, readable by company staff
+    match /resumes/{userId}/{fileName} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        allow read: if isAuthenticated() && (request.auth.token.role == 'recruiter' || request.auth.token.role == 'company_admin');
     }
     
-    function hasRole(roles) {
-      return isAuthenticated() && getUserData().role in roles;
+    match /video-intros/{userId}/{fileName} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        allow read: if isAuthenticated() && (request.auth.token.role == 'recruiter' || request.auth.token.role == 'company_admin');
     }
     
-    function isCompanyMember(companyId) {
-      return isAuthenticated() && getUserData().companyId == companyId;
+    // Job attachments (e.g., images for job postings)
+    match /jobs/{jobId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (request.auth.token.role == 'recruiter' || request.auth.token.role == 'company_admin');
     }
-    
-    function isSuperAdmin() {
-      return hasRole(['super_admin']);
-    }
-    
-    function isCompanyAdmin() {
-      return hasRole(['company_admin', 'super_admin']);
-    }
-    
-    function isRecruiter() {
-      return hasRole(['recruiter', 'company_admin', 'super_admin']);
-    }
-    
-    function isValidFileSize(maxSizeInMB) {
-      return request.resource.size <= maxSizeInMB * 1024 * 1024;
-    }
-    
-    function isValidImageType() {
-      return request.resource.contentType.matches('image/.*');
-    }
-    
-    function isValidDocumentType() {
-      return request.resource.contentType in [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
-      ];
-    }
-    
-    function isValidVideoType() {
-      return request.resource.contentType.matches('video/.*');
-    }
-    
-    // User profile images
-    match /image/{userId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId) && isValidImageType() && isValidFileSize(5);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // User documents (resumes, cover letters, etc.)
-    match /document/{userId}/{fileName} {
-      allow read: if isOwner(userId) || isRecruiter() || isSuperAdmin();
-      allow write: if isOwner(userId) && isValidDocumentType() && isValidFileSize(10);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Resume files
-    match /resume/{userId}/{fileName} {
-      allow read: if isOwner(userId) || isRecruiter() || isSuperAdmin();
-      allow write: if isOwner(userId) && isValidDocumentType() && isValidFileSize(10);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Video introductions
-    match /videos/intro/{userId}/{fileName} {
-      allow read: if isOwner(userId) || isRecruiter() || isSuperAdmin();
-      allow write: if isOwner(userId) && isValidVideoType() && isValidFileSize(100);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Interview recordings
-    match /videos/interview/{userId}/{fileName} {
-      allow read: if isOwner(userId) || isRecruiter() || isSuperAdmin();
-      allow write: if isAuthenticated() && isValidVideoType() && isValidFileSize(500);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Video testimonials
-    match /videos/testimonial/{userId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId) && isValidVideoType() && isValidFileSize(50);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Video thumbnails
-    match /videos/thumbnails/{userId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId) && isValidImageType() && isValidFileSize(2);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Company logos and branding
-    match /companies/{companyId}/logo/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isCompanyMember(companyId) && isValidImageType() && isValidFileSize(5);
-      allow delete: if isCompanyMember(companyId) || isSuperAdmin();
-    }
-    
-    match /companies/{companyId}/banners/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isCompanyMember(companyId) && isValidImageType() && isValidFileSize(10);
-      allow delete: if isCompanyMember(companyId) || isSuperAdmin();
-    }
-    
-    // Company documents
-    match /companies/{companyId}/documents/{fileName} {
-      allow read: if isCompanyMember(companyId) || isSuperAdmin();
-      allow write: if isCompanyMember(companyId) && isValidDocumentType() && isValidFileSize(20);
-      allow delete: if isCompanyMember(companyId) || isSuperAdmin();
-    }
-    
-    // Job attachments
-    match /jobs/{jobId}/attachments/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isRecruiter() && isValidDocumentType() && isValidFileSize(10);
-      allow delete: if isRecruiter() || isSuperAdmin();
-    }
-    
-    // Candidate portfolios
-    match /candidates/{candidateId}/portfolio/{fileName} {
-      allow read: if isOwner(candidateId) || isRecruiter() || isSuperAdmin();
-      allow write: if isOwner(candidateId) && 
-                      (isValidImageType() || isValidDocumentType()) && 
-                      isValidFileSize(20);
-      allow delete: if isOwner(candidateId) || isSuperAdmin();
-    }
-    
-    // Application attachments
-    match /applications/{applicationId}/attachments/{fileName} {
-      allow read: if isAuthenticated(); // Will be further restricted by Firestore rules
-      allow write: if isAuthenticated() && isValidDocumentType() && isValidFileSize(10);
-      allow delete: if isSuperAdmin();
-    }
-    
-    // System uploads (admin only)
-    match /system/{allPaths=**} {
-      allow read: if isSuperAdmin();
-      allow write: if isSuperAdmin() && isValidFileSize(100);
-      allow delete: if isSuperAdmin();
-    }
-    
-    // Temporary uploads (24 hour TTL)
-    match /temp/{userId}/{fileName} {
-      allow read, write: if isOwner(userId) && isValidFileSize(50);
-      allow delete: if isOwner(userId) || isSuperAdmin();
-    }
-    
-    // Backup storage (system only)
-    match /backups/{allPaths=**} {
-      allow read, write: if false; // System access only
-    }
-    
-    // Default deny all other files
+
+    // Default deny
     match /{allPaths=**} {
       allow read, write: if false;
     }

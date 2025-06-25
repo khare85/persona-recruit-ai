@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import admin from 'firebase-admin';
+import * as jwt from 'jsonwebtoken';
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -12,7 +13,6 @@ if (!admin.apps.length) {
         credential: admin.credential.cert(serviceAccount)
       });
     } else {
-      // Use application default credentials in production/cloud environments
       admin.initializeApp();
     }
   } catch (error) {
@@ -36,11 +36,10 @@ export interface AuthenticatedRequest extends NextRequest {
 /**
  * Verify Firebase ID token and extract user information including custom claims.
  */
-export async function verifyToken(token: string): Promise<AuthenticatedUser | null> {
+export async function verifyFirebaseToken(token: string): Promise<AuthenticatedUser | null> {
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
     
-    // Custom claims are the source of truth for roles and other user metadata
     const role = (decodedToken.role as UserRole) || 'candidate';
     const companyId = decodedToken.companyId || undefined;
     
@@ -57,7 +56,31 @@ export async function verifyToken(token: string): Promise<AuthenticatedUser | nu
 }
 
 /**
+ * Verify our own JWT token.
+ */
+export function verifyJwtToken(token: string): AuthenticatedUser | null {
+  try {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('JWT_SECRET is not configured');
+      return null;
+    }
+    const decoded = jwt.verify(token, jwtSecret) as any;
+    return {
+      id: decoded.id || decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      companyId: decoded.companyId
+    };
+  } catch (error) {
+    console.error('JWT verification failed:', error);
+    return null;
+  }
+}
+
+/**
  * Higher-order function (middleware) to protect API routes.
+ * It tries to verify a Firebase ID token first, then falls back to a custom JWT.
  */
 export function withAuth(
   handler: (req: AuthenticatedRequest, ...args: any[]) => Promise<NextResponse>
@@ -70,8 +93,14 @@ export function withAuth(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const user = await verifyToken(token);
+    // Try Firebase token verification first
+    let user = await verifyFirebaseToken(token);
 
+    // If Firebase token fails, try JWT verification (for backwards compatibility/other flows)
+    if (!user) {
+      user = verifyJwtToken(token);
+    }
+    
     if (!user) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }

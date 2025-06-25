@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AuthenticationPage() {
+  const { signIn } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,35 +35,21 @@ export default function AuthenticationPage() {
     const password = formData.get('password') as string;
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Login failed');
-      }
-
+      const userCredential = await signIn(email, password);
       setSuccess('Login successful! Redirecting...');
       
-      // Store auth token and user data in localStorage
-      localStorage.setItem('auth-token', result.data.token);
-      localStorage.setItem('user', JSON.stringify(result.data.user));
-      
+      const user = userCredential; // The user object from firebase
+      const tokenResult = await user.getIdTokenResult();
+      const role = tokenResult.claims.role || 'candidate';
+
       // Redirect based on user role
-      const user = result.data.user;
-      if (user.role === 'super_admin') {
+      if (role === 'super_admin') {
         router.push('/admin/dashboard');
-      } else if (user.role === 'company_admin') {
+      } else if (role === 'company_admin') {
         router.push('/company/dashboard');
-      } else if (user.role === 'recruiter') {
+      } else if (role === 'recruiter') {
         router.push('/recruiter/dashboard');
-      } else if (user.role === 'interviewer') {
+      } else if (role === 'interviewer') {
         router.push('/interviewer/dashboard');
       } else {
         router.push('/candidates/dashboard');

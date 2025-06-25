@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
@@ -22,6 +23,7 @@ interface AdminDashboardData {
 }
 
 export default function AdminDashboardPage() {
+  const { getToken } = useAuth();
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const token = localStorage.getItem('auth-token');
+        const token = await getToken();
         if (!token) {
           setError('User not authenticated. Please log in.');
           setIsLoading(false);
@@ -54,7 +56,7 @@ export default function AdminDashboardPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [getToken]);
 
   if (isLoading) {
     return (

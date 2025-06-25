@@ -4,11 +4,11 @@ import { databaseService } from '@/services/database.service';
 import { withAuth, withRole } from '@/middleware/auth';
 import { handleApiError } from '@/lib/errors';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '@/middleware/auth';
 
 // Job schema for validation
 const jobSchema = z.object({
   title: z.string().min(1).max(200),
-  company: z.string().min(1).max(100).optional(),
   location: z.string().min(1).max(100),
   type: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']),
   department: z.string().min(1).max(50),
@@ -23,8 +23,6 @@ const jobSchema = z.object({
   isRemote: z.boolean().optional(),
   urgency: z.enum(['Low', 'Medium', 'High']).optional(),
   status: z.enum(['Active', 'Closed', 'Draft']).default('Active'),
-  postedDate: z.string().optional(),
-  applicants: z.number().optional()
 });
 
 // GET /api/jobs - List all jobs with optional filters
@@ -32,13 +30,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
-    const department = searchParams.get('department');
-    const status = searchParams.get('status');
+    const status = searchParams.get('status') || 'active'; // Default to active jobs for public view
     const limit = parseInt(searchParams.get('limit') || '50');
     
     const { items: jobs, total } = await databaseService.listJobs({
       companyId: companyId || undefined,
-      status: status || undefined,
+      status: status,
       limit,
     });
     
@@ -61,7 +58,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/jobs - Create a new job
 export const POST = withAuth(
-  withRole(['recruiter', 'company_admin'], async (request: NextRequest): Promise<NextResponse> => {
+  withRole(['recruiter', 'company_admin'], async (request: AuthenticatedRequest): Promise<NextResponse> => {
     try {
       const body = await request.json();
       const validation = jobSchema.safeParse(body);
@@ -76,8 +73,8 @@ export const POST = withAuth(
         );
       }
       
-      const user = (request as any).user;
-      if (!user.companyId) {
+      const user = request.user;
+      if (!user?.companyId) {
         return NextResponse.json(
           { error: 'User must be associated with a company to post jobs' },
           { status: 400 }

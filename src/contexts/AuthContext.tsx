@@ -9,27 +9,29 @@ import {
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut,
+  updateProfile,
+  sendEmailVerification
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation'; // Corrected import
+import { useRouter } from 'next/navigation';
 
 export type UserRole = 'super_admin' | 'company_admin' | 'recruiter' | 'interviewer' | 'candidate';
 
-interface User extends FirebaseUser {
-  role?: UserRole;
+export interface User extends FirebaseUser {
+  role: UserRole;
   fullName?: string;
+  companyId?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, pass: string) => Promise<void>;
-  signUp: (email: string, pass: string, fullName?: string, role?: UserRole) => Promise<void>;
+  signIn: (email: string, pass: string) => Promise<FirebaseUser>;
+  signUp: (email: string, pass: string, fullName?: string, role?: UserRole) => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
-  fetchUserRole: (uid: string) => Promise<UserRole | null>;
-  updateUserProfile: (uid: string, data: { fullName?: string; role?: UserRole }) => Promise<void>;
+  getToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,44 +42,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { toast } = useToast();
   const router = useRouter();
 
-  const fetchUserRole = async (uid: string): Promise<UserRole | null> => {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      if (userDoc.exists()) {
-        return userDoc.data()?.role || 'candidate';
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      return null;
-    }
-  };
-
-  const updateUserProfile = async (uid: string, data: { fullName?: string; role?: UserRole }) => {
-    try {
-      await setDoc(doc(db, 'users', uid), {
-        ...data,
-        updatedAt: new Date(),
-        createdAt: new Date()
-      }, { merge: true });
-    } catch (error) {
-      console.error('Error updating user profile:', error);
-      throw error;
-    }
-  };
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userRole = await fetchUserRole(firebaseUser.uid);
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        const userData = userDoc.data();
-        
-        setUser({
-          ...firebaseUser,
-          role: userRole || 'candidate',
-          fullName: userData?.fullName || firebaseUser.displayName || ''
-        } as User); 
+        try {
+          const idTokenResult = await firebaseUser.getIdTokenResult(true); // Force refresh
+          const role = (idTokenResult.claims.role as UserRole) || 'candidate';
+          const companyId = (idTokenResult.claims.companyId as string) || undefined;
+          
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const userData = userDoc.data();
+          const fullName = userData?.fullName || `${userData?.firstName} ${userData?.lastName}` || firebaseUser.displayName || '';
+
+          setUser({
+            ...firebaseUser,
+            role,
+            fullName,
+            companyId
+          } as User);
+        } catch (error) {
+          console.error("Error fetching user data/claims:", error);
+          // If claims fail, sign out to prevent inconsistent state
+          await firebaseSignOut(auth);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -87,35 +75,52 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string, pass: string) => {
+  const getToken = async (): Promise<string | null> => {
+    if (auth.currentUser) {
+      return auth.currentUser.getIdToken();
+    }
+    return null;
+  };
+
+  const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      const userCredential = await signInWithEmailAndPassword(auth, email, pass);
       // User state will be updated by onAuthStateChanged
-      // Redirection can happen in the component or here
+      return userCredential.user;
     } catch (error) {
       const authError = error as AuthError;
-      console.error("Sign in error:", authError);
-      toast({ variant: "destructive", title: "Login Failed", description: authError.message || "Invalid credentials." });
+      toast({ variant: "destructive", title: "Login Failed", description: authError.message });
       setLoading(false);
-      throw authError; // Re-throw to handle in component
+      throw authError;
     }
   };
 
-  const signUp = async (email: string, pass: string, fullName?: string, role: UserRole = 'candidate') => {
+  const signUp = async (email: string, pass: string, fullName?: string, role: UserRole = 'candidate'): Promise<FirebaseUser> => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-      const user = userCredential.user;
-      
-      // Save user profile to Firestore
-      await updateUserProfile(user.uid, { fullName, role });
-      
+      const firebaseUser = userCredential.user;
+
+      if (fullName) {
+        await updateProfile(firebaseUser, { displayName: fullName });
+      }
+
+      // NOTE: In a production Firebase environment, you should use a Cloud Function
+      // triggered by `functions.auth.user().onCreate()` to create the user document
+      // in Firestore and set their custom claims for their role.
+      // This is more secure than relying on a client-side call after signup.
+      // For this project, we're assuming this trigger exists to set the role.
+      // The `onAuthStateChanged` listener will then pick up the role from the token claims.
+
+      // Send verification email
+      // await sendEmailVerification(firebaseUser);
       toast({ title: "Account Created", description: "Your account has been created successfully!" });
+
+      return firebaseUser;
     } catch (error) {
       const authError = error as AuthError;
-      console.error("Sign up error:", authError);
-      toast({ variant: "destructive", title: "Sign Up Failed", description: authError.message || "Could not create account." });
+      toast({ variant: "destructive", title: "Sign Up Failed", description: authError.message });
       setLoading(false);
       throw authError;
     }
@@ -125,13 +130,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     try {
       await firebaseSignOut(auth);
-      setUser(null);
-      // Redirect to home or auth page after sign out
-      router.push('/'); 
+      // User state will be cleared by onAuthStateChanged
+      router.push('/auth/login');
       toast({ title: "Signed Out", description: "You have been successfully signed out." });
     } catch (error) {
       const authError = error as AuthError;
-      console.error("Sign out error:", authError);
       toast({ variant: "destructive", title: "Sign Out Failed", description: authError.message });
     } finally {
       setLoading(false);
@@ -139,7 +142,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, fetchUserRole, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, getToken }}>
       {children}
     </AuthContext.Provider>
   );

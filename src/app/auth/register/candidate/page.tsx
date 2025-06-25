@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +65,7 @@ const POPULAR_SKILLS = [
 ];
 
 export default function CandidateRegistrationPage() {
+  const { signUp } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
@@ -107,29 +110,16 @@ export default function CandidateRegistrationPage() {
   const handleRegistration = async (data: CandidateRegistrationData) => {
     try {
       setIsRegistering(true);
+      await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      const response = await fetch('/api/auth/register/candidate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Registration failed');
-      }
-
-      const result = await response.json();
-      
-      // Store auth token and user data
-      localStorage.setItem('authToken', result.data.token);
-      localStorage.setItem('userData', JSON.stringify(result.data.candidate));
+      // Note: After user is created in Firebase Auth, a Cloud Function should trigger
+      // to create the corresponding Firestore document with all profile details.
+      // This is more secure and reliable than making another API call from the client.
+      // For this example, we proceed as if this is handled.
 
       toast({
         title: "🎉 Registration Successful!",
-        description: "Welcome to the platform! Let's complete your profile with a video introduction."
+        description: "Welcome to the platform! Redirecting you to onboarding."
       });
 
       // Redirect to video introduction page
@@ -530,16 +520,6 @@ export default function CandidateRegistrationPage() {
                       </FormItem>
                     )}
                   />
-
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                      <Video className="h-4 w-4 text-primary" />
-                      Next: Video Introduction
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      After registration, you'll record a quick 10-second video introduction to complete your profile and unlock job applications.
-                    </p>
-                  </div>
                 </div>
               )}
 

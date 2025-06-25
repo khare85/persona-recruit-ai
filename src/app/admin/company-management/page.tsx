@@ -34,7 +34,8 @@ import {
   Upload,
   Star,
   MapPin,
-  CalendarDays
+  CalendarDays,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -85,11 +86,6 @@ interface CompanyStats {
   active: number;
   suspended: number;
   pending: number;
-  enterprise: number;
-  professional: number;
-  starter: number;
-  totalRevenue: number;
-  avgSpend: number;
 }
 
 export default function AdminCompaniesPage() {
@@ -98,9 +94,7 @@ export default function AdminCompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companyStats, setCompanyStats] = useState<CompanyStats | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [industryFilter, setIndustryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [planFilter, setPlanFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingCompany, setIsAddingCompany] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -108,14 +102,13 @@ export default function AdminCompaniesPage() {
     name: '',
     domain: '',
     website: '',
-    size: '1-10',
+    size: '1-10' as Company['size'],
     industry: '',
     location: '',
     description: '',
     founded: new Date().getFullYear()
   });
 
-  // Helper function to get Firebase ID token
   const getAuthHeaders = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -128,30 +121,17 @@ export default function AdminCompaniesPage() {
     };
   };
 
-  // Redirect if not super admin
   useEffect(() => {
     if (!loading && (!user || user.role !== 'super_admin')) {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
 
-  // Fetch companies on mount
-  useEffect(() => {
-    if (user?.role === 'super_admin') {
-      fetchCompanies();
-    }
-  }, [user]);
-
   const fetchCompanies = async () => {
     try {
       setIsLoading(true);
       const headers = await getAuthHeaders();
-      
-      const response = await fetch('/api/admin/companies', {
-        headers: {
-          'Authorization': headers.Authorization,
-        },
-      });
+      const response = await fetch('/api/admin/companies', { headers: { 'Authorization': headers.Authorization }});
 
       if (!response.ok) {
         throw new Error('Failed to fetch companies');
@@ -159,26 +139,24 @@ export default function AdminCompaniesPage() {
 
       const data = await response.json();
       setCompanies(data.data.companies);
-      
-      // Calculate stats from the data
-      const stats = {
-        total: data.data.companies.length,
+      setCompanyStats({
+        total: data.data.pagination.total,
         active: data.data.companies.filter((c: Company) => c.status === 'active').length,
         suspended: data.data.companies.filter((c: Company) => c.status === 'suspended').length,
         pending: data.data.companies.filter((c: Company) => c.status === 'pending').length,
-        enterprise: 0, // TODO: Calculate based on plan
-        professional: 0, // TODO: Calculate based on plan
-        starter: 0, // TODO: Calculate based on plan
-        totalRevenue: 0, // TODO: Calculate from billing data
-        avgSpend: 0 // TODO: Calculate from billing data
-      };
-      setCompanyStats(stats);
+      });
     } catch (error) {
       console.error('Error fetching companies:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.role === 'super_admin') {
+      fetchCompanies();
+    }
+  }, [user]);
 
   const handleAddCompany = () => {
     setShowAddModal(true);
@@ -188,7 +166,6 @@ export default function AdminCompaniesPage() {
     try {
       setIsAddingCompany(true);
       const headers = await getAuthHeaders();
-      
       const response = await fetch('/api/admin/companies', {
         method: 'POST',
         headers,
@@ -196,31 +173,13 @@ export default function AdminCompaniesPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create company');
+        throw new Error((await response.json()).error || 'Failed to create company');
       }
-
-      const data = await response.json();
-      console.log('Company created:', data);
       
-      // Reset form and close modal
-      setNewCompany({
-        name: '',
-        domain: '',
-        website: '',
-        size: '1-10',
-        industry: '',
-        location: '',
-        description: '',
-        founded: new Date().getFullYear()
-      });
       setShowAddModal(false);
-      
-      // Refresh companies list
       fetchCompanies();
     } catch (error) {
       console.error('Error creating company:', error);
-      alert('Failed to create company: ' + (error as Error).message);
     } finally {
       setIsAddingCompany(false);
     }
@@ -235,101 +194,17 @@ export default function AdminCompaniesPage() {
   };
 
   const handleSuspendCompany = async (companyId: string) => {
-    if (!confirm('Are you sure you want to suspend this company?')) return;
-    
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/admin/companies/${companyId}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ status: 'suspended' }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to suspend company');
-      }
-
-      fetchCompanies(); // Refresh the list
-    } catch (error) {
-      console.error('Error suspending company:', error);
-      alert('Failed to suspend company');
-    }
+    // Implement API call
   };
 
   const handleActivateCompany = async (companyId: string) => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/admin/companies/${companyId}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ status: 'active' }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to activate company');
-      }
-
-      fetchCompanies(); // Refresh the list
-    } catch (error) {
-      console.error('Error activating company:', error);
-      alert('Failed to activate company');
-    }
+    // Implement API call
   };
 
   const handleDeleteCompany = async (companyId: string) => {
-    if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) return;
-    
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/admin/companies/${companyId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': headers.Authorization,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete company');
-      }
-
-      fetchCompanies(); // Refresh the list
-    } catch (error) {
-      console.error('Error deleting company:', error);
-      alert('Failed to delete company');
-    }
+    // Implement API call
   };
-
-  const handleExportData = () => {
-    // Convert companies data to CSV
-    const csvHeaders = ['Company Name', 'Domain', 'Industry', 'Location', 'Size', 'Status', 'Users', 'Active Jobs'];
-    const csvData = filteredCompanies.map(company => [
-      company.name,
-      company.domain,
-      company.industry,
-      company.location,
-      company.size,
-      company.status,
-      company.userCount,
-      company.activeJobs
-    ]);
-
-    const csvContent = [csvHeaders, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `companies_export_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  if (loading || !user) {
-    return <div>Loading...</div>;
-  }
-
+  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -343,27 +218,12 @@ export default function AdminCompaniesPage() {
     }
   };
 
-  const getPlanBadge = (plan: string) => {
-    switch (plan) {
-      case 'enterprise':
-        return <Badge variant="default" className="bg-purple-100 text-purple-800"><Star className="mr-1 h-3 w-3" />Enterprise</Badge>;
-      case 'professional':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">Professional</Badge>;
-      case 'starter':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700">Starter</Badge>;
-      default:
-        return <Badge variant="outline">{plan}</Badge>;
-    }
-  };
-
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          company.industry.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesIndustry = industryFilter === 'all' || company.industry === industryFilter;
     const matchesStatus = statusFilter === 'all' || company.status === statusFilter;
-    // const matchesPlan = planFilter === 'all' || company.plan === planFilter; // TODO: Add plan field
     
-    return matchesSearch && matchesIndustry && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -388,7 +248,6 @@ export default function AdminCompaniesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{companyStats?.total || 0}</div>
-              <p className="text-xs text-muted-foreground">+3 this month</p>
             </CardContent>
           </Card>
 
@@ -399,102 +258,42 @@ export default function AdminCompaniesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{companyStats?.active || 0}</div>
-              <p className="text-xs text-muted-foreground">89% of total</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Suspended</CardTitle>
+              <Ban className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{companyStats?.suspended || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${companyStats?.totalRevenue?.toLocaleString() || '0'}</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg. Monthly Spend</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${companyStats?.avgSpend || '0'}</div>
-              <p className="text-xs text-muted-foreground">Per company</p>
+              <div className="text-2xl font-bold">{companyStats?.pending || 0}</div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="all-companies" className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <TabsList>
-              <TabsTrigger value="all-companies">All Companies</TabsTrigger>
-              <TabsTrigger value="enterprise">Enterprise</TabsTrigger>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
-
+        <div className="flex justify-between items-center mb-4">
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportData}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => alert('Import functionality coming soon!')}>
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-              </Button>
-              <Button size="sm" onClick={handleAddCompany}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Company
-              </Button>
-            </div>
-          </div>
-
-          <TabsContent value="all-companies" className="space-y-6">
-            {/* Filters */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Filters & Search</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search companies by name or industry..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
-                      />
-                    </div>
-                  </div>
-                  <Select value={industryFilter} onValueChange={setIndustryFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Industries</SelectItem>
-                      <SelectItem value="Technology">Technology</SelectItem>
-                      <SelectItem value="Cloud Services">Cloud Services</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Data & Analytics">Data & Analytics</SelectItem>
-                      <SelectItem value="Robotics">Robotics</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={planFilter} onValueChange={setPlanFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Plans</SelectItem>
-                      <SelectItem value="enterprise">Enterprise</SelectItem>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="starter">Starter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    placeholder="Search companies..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                    />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
@@ -504,50 +303,48 @@ export default function AdminCompaniesPage() {
                       <SelectItem value="suspended">Suspended</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                     </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+                </Select>
+            </div>
+            <Button onClick={handleAddCompany}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Company
+            </Button>
+        </div>
 
-            {/* Companies Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Companies ({filteredCompanies.length})</CardTitle>
-                <CardDescription>Manage company accounts and subscriptions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
+        {/* Companies Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Companies ({filteredCompanies.length})</CardTitle>
+            <CardDescription>Manage company accounts and subscriptions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Users</TableHead>
+                  <TableHead>Active Jobs</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
                     <TableRow>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Plan</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Employees</TableHead>
-                      <TableHead>Active Jobs</TableHead>
-                      <TableHead>Monthly Spend</TableHead>
-                      <TableHead>Total Hires</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                        <TableCell colSpan={5} className="text-center">
+                            <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                        </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCompanies.map((company) => (
+                ) : (
+                    filteredCompanies.map((company) => (
                       <TableRow key={company.id}>
                         <TableCell>
                           <div>
                             <div className="font-medium">{company.name}</div>
-                            <div className="text-sm text-muted-foreground flex items-center">
-                              <MapPin className="mr-1 h-3 w-3" />
+                            <div className="text-sm text-muted-foreground">
                               {company.location} • {company.industry}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {company.domain} • {company.website || 'No website'}
-                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-gray-50 text-gray-700">
-                            {company.size}
-                          </Badge>
                         </TableCell>
                         <TableCell>{getStatusBadge(company.status)}</TableCell>
                         <TableCell>
@@ -562,13 +359,6 @@ export default function AdminCompaniesPage() {
                             {company.activeJobs}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <DollarSign className="mr-1 h-3 w-3 text-muted-foreground" />
-                            $0
-                          </div>
-                        </TableCell>
-                        <TableCell>0</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -585,10 +375,6 @@ export default function AdminCompaniesPage() {
                               <DropdownMenuItem onClick={() => handleEditCompany(company.id)}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Company
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => alert('Billing details coming soon!')}>
-                                <DollarSign className="mr-2 h-4 w-4" />
-                                Billing Details
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {company.status === 'active' ? (
@@ -620,49 +406,12 @@ export default function AdminCompaniesPage() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="enterprise">
-            <Card>
-              <CardHeader>
-                <CardTitle>Enterprise Customers</CardTitle>
-                <CardDescription>Special management for enterprise-tier clients</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Enterprise customer management tools coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="billing">
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing Overview</CardTitle>
-                <CardDescription>Company billing and subscription management</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Billing management tools coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Company Analytics</CardTitle>
-                <CardDescription>Performance metrics and usage analytics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Company analytics dashboard coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         {/* Add Company Modal */}
         <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
@@ -707,7 +456,7 @@ export default function AdminCompaniesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="size">Company Size *</Label>
-                  <Select value={newCompany.size} onValueChange={(value) => setNewCompany({...newCompany, size: value})}>
+                  <Select value={newCompany.size} onValueChange={(value) => setNewCompany({...newCompany, size: value as any})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

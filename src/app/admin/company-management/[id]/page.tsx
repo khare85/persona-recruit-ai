@@ -9,21 +9,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Building, 
   Users, 
   Briefcase, 
-  DollarSign, 
   MapPin, 
   Globe, 
   CalendarDays, 
   ArrowLeft, 
   Edit,
   Loader2,
-  AlertCircle,
-  Mail,
-  UserCheck
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -210,31 +206,6 @@ export default function CompanyDetailsPage() {
                     ))}
                   </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button className="w-full justify-start" variant="outline">
-                  <UserCheck className="mr-2 h-4 w-4" />
-                  View Company Admins
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  View All Jobs
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Go to Billing
-                </Button>
-                <Button className="w-full justify-start" variant="destructive">
-                  Suspend Company
-                </Button>
               </CardContent>
             </Card>
           </div>

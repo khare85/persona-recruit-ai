@@ -11,7 +11,6 @@ import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -69,7 +68,6 @@ export default function EditCompanyPage() {
         const data = await response.json();
         const company = data.data.company;
 
-        // Populate form with fetched data
         form.reset({
           name: company.name,
           domain: company.domain,
@@ -246,7 +244,7 @@ export default function EditCompanyPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Company Size</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
@@ -270,7 +268,7 @@ export default function EditCompanyPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />

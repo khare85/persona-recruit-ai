@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth, withRole } from '@/middleware/auth';
@@ -33,40 +34,34 @@ export const GET = withRateLimit('api',
           requestedBy: req.user?.id
         });
 
-        // TODO: Get company from database
-        const mockCompany = {
-          id: companyId,
-          name: 'TechCorp Inc.',
-          domain: 'techcorp.com',
-          website: 'https://techcorp.com',
-          size: '201-1000',
-          industry: 'Technology',
-          location: 'San Francisco, CA',
-          description: 'Leading technology company specializing in AI and machine learning solutions.',
-          founded: 2015,
-          status: 'Active',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-06-20T14:30:00Z',
-          userCount: 25,
-          activeJobs: 8,
-          users: [
-            {
-              id: 'u1',
-              email: 'admin@techcorp.com',
-              firstName: 'John',
-              lastName: 'Smith',
-              role: 'company_admin',
-              department: 'Administration',
-              status: 'Active',
-              lastLogin: '2024-06-22T09:15:00Z',
-              invitedAt: '2024-01-15T10:00:00Z'
-            }
-          ]
+        // Get company from database
+        const company = await databaseService.getCompanyById(companyId);
+        if (!company) {
+          return NextResponse.json(
+            { error: 'Company not found' },
+            { status: 404 }
+          );
+        }
+
+        // Get associated users
+        const { items: users } = await databaseService.listUsers({ companyId });
+
+        const companyDetails = {
+          ...company,
+          userCount: users.length,
+          users: users.slice(0, 10).map(u => ({
+            id: u.id,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            role: u.role,
+            status: u.status
+          })),
         };
 
         return NextResponse.json({
           success: true,
-          data: { company: mockCompany },
+          data: { company: companyDetails },
           message: 'Company details retrieved successfully'
         });
 
@@ -106,69 +101,8 @@ export const PATCH = withRateLimit('api',
           fields: Object.keys(updateData)
         });
 
-        // Update company in database
-        await databaseService.updateCompany(companyId, updateData);
+        await databaseService.updateCompany(companyId, updateData as any);
         
-        // Get updated company
-        const updatedCompany = await databaseService.getCompanyById(companyId);
-        if (!updatedCompany) {
-          return NextResponse.json(
-            { error: 'Company not found after update' },
-            { status: 404 }
-          );
-        }
-
-        apiLogger.info('Company updated successfully', {
-          companyId,
-          updatedBy: req.user?.id
-        });
-
-        return NextResponse.json({
-          success: true,
-          data: { company: updatedCompany },
-          message: 'Company updated successfully'
-        });
-
-      } catch (error) {
-        return handleApiError(error);
-      }
-    })
-  )
-);
-
-/**
- * PUT /api/admin/companies/[id] - Update company (full update)
- */
-export const PUT = withRateLimit('api',
-  withAuth(
-    withRole(['super_admin'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
-      try {
-        const companyId = params.id;
-        const body = await req.json();
-        const validation = updateCompanySchema.safeParse(body);
-
-        if (!validation.success) {
-          return NextResponse.json(
-            {
-              error: 'Invalid company update data',
-              details: validation.error.errors
-            },
-            { status: 400 }
-          );
-        }
-
-        const updateData = validation.data;
-
-        apiLogger.info('Company full update requested', {
-          companyId,
-          updatedBy: req.user?.id,
-          fields: Object.keys(updateData)
-        });
-
-        // Update company in database
-        await databaseService.updateCompany(companyId, updateData);
-        
-        // Get updated company
         const updatedCompany = await databaseService.getCompanyById(companyId);
         if (!updatedCompany) {
           return NextResponse.json(
@@ -218,21 +152,6 @@ export const DELETE = withRateLimit('api',
           );
         }
 
-        // Check if company has active jobs or users
-        const userCount = await databaseService.getCompanyUserCount(companyId);
-        const activeJobsCount = await databaseService.getCompanyActiveJobsCount(companyId);
-        
-        if (userCount > 0 || activeJobsCount > 0) {
-          return NextResponse.json(
-            { 
-              error: 'Cannot delete company with active users or jobs',
-              details: { userCount, activeJobsCount }
-            },
-            { status: 400 }
-          );
-        }
-
-        // Soft delete company
         await databaseService.deleteCompany(companyId);
 
         apiLogger.info('Company deleted successfully', {

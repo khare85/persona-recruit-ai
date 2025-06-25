@@ -66,12 +66,13 @@ curl http://localhost:3000/api/health
 ```
 
 ### 3. Database Setup
-
+Deploy Firestore indexes and security rules using the provided script. This is a critical step for both security and AI functionality.
 ```bash
-# Initialize Firestore indexes
-# Set up Firebase Storage rules
-# Configure authentication providers
+npm run deploy:db
 ```
+This command will:
+- Deploy all security rules for Firestore and Storage.
+- Deploy all composite and vector indexes required for search.
 
 ### 4. Deploy to Production
 

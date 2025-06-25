@@ -1,6 +1,6 @@
 # Firebase Production Setup Guide
 
-## 🎯 CURRENT STATUS: 75% Production Ready
+## 🎯 CURRENT STATUS: 85% Production Ready
 
 Your Firebase backend is **architecturally complete** but needs configuration for production deployment.
 
@@ -134,25 +134,13 @@ ELEVENLABS_API_KEY=your_elevenlabs_key
 ELEVENLABS_AGENT_ID=your_agent_id
 ```
 
-#### **3. Firestore Vector Indexes** ⚠️ **CRITICAL**
-**Manual setup required in Google Cloud Console:**
-
-1. Navigate to **Firestore → Indexes → Single field**
-2. Create vector index for `candidates_with_embeddings.resumeEmbedding`:
-   - **Collection:** `candidates_with_embeddings`
-   - **Field:** `resumeEmbedding`
-   - **Index type:** Vector
-   - **Dimensions:** 768
-   - **Distance measure:** COSINE
-
-3. Create vector index for `jobs_with_embeddings.jobEmbedding`:
-   - **Collection:** `jobs_with_embeddings`
-   - **Field:** `jobEmbedding`
-   - **Index type:** Vector
-   - **Dimensions:** 768
-   - **Distance measure:** COSINE
-
-**⏱️ Index creation takes 10-30 minutes**
+#### **3. Deploy Firestore Indexes (Vector & Composite)** ⚠️ **CRITICAL**
+All required composite and vector indexes are defined in `firestore.indexes.json`. To deploy them, run the database deployment script:
+```bash
+npm run deploy:db
+```
+This script will deploy all necessary indexes, including the 768-dimension vector indexes required for AI-powered semantic search.
+**⏱️ Index creation takes 10-30 minutes.** You can monitor the progress in the Firebase Console.
 
 #### **4. Document AI Processor Setup**
 1. Enable Document AI API in Google Cloud Console
@@ -161,31 +149,10 @@ ELEVENLABS_AGENT_ID=your_agent_id
    - **Location:** us (or your preferred region)
 3. Note the Processor ID for environment variables
 
-#### **5. Security Rules Implementation**
-Create Firestore security rules (`firestore.rules`):
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Candidates with embeddings - admin only
-    match /candidates_with_embeddings/{candidateId} {
-      allow read, write: if request.auth != null && 
-        request.auth.token.role in ['admin', 'recruiter'];
-    }
-    
-    // Jobs with embeddings - admin only
-    match /jobs_with_embeddings/{jobId} {
-      allow read, write: if request.auth != null && 
-        request.auth.token.role in ['admin', 'recruiter'];
-    }
-    
-    // Interview sessions
-    match /interview_sessions/{sessionId} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
+#### **5. Deploy Security Rules**
+The deployment script also handles security rules. Run this command if you only want to update rules:
+```bash
+npm run deploy:db
 ```
 
 ### **🔄 TRANSITION FROM MOCK TO FIREBASE**
@@ -236,8 +203,8 @@ Update API routes to use Firebase instead of mock data:
 
 ### **🟡 GOOD (75%)**
 - **Configuration** - Environment setup needed
-- **Security** - Rules need implementation
-- **Indexes** - Manual creation required
+- **Security** - Rules need deployment
+- **Indexes** - Need deployment
 
 ### **🔴 NEEDS WORK (50%)**
 - **Frontend Integration** - Still using mock data
@@ -251,12 +218,12 @@ Update API routes to use Firebase instead of mock data:
 ### **Week 1: Core Setup**
 1. Set up production Firebase project
 2. Configure all environment variables
-3. Create Firestore vector indexes
+3. Deploy Firestore indexes and rules (`npm run deploy:db`)
 4. Set up Document AI processor
 
 ### **Week 2: Integration**
 1. Replace mock data with Firebase calls
-2. Implement security rules
+2. Implement and test security rules
 3. Set up authentication flow
 4. Test all AI functionality
 
@@ -280,9 +247,8 @@ Update API routes to use Firebase instead of mock data:
 
 ### **⚠️ WHAT NEEDS SETUP:**
 - Environment variables configuration
-- Firestore vector indexes creation
+- Firestore vector indexes & rules deployment
 - Document AI processor setup
-- Security rules implementation
 - Frontend to Firebase transition
 
 ### **🎯 PRODUCTION TIMELINE: 1-2 WEEKS**

@@ -61,7 +61,7 @@ if ! firebase storage:rules:validate storage.rules; then
     exit 1
 fi
 
-echo "📊 Deploying Firestore indexes..."
+echo "📊 Deploying Firestore indexes (including vector indexes)..."
 firebase deploy --only firestore:indexes --project "$PROJECT"
 
 echo "🔒 Deploying Firestore security rules..."
@@ -69,13 +69,6 @@ firebase deploy --only firestore:rules --project "$PROJECT"
 
 echo "📁 Deploying Storage security rules..."
 firebase deploy --only storage --project "$PROJECT"
-
-echo "🎯 Creating vector indexes for AI search..."
-echo "⚠️  Note: Vector indexes must be created manually in Firebase Console:"
-echo "   1. Go to Firestore Database > Indexes"
-echo "   2. Create vector index for 'candidates_with_embeddings.resumeEmbedding'"
-echo "   3. Create vector index for 'jobs_with_embeddings.jobEmbedding'"
-echo "   4. Both should use 768 dimensions with COSINE distance"
 
 echo "🔧 Verifying deployment..."
 
@@ -86,10 +79,9 @@ firebase firestore:indexes --project "$PROJECT"
 echo "✅ Database and storage deployment completed successfully!"
 echo ""
 echo "📋 Next steps:"
-echo "   1. Monitor index build progress in Firebase Console"
-echo "   2. Create vector indexes manually (see note above)"
-echo "   3. Test application functionality"
-echo "   4. Monitor performance and security rule effectiveness"
+echo "   1. Monitor index build progress in Firebase Console. This can take 10-30 minutes."
+echo "   2. Test application functionality that requires database access."
+echo "   3. Monitor performance and security rule effectiveness."
 echo ""
 echo "🔗 Useful links:"
 echo "   - Firestore Console: https://console.firebase.google.com/project/$PROJECT/firestore"

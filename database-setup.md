@@ -3,40 +3,19 @@
 ## Overview
 This document outlines the complete database indexes and cloud storage folder structure for the AI Talent Recruitment Platform.
 
-## Database Indexes
+## Database Deployment
+All required Firestore indexes (composite and vector) and security rules for both Firestore and Storage are defined in the project.
 
-### Required Firestore Composite Indexes
-
-All indexes are defined in `firestore.indexes.json`. Deploy them using:
-
+To deploy all database configurations, use the provided script:
 ```bash
-firebase deploy --only firestore:indexes
+npm run deploy:db
 ```
-
-### Critical Indexes by Collection
-
-#### Users Collection
-- `[email, deletedAt]` - User lookup by email
-- `[companyId, role, deletedAt]` - Company user filtering
-- `[role, status, deletedAt]` - User status filtering
-
-#### Jobs Collection
-- `[companyId, status, deletedAt, createdAt]` - Company job listing
-- `[recruiterId, status, deletedAt, createdAt]` - Recruiter job filtering  
-- `[status, deletedAt, publishedAt]` - Public job search
-- `[location, status, deletedAt]` - Location-based search
-- `[department, status, deletedAt]` - Department filtering
-
-#### Job Applications Collection
-- `[candidateId, deletedAt, appliedAt]` - Candidate applications
-- `[jobId, status, deletedAt, appliedAt]` - Job applications
-- `[companyId, status, deletedAt, lastActivityAt]` - Company applications
-- `[jobId, candidateId, deletedAt]` - Duplicate application checks
-- `[aiMatchScore, status, deletedAt]` - AI match scoring
-
-#### Vector Indexes for AI Search
-- `candidates_with_embeddings.resumeEmbedding` - 768-dimension COSINE similarity
-- `jobs_with_embeddings.jobEmbedding` - 768-dimension COSINE similarity
+This script is the recommended way to ensure your database is correctly configured for production. It handles the deployment of:
+- Firestore Security Rules (`firestore.rules`)
+- Storage Security Rules (`storage.rules`)
+- All Firestore Indexes (`firestore.indexes.json`), including:
+  - Composite indexes for efficient querying.
+  - **Vector indexes** for AI-powered semantic search.
 
 ## Storage Folder Structure
 
@@ -163,20 +142,6 @@ firebase deploy --only firestore:indexes
 └── cache/                         # Cached content
 ```
 
-## Security Rules
-
-### Firestore Security Rules
-- Role-based access control
-- Company-scoped data access
-- User ownership validation
-- Read-only audit logs
-
-### Storage Security Rules
-- File type validation
-- Size limits enforcement
-- User ownership verification
-- Company-scoped access
-
 ## File Size Limits
 
 | File Type | Max Size | Use Case |
@@ -206,28 +171,6 @@ firebase deploy --only firestore:indexes
 - `video/mp4`
 - `video/webm`
 - `video/quicktime`
-
-## Deployment Commands
-
-### Deploy Firestore Rules
-```bash
-firebase deploy --only firestore:rules
-```
-
-### Deploy Storage Rules
-```bash
-firebase deploy --only storage
-```
-
-### Deploy Firestore Indexes
-```bash
-firebase deploy --only firestore:indexes
-```
-
-### Deploy All Database Components
-```bash
-firebase deploy --only firestore,storage
-```
 
 ## Monitoring and Maintenance
 

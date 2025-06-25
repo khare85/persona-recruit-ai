@@ -16,6 +16,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "deploy:db": "bash ./scripts/deploy-database.sh",
     "setup:storage": "node scripts/setup-firebase-storage.js",
     "check:storage": "node scripts/check-firebase-storage.js",
     "setup:storage:secretmanager": "node scripts/setup-firebase-storage-secretmanager.js",

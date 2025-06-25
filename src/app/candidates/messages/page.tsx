@@ -21,7 +21,7 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Calendar,
+  CalendarDays,
   Briefcase,
   Users,
   Building,
@@ -298,7 +298,7 @@ export default function CandidateMessagesPage() {
 
   const getMessageIcon = (type: string) => {
     switch (type) {
-      case 'interview_invite': return <Calendar className="h-4 w-4 text-blue-600" />;
+      case 'interview_invite': return <CalendarDays className="h-4 w-4 text-blue-600" />;
       case 'application_update': return <Briefcase className="h-4 w-4 text-green-600" />;
       case 'job_match': return <Star className="h-4 w-4 text-yellow-600" />;
       case 'system': return <Bell className="h-4 w-4 text-gray-600" />;
@@ -318,7 +318,7 @@ export default function CandidateMessagesPage() {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'interview_scheduled': return <Calendar className="h-4 w-4 text-blue-600" />;
+      case 'interview_scheduled': return <CalendarDays className="h-4 w-4 text-blue-600" />;
       case 'application_status': return <Briefcase className="h-4 w-4 text-green-600" />;
       case 'job_recommendation': return <Star className="h-4 w-4 text-yellow-600" />;
       case 'message_received': return <MessageSquare className="h-4 w-4 text-purple-600" />;

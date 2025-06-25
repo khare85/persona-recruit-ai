@@ -12,7 +12,7 @@ import {
   Database,
   Globe,
   Mail,
-  Calendar,
+  CalendarDays,
   FileText,
   Users,
   Settings,
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
     {
       id: "data-retention",
       title: "Data Retention",
-      icon: Calendar,
+      icon: CalendarDays,
       content: [
         {
           subtitle: "Active Accounts",
@@ -185,7 +185,7 @@ export default function PrivacyPolicyPage() {
               This Privacy Policy describes how Persona Recruit AI collects, uses, and protects your personal information.
             </p>
             <div className="flex items-center justify-center text-sm text-gray-500">
-              <Calendar className="h-4 w-4 mr-2" />
+              <CalendarDays className="h-4 w-4 mr-2" />
               Last updated: {lastUpdated}
             </div>
           </div>

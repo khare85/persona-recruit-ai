@@ -21,7 +21,7 @@ import {
   Filter, 
   Search, 
   Eye, 
-  Calendar,
+  CalendarDays,
   CheckCircle,
   XCircle,
   Clock,
@@ -525,7 +525,7 @@ export default function ApplicationManagementPage() {
                                     size="sm"
                                     onClick={() => scheduleInterview(application.id, application.candidateId, application.jobId)}
                                   >
-                                    <Calendar className="h-4 w-4 mr-1" />
+                                    <CalendarDays className="h-4 w-4 mr-1" />
                                     Schedule Interview
                                   </Button>
                                 )}

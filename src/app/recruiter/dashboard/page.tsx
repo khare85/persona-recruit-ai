@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Briefcase, Users, Calendar, Award, Search, Activity, PlusCircle, Eye, LayoutDashboard, Loader2, AlertCircle } from 'lucide-react';
+import { Briefcase, Users, CalendarDays, Award, Search, Activity, PlusCircle, Eye, LayoutDashboard, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
@@ -100,7 +100,7 @@ export default function RecruiterDashboardPage() {
           <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Interviews Scheduled</CardTitle>
-              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <CalendarDays className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.interviewsScheduled}</div>

@@ -27,7 +27,7 @@ import {
   Filter,
   ArrowRight,
   Building,
-  Calendar
+  CalendarDays
 } from 'lucide-react';
 
 export default function CareersPage() {
@@ -358,7 +358,7 @@ export default function CareersPage() {
                           {job.salary}
                         </div>
                         <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
+                          <CalendarDays className="h-4 w-4 mr-1" />
                           {job.posted}
                         </div>
                       </div>

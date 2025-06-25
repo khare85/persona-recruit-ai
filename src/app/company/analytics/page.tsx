@@ -24,7 +24,7 @@ import {
   TrendingUp, 
   Users, 
   Briefcase, 
-  Calendar,
+  CalendarDays,
   UserCheck,
   Building,
   Filter,
@@ -213,7 +213,7 @@ export default function CompanyAnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Interviews</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{analytics.overview.totalInterviews}</div>

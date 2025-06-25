@@ -13,7 +13,7 @@ import {
   XCircle,
   Trash2,
   MarkAsUnread,
-  Calendar,
+  CalendarDays,
   Users,
   Search,
   Shield,
@@ -160,7 +160,7 @@ export function NotificationsList({ showUnreadOnly = false, limit = 20 }: Notifi
       case 'applications':
         return <Users className="h-4 w-4" />;
       case 'interviews':
-        return <Calendar className="h-4 w-4" />;
+        return <CalendarDays className="h-4 w-4" />;
       case 'matches':
         return <Search className="h-4 w-4" />;
       case 'invitations':

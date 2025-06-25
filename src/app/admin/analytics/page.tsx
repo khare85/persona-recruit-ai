@@ -35,7 +35,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
-  Calendar,
+  CalendarDays,
   Globe,
   Zap,
   MessageSquare,
@@ -406,7 +406,7 @@ export default function AdminAnalyticsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-blue-500" />
+                    <CalendarDays className="h-5 w-5 text-blue-500" />
                     Activity Summary
                   </CardTitle>
                 </CardHeader>

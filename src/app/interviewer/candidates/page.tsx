@@ -17,7 +17,7 @@ import {
   Eye, 
   Video,
   FileText,
-  Calendar,
+  CalendarDays,
   CheckCircle,
   Clock,
   AlertTriangle,
@@ -179,7 +179,7 @@ export default function InterviewerCandidatesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return <Badge className="bg-blue-100 text-blue-800"><Calendar className="mr-1 h-3 w-3" />Scheduled</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800"><CalendarDays className="mr-1 h-3 w-3" />Scheduled</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="mr-1 h-3 w-3" />Pending</Badge>;
       case 'completed':
@@ -414,7 +414,7 @@ export default function InterviewerCandidatesPage() {
                       )}
                       
                       <Button size="sm" className="w-full">
-                        <Calendar className="mr-1 h-3 w-3" />
+                        <CalendarDays className="mr-1 h-3 w-3" />
                         Interview Details
                       </Button>
                     </div>

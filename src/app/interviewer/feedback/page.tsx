@@ -30,7 +30,7 @@ import {
   Video,
   FileText,
   User,
-  Calendar,
+  CalendarDays,
   Clock,
   Award,
   MessageSquare,
@@ -301,7 +301,7 @@ export default function InterviewerFeedbackPage() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">{formatDate(selectedInterview.interviewDate)}</span>
                       </div>
                       <div className="flex items-center space-x-2">

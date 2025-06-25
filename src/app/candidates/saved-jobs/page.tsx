@@ -20,7 +20,7 @@ import {
   Filter,
   Trash2,
   Eye,
-  Calendar,
+  CalendarDays,
   AlertCircle,
   CheckCircle,
   Star
@@ -364,7 +364,7 @@ export default function SavedJobsPage() {
                         {job.applicationCount} applicants
                       </div>
                       <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
+                        <CalendarDays className="h-4 w-4 mr-1" />
                         Saved {new Date(job.savedAt).toLocaleDateString()}
                       </div>
                     </div>

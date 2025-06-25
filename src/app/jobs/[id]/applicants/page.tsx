@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Container } from '@/components/shared/Container';
-import { ArrowLeft, Star, Mail, Phone, MapPin, Briefcase, ExternalLink, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star, Mail, Phone, MapPin, Briefcase, ExternalLink, CalendarDays, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getMockJob, getMockApplicantsForJob, type MockCandidate, type MockJob } from '@/services/mockDataService';
 import { candidateJobMatcher } from '@/ai/flows/candidate-job-matcher';
@@ -288,7 +288,7 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
                           title="Schedule Interview"
                           onClick={() => handleScheduleInterview(applicant.id, applicant.fullName)}
                         >
-                          <Calendar className="h-4 w-4" />
+                          <CalendarDays className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" title="Send Email">
                           <Mail className="h-4 w-4" />
@@ -361,7 +361,7 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
                       variant="outline"
                       onClick={() => handleScheduleInterview(applicants[0].id, applicants[0].fullName)}
                     >
-                      <Calendar className="mr-2 h-4 w-4" />
+                      <CalendarDays className="mr-2 h-4 w-4" />
                       Schedule Interview
                     </Button>
                   </div>

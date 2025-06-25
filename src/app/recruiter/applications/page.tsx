@@ -17,7 +17,7 @@ import {
   Download,
   Eye,
   MessageSquare,
-  Calendar,
+  CalendarDays,
   CheckCircle,
   XCircle,
   Clock,
@@ -170,7 +170,7 @@ export default function RecruiterApplicationsPage() {
     switch (status) {
       case 'pending': return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case 'reviewed': return <Badge variant="outline"><Eye className="h-3 w-3 mr-1" />Reviewed</Badge>;
-      case 'interviewed': return <Badge className="bg-blue-100 text-blue-800"><Calendar className="h-3 w-3 mr-1" />Interviewed</Badge>;
+      case 'interviewed': return <Badge className="bg-blue-100 text-blue-800"><CalendarDays className="h-3 w-3 mr-1" />Interviewed</Badge>;
       case 'hired': return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Hired</Badge>;
       case 'rejected': return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
@@ -283,7 +283,7 @@ export default function RecruiterApplicationsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Interviewed</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.interviewed || 0}</div>

@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
-  Calendar, 
+  CalendarDays, 
   Plus, 
   Search, 
   Clock,
@@ -199,7 +199,7 @@ export default function RecruiterInterviewsPage() {
       case 'video': return <Video className="h-4 w-4 text-blue-600" />;
       case 'phone': return <Phone className="h-4 w-4 text-green-600" />;
       case 'in-person': return <MapPin className="h-4 w-4 text-purple-600" />;
-      default: return <Calendar className="h-4 w-4" />;
+      default: return <CalendarDays className="h-4 w-4" />;
     }
   };
 
@@ -263,7 +263,7 @@ export default function RecruiterInterviewsPage() {
       <Container className="py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground flex items-center">
-            <Calendar className="mr-3 h-8 w-8 text-primary" />
+            <CalendarDays className="mr-3 h-8 w-8 text-primary" />
             Interview Management
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -276,7 +276,7 @@ export default function RecruiterInterviewsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Interviews</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.total || 0}</div>

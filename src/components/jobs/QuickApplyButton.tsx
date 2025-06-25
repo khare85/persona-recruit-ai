@@ -28,7 +28,7 @@ import {
   User,
   Briefcase,
   DollarSign,
-  Calendar,
+  CalendarDays,
   MapPin
 } from 'lucide-react';
 
@@ -299,7 +299,7 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
                   <div>
                     <Label htmlFor="availableFrom">Available From (Optional)</Label>
                     <div className="relative mt-1">
-                      <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <CalendarDays className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="availableFrom"
                         type="date"

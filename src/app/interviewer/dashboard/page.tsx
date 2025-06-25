@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   MessageSquare, 
-  Calendar, 
+  CalendarDays, 
   Clock, 
   Star, 
   CheckCircle,
@@ -144,7 +144,7 @@ export default function InterviewerDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.thisMonth.completed}</div>
@@ -200,7 +200,7 @@ export default function InterviewerDashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center">
-                    <Calendar className="mr-2 h-5 w-5 text-primary" />
+                    <CalendarDays className="mr-2 h-5 w-5 text-primary" />
                     Today's Schedule
                   </span>
                   <Link href="/interviewer/schedule">

@@ -14,7 +14,7 @@ import {
   CreditCard,
   Globe,
   Mail,
-  Calendar,
+  CalendarDays,
   CheckCircle,
   XCircle
 } from 'lucide-react';
@@ -224,7 +224,7 @@ export default function TermsOfServicePage() {
               These terms govern your use of the Persona Recruit AI platform and services.
             </p>
             <div className="flex items-center justify-center text-sm text-gray-500">
-              <Calendar className="h-4 w-4 mr-2" />
+              <CalendarDays className="h-4 w-4 mr-2" />
               Last updated: {lastUpdated}
             </div>
           </div>

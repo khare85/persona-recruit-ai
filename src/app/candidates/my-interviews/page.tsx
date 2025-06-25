@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Clock, MapPin, Building2, Video, CheckCircle, XCircle, AlertCircle, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Building2, Video, CheckCircle, XCircle, AlertCircle, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getMockInterviewsForCandidate, getMockInterviewAnalysis } from '@/services/mockDataService';
 import { format } from 'date-fns';
@@ -51,7 +51,7 @@ export default function MyInterviewsPage() {
     switch(normalizedStatus) {
       case 'scheduled':
       case 'confirmed':
-        return <Calendar className="h-4 w-4" />;
+        return <CalendarDays className="h-4 w-4" />;
       case 'completed':
         return <CheckCircle className="h-4 w-4" />;
       case 'cancelled':
@@ -166,7 +166,7 @@ export default function MyInterviewsPage() {
         <Card className="mb-8 shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
-              <Calendar className="mr-2 h-5 w-5 text-primary" />
+              <CalendarDays className="mr-2 h-5 w-5 text-primary" />
               Upcoming Interviews
             </CardTitle>
             <CardDescription>Your scheduled interviews</CardDescription>
@@ -196,7 +196,7 @@ export default function MyInterviewsPage() {
                     <TableCell>
                       <div>
                         <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                          <CalendarDays className="h-3 w-3 mr-1 text-muted-foreground" />
                           {format(new Date(interview.date), 'MMM d, yyyy')}
                         </div>
                         <div className="text-sm text-muted-foreground flex items-center">
@@ -274,7 +274,7 @@ export default function MyInterviewsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                          <CalendarDays className="h-3 w-3 mr-1 text-muted-foreground" />
                           {format(new Date(interview.date), 'MMM d, yyyy')}
                         </div>
                       </TableCell>

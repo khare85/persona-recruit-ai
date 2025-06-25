@@ -30,7 +30,7 @@ import {
   Brain,
   Sparkles,
   Target,
-  Calendar,
+  CalendarDays,
   Mail,
   ExternalLink,
   Download,
@@ -470,7 +470,7 @@ export default function TalentSearchPage() {
                               Contact
                             </Button>
                             <Button variant="outline" size="sm">
-                              <Calendar className="h-4 w-4 mr-2" />
+                              <CalendarDays className="h-4 w-4 mr-2" />
                               Schedule Interview
                             </Button>
                           </div>

@@ -10,7 +10,7 @@ import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign, Search,
   ExternalLink, Activity, LogOut, Settings2, Server, BarChartBig, Settings, UsersRound, PlusCircle,
-  Home, SearchCheck, Sparkles, Info, MessageSquare, ClipboardCheck, Star, Brain, Bookmark, TrendingUp, Bell
+  Home, SearchCheck, Sparkles, Info, MessageSquare, ClipboardCheck, Star, Brain, Bookmark, TrendingUp, Bell, CalendarDays
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,7 +43,7 @@ const recruiterNavItems = [
   { href: '/recruiter/jobs', label: 'My Jobs', icon: Briefcase },
   { href: '/jobs/new', label: 'Post New Job', icon: PlusCircle },
   { href: '/recruiter/applications', label: 'Applications', icon: UsersRound },
-  { href: '/recruiter/interviews', label: 'Interviews', icon: Calendar },
+  { href: '/recruiter/interviews', label: 'Interviews', icon: CalendarDays },
   { href: '/recruiter/analytics', label: 'My Analytics', icon: BarChartBig },
   { href: '/recruiter/schedule-interview', label: 'Schedule Interview', icon: CalendarClock },
   { href: '/candidates', label: 'Browse Candidates', icon: Users },

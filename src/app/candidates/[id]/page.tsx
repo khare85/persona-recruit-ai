@@ -18,7 +18,7 @@ import {
   Video, 
   Download, 
   Edit3, 
-  Calendar,
+  CalendarDays,
   DollarSign,
   Globe,
   Award,
@@ -359,7 +359,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Availability</span>
                 </div>
                 <p className="text-sm">{candidate.availability}</p>
@@ -410,7 +410,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
             </CardHeader>
             <CardContent className="space-y-3">
               <Button variant="outline" size="sm" className="w-full justify-start">
-                <Calendar className="h-4 w-4 mr-2" />
+                <CalendarDays className="h-4 w-4 mr-2" />
                 Schedule Interview
               </Button>
               <Button variant="outline" size="sm" className="w-full justify-start">

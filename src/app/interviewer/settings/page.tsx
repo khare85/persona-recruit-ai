@@ -18,7 +18,7 @@ import {
   Settings,
   User,
   Bell,
-  Calendar,
+  CalendarDays,
   Clock,
   Shield,
   Eye,
@@ -465,7 +465,7 @@ export default function InterviewerSettingsPage() {
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Calendar className="mr-2 h-5 w-5 text-primary" />
+                  <CalendarDays className="mr-2 h-5 w-5 text-primary" />
                   Calendar Integration
                 </CardTitle>
                 <CardDescription>

@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Calendar, 
+  CalendarDays, 
   Clock, 
   Users, 
   MapPin, 
@@ -227,7 +227,7 @@ export default function InterviewerSchedulePage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground flex items-center">
-                <Calendar className="mr-3 h-8 w-8 text-primary" />
+                <CalendarDays className="mr-3 h-8 w-8 text-primary" />
                 Interview Schedule
               </h1>
               <p className="text-muted-foreground mt-1">
@@ -447,7 +447,7 @@ export default function InterviewerSchedulePage() {
             {upcomingInterviews.length === 0 && (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium mb-2">No upcoming interviews</h3>
                   <p className="text-muted-foreground">Your schedule is clear for the selected period.</p>
                 </CardContent>

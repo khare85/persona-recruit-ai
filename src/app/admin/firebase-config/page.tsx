@@ -16,21 +16,9 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import {
   Settings,
-  Shield,
-  Users,
-  Database,
-  Key,
-  Flag,
-  Code,
   Save,
   RefreshCw,
-  Plus,
-  Trash2,
-  Edit,
-  AlertTriangle,
-  CheckCircle,
-  Eye,
-  EyeOff
+  AlertTriangle
 } from 'lucide-react';
 import {
   Dialog,
@@ -95,7 +83,7 @@ interface FirebaseConfig {
 }
 
 // Prevent static generation to avoid SSR issues with client-only components
-export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 function FirebaseConfigPage() {
   const [config, setConfig] = useState<FirebaseConfig | null>(null);

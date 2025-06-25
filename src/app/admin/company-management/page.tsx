@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/config/firebase';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ import {
   Upload,
   Star,
   MapPin,
-  Calendar
+  CalendarDays
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -114,6 +115,19 @@ export default function AdminCompaniesPage() {
     founded: new Date().getFullYear()
   });
 
+  // Helper function to get Firebase ID token
+  const getAuthHeaders = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Not authenticated');
+    }
+    const idToken = await currentUser.getIdToken();
+    return {
+      'Authorization': `Bearer ${idToken}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
   // Redirect if not super admin
   useEffect(() => {
     if (!loading && (!user || user.role !== 'super_admin')) {
@@ -131,9 +145,11 @@ export default function AdminCompaniesPage() {
   const fetchCompanies = async () => {
     try {
       setIsLoading(true);
+      const headers = await getAuthHeaders();
+      
       const response = await fetch('/api/admin/companies', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Authorization': headers.Authorization,
         },
       });
 
@@ -171,12 +187,11 @@ export default function AdminCompaniesPage() {
   const handleCreateCompany = async () => {
     try {
       setIsAddingCompany(true);
+      const headers = await getAuthHeaders();
+      
       const response = await fetch('/api/admin/companies', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-        },
+        headers,
         body: JSON.stringify(newCompany),
       });
 
@@ -223,12 +238,10 @@ export default function AdminCompaniesPage() {
     if (!confirm('Are you sure you want to suspend this company?')) return;
     
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/admin/companies/${companyId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-        },
+        headers,
         body: JSON.stringify({ status: 'suspended' }),
       });
 
@@ -245,12 +258,10 @@ export default function AdminCompaniesPage() {
 
   const handleActivateCompany = async (companyId: string) => {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/admin/companies/${companyId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-        },
+        headers,
         body: JSON.stringify({ status: 'active' }),
       });
 
@@ -269,10 +280,11 @@ export default function AdminCompaniesPage() {
     if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) return;
     
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`/api/admin/companies/${companyId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Authorization': headers.Authorization,
         },
       });
 

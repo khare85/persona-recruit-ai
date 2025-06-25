@@ -1,12 +1,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import admin from 'firebase-admin';
 
-// JWT Secret for token verification
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('Server configuration error: JWT_SECRET is not configured. Please add JWT_SECRET to your environment variables.');
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+  const serviceAccount = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (serviceAccount) {
+    const serviceAccountObj = JSON.parse(serviceAccount);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccountObj)
+    });
+  } else {
+    // Use default credentials in production/deployment
+    admin.initializeApp();
+  }
 }
 
 export interface AuthenticatedUser {
@@ -21,16 +28,36 @@ export interface AuthenticatedRequest extends NextRequest {
 }
 
 /**
- * Verify JWT token and extract user information
+ * Verify Firebase ID token and extract user information
  */
-export function verifyToken(token: string): AuthenticatedUser | null {
+export async function verifyToken(token: string): Promise<AuthenticatedUser | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    
+    // Get user's custom claims (including role)
+    const userRecord = await admin.auth().getUser(decodedToken.uid);
+    const customClaims = userRecord.customClaims || {};
+    
+    // Also check Firestore for user role if not in custom claims
+    let role = customClaims.role;
+    let companyId = customClaims.companyId;
+    
+    if (!role) {
+      // Fallback to checking Firestore
+      const db = admin.firestore();
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        role = userData?.role || 'candidate';
+        companyId = userData?.companyId;
+      }
+    }
+    
     return {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
-      companyId: decoded.companyId
+      id: decodedToken.uid,
+      email: decodedToken.email || '',
+      role: role || 'candidate',
+      companyId: companyId
     };
   } catch (error) {
     console.error('Token verification failed:', error);
@@ -60,7 +87,7 @@ export function withAuth(
       }
 
       // Verify token and extract user
-      const user = verifyToken(token);
+      const user = await verifyToken(token);
       if (!user) {
         return NextResponse.json(
           { error: 'Invalid or expired token' },
@@ -129,43 +156,14 @@ export function withCompanyScope(
 }
 
 /**
- * Generate JWT token for user
+ * Set custom claims for a user (admin only)
  */
-export function generateToken(user: Omit<AuthenticatedUser, 'id'> & { id: string }): string {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: user.companyId
-    },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-}
-
-/**
- * Refresh token if it's about to expire
- */
-export function refreshTokenIfNeeded(token: string): string | null {
+export async function setUserClaims(uid: string, claims: { role?: string; companyId?: string }) {
   try {
-    const decoded = jwt.decode(token) as any;
-    const now = Math.floor(Date.now() / 1000);
-    const timeUntilExpiry = decoded.exp - now;
-
-    // Refresh if token expires within 1 hour
-    if (timeUntilExpiry < 3600) {
-      return generateToken({
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role,
-        companyId: decoded.companyId
-      });
-    }
-
-    return null; // No refresh needed
+    await admin.auth().setCustomUserClaims(uid, claims);
+    return true;
   } catch (error) {
-    console.error('Token refresh check failed:', error);
-    return null;
+    console.error('Failed to set custom claims:', error);
+    return false;
   }
 }

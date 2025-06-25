@@ -22,7 +22,7 @@ const updateCompanySchema = z.object({
 /**
  * GET /api/admin/companies/[id] - Get company details
  */
-export const GET = withRateLimit('standard',
+export const GET = withRateLimit('api',
   withAuth(
     withRole(['super_admin'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
       try {
@@ -80,7 +80,7 @@ export const GET = withRateLimit('standard',
 /**
  * PATCH /api/admin/companies/[id] - Update company (partial update)
  */
-export const PATCH = withRateLimit('update',
+export const PATCH = withRateLimit('api',
   withAuth(
     withRole(['super_admin'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
       try {
@@ -139,7 +139,7 @@ export const PATCH = withRateLimit('update',
 /**
  * PUT /api/admin/companies/[id] - Update company (full update)
  */
-export const PUT = withRateLimit('update',
+export const PUT = withRateLimit('api',
   withAuth(
     withRole(['super_admin'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
       try {
@@ -198,7 +198,7 @@ export const PUT = withRateLimit('update',
 /**
  * DELETE /api/admin/companies/[id] - Delete company
  */
-export const DELETE = withRateLimit('delete',
+export const DELETE = withRateLimit('api',
   withAuth(
     withRole(['super_admin'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
       try {

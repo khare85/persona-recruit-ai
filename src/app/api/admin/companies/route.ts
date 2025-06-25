@@ -23,7 +23,7 @@ const updateCompanySchema = createCompanySchema.partial();
 /**
  * GET /api/admin/companies - Get all companies
  */
-export const GET = withRateLimit('standard', 
+export const GET = withRateLimit('api', 
   withAuth(
     withRole(['super_admin'], async (req: NextRequest): Promise<NextResponse> => {
       try {
@@ -92,7 +92,7 @@ export const GET = withRateLimit('standard',
 /**
  * POST /api/admin/companies - Create new company
  */
-export const POST = withRateLimit('create',
+export const POST = withRateLimit('api',
   withAuth(
     withRole(['super_admin'], async (req: NextRequest): Promise<NextResponse> => {
       try {

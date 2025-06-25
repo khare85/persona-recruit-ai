@@ -1,3 +1,4 @@
+
 const admin = require('firebase-admin');
 require('dotenv').config({ path: '.env.local' });
 
@@ -24,7 +25,8 @@ const users = [
     password: 'recruiter123',
     firstName: 'Tech',
     lastName: 'Recruiter',
-    role: 'recruiter'
+    role: 'recruiter',
+    companyId: null // Will be assigned later
   },
   {
     email: 'candidate@example.com',
@@ -56,6 +58,14 @@ async function setupUsers() {
         console.log(`✓ Created user ${userData.email} in Firebase Auth (${userRecord.uid})`);
       }
       
+      // Set custom claims for role
+      const customClaims = { role: userData.role };
+      if (userData.companyId) {
+        customClaims.companyId = userData.companyId;
+      }
+      await admin.auth().setCustomUserClaims(userRecord.uid, customClaims);
+      console.log(`✓ Set custom claims for ${userData.email}:`, customClaims);
+
       // Check if user exists in Firestore
       const userDoc = await db.collection('users').doc(userRecord.uid).get();
       

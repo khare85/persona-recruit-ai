@@ -47,12 +47,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (firebaseUser) {
         try {
           const idTokenResult = await firebaseUser.getIdTokenResult(true); // Force refresh
-          const role = (idTokenResult.claims.role as UserRole) || 'candidate';
+          let role = (idTokenResult.claims.role as UserRole);
           const companyId = (idTokenResult.claims.companyId as string) || undefined;
           
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           const userData = userDoc.data();
           const fullName = userData?.fullName || `${userData?.firstName} ${userData?.lastName}` || firebaseUser.displayName || '';
+
+          // If role is not in claims, try to get it from Firestore as a fallback.
+          // This makes the system more resilient to claim propagation delays.
+          if (!role && userData?.role) {
+            role = userData.role;
+          } else if (!role) {
+            role = 'candidate'; // Default if not found anywhere
+          }
 
           setUser({
             ...firebaseUser,
@@ -77,7 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const getToken = async (): Promise<string | null> => {
     if (auth.currentUser) {
-      return auth.currentUser.getIdToken();
+      return auth.currentUser.getIdToken(true); // Force refresh
     }
     return null;
   };
@@ -111,7 +119,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // in Firestore and set their custom claims for their role.
       // This is more secure than relying on a client-side call after signup.
       // For this project, we're assuming this trigger exists to set the role.
-      // The `onAuthStateChanged` listener will then pick up the role from the token claims.
 
       // Send verification email
       // await sendEmailVerification(firebaseUser);
@@ -131,7 +138,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await firebaseSignOut(auth);
       // User state will be cleared by onAuthStateChanged
-      router.push('/auth/login');
+      router.push('/auth');
       toast({ title: "Signed Out", description: "You have been successfully signed out." });
     } catch (error) {
       const authError = error as AuthError;

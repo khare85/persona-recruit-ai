@@ -179,7 +179,12 @@ class DatabaseService {
         }
       }
 
-      // 2. Create user document in Firestore (for custom login and roles)
+      // 2. Set custom claims for role-based access
+      const customClaims = { role: userData.role, companyId: userData.companyId };
+      await admin.auth().setCustomUserClaims(authUser.uid, customClaims);
+      dbLogger.info('Custom claims set for user', { uid: authUser.uid, claims: customClaims });
+
+      // 3. Create user document in Firestore (for custom login and roles)
       const passwordHash = await bcrypt.hash(plainPassword, 12);
       
       const userFirestoreData = {

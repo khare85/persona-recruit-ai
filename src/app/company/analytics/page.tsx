@@ -90,7 +90,11 @@ export default function CompanyAnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('/api/company/analytics');
+      const response = await fetch('/api/company/analytics', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data.analytics);
@@ -108,9 +112,8 @@ export default function CompanyAnalyticsPage() {
     if (!analytics) return;
     
     const exportData = {
-      overview: analytics.overview,
-      exportedAt: new Date().toISOString(),
-      period: selectedPeriod
+      ...analytics,
+      exportedAt: new Date().toISOString()
     };
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });

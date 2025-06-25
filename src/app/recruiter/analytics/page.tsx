@@ -8,19 +8,40 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  BarChart3, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
+import { 
   TrendingUp, 
-  Clock, 
   Users, 
   Briefcase, 
-  Calendar,
-  Target,
-  Award,
-  Activity,
+  CalendarDays,
+  UserCheck,
+  Building,
+  Filter,
   Download,
-  RefreshCw,
-  Filter
+  Loader2,
+  AlertCircle,
+  Star,
+  Clock,
+  CheckCircle,
+  XCircle,
+  BarChart3,
+  Activity,
+  RefreshCw
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface RecruiterMetrics {
   totalApplications: number;
@@ -64,6 +85,7 @@ export default function RecruiterAnalyticsPage() {
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
   const [sourceMetrics, setSourceMetrics] = useState<SourceMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('last-3-months');
 
   useEffect(() => {
@@ -72,74 +94,28 @@ export default function RecruiterAnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch(`/api/recruiter/analytics?timeRange=${timeRange}`);
+      const token = localStorage.getItem('auth-token');
+      if (!token) {
+        setError('User not authenticated. Please log in.');
+        setIsLoading(false);
+        return;
+      }
+      const response = await fetch(`/api/recruiter/analytics?timeRange=${timeRange}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const result = await response.json();
         setMetrics(result.data.metrics);
         setJobPerformance(result.data.jobPerformance);
         setMonthlyTrends(result.data.monthlyTrends);
         setSourceMetrics(result.data.sourceMetrics);
+      } else {
+        setError('Failed to load analytics data');
       }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
-      // Mock data for demonstration
-      setMetrics({
-        totalApplications: 247,
-        activeJobs: 8,
-        hireRate: 15.2,
-        avgTimeToHire: 18,
-        interviewConversionRate: 32.5,
-        totalHires: 12,
-        applicationsThisMonth: 89,
-        hiresThisMonth: 4
-      });
-
-      setJobPerformance([
-        {
-          id: '1',
-          title: 'Senior Frontend Developer',
-          applications: 89,
-          views: 1247,
-          hires: 1,
-          conversionRate: 1.1,
-          avgTimeToFill: 24,
-          status: 'active'
-        },
-        {
-          id: '2',
-          title: 'Product Manager',
-          applications: 67,
-          views: 892,
-          hires: 1,
-          conversionRate: 1.5,
-          avgTimeToFill: 15,
-          status: 'filled'
-        },
-        {
-          id: '3',
-          title: 'Data Scientist',
-          applications: 91,
-          views: 1156,
-          hires: 2,
-          conversionRate: 2.2,
-          avgTimeToFill: 12,
-          status: 'active'
-        }
-      ]);
-
-      setMonthlyTrends([
-        { month: 'Apr 2024', applications: 78, interviews: 24, hires: 3 },
-        { month: 'May 2024', applications: 92, interviews: 28, hires: 5 },
-        { month: 'Jun 2024', applications: 89, interviews: 31, hires: 4 }
-      ]);
-
-      setSourceMetrics([
-        { source: 'LinkedIn', applications: 98, hires: 6, conversionRate: 6.1 },
-        { source: 'Indeed', applications: 67, hires: 3, conversionRate: 4.5 },
-        { source: 'Company Website', applications: 45, hires: 2, conversionRate: 4.4 },
-        { source: 'Referrals', applications: 23, hires: 1, conversionRate: 4.3 },
-        { source: 'Other', applications: 14, hires: 0, conversionRate: 0 }
-      ]);
+      setError('An error occurred while loading analytics');
     } finally {
       setIsLoading(false);
     }
@@ -397,7 +373,7 @@ export default function RecruiterAnalyticsPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span>Applications</span>
-                      <span className="font-bold">{metrics?.totalApplications || 0}</span>
+                      <span className="font-semibold">{metrics?.totalApplications || 0}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div className="bg-primary h-2 rounded-full" style={{ width: '100%' }}></div>
@@ -405,7 +381,7 @@ export default function RecruiterAnalyticsPage() {
                     
                     <div className="flex justify-between items-center">
                       <span>Interviews</span>
-                      <span className="font-bold">{Math.round((metrics?.totalApplications || 0) * 0.3)}</span>
+                      <span className="font-semibold">{Math.round((metrics?.totalApplications || 0) * 0.3)}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div className="bg-blue-600 h-2 rounded-full" style={{ width: '30%' }}></div>
@@ -413,7 +389,7 @@ export default function RecruiterAnalyticsPage() {
                     
                     <div className="flex justify-between items-center">
                       <span>Offers</span>
-                      <span className="font-bold">{Math.round((metrics?.totalApplications || 0) * 0.18)}</span>
+                      <span className="font-semibold">{Math.round((metrics?.totalApplications || 0) * 0.18)}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div className="bg-green-600 h-2 rounded-full" style={{ width: '18%' }}></div>

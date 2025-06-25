@@ -81,7 +81,17 @@ export default function RecruiterJobsPage() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch('/api/recruiter/jobs');
+      const token = localStorage.getItem('auth-token');
+      if (!token) {
+        console.error('No auth token found');
+        setIsLoading(false);
+        return;
+      }
+      const response = await fetch('/api/recruiter/jobs', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const result = await response.json();
         setJobs(result.data.jobs || []);
@@ -89,70 +99,6 @@ export default function RecruiterJobsPage() {
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
-      // Mock data for demonstration
-      const mockJobs: Job[] = [
-        {
-          id: '1',
-          title: 'Senior Frontend Developer',
-          department: 'Engineering',
-          location: 'San Francisco, CA',
-          employmentType: 'Full-time',
-          salaryRange: '$120,000 - $160,000',
-          status: 'active',
-          applications: 89,
-          views: 1247,
-          hires: 0,
-          postedAt: '2024-06-15T10:00:00Z',
-          deadline: '2024-07-15T23:59:59Z',
-          description: 'We are looking for a Senior Frontend Developer to join our growing engineering team...',
-          requirements: ['5+ years React experience', 'TypeScript proficiency', 'GraphQL knowledge'],
-          benefits: ['Health insurance', 'Remote work', 'Stock options']
-        },
-        {
-          id: '2',
-          title: 'Product Manager',
-          department: 'Product',
-          location: 'Remote',
-          employmentType: 'Full-time',
-          salaryRange: '$110,000 - $140,000',
-          status: 'active',
-          applications: 67,
-          views: 892,
-          hires: 1,
-          postedAt: '2024-06-10T09:00:00Z',
-          deadline: '2024-07-10T23:59:59Z',
-          description: 'Join our product team to help shape the future of our platform...',
-          requirements: ['3+ years product management', 'Analytics experience', 'User research skills'],
-          benefits: ['Health insurance', 'Flexible hours', 'Learning budget']
-        },
-        {
-          id: '3',
-          title: 'Data Scientist',
-          department: 'Engineering',
-          location: 'Seattle, WA',
-          employmentType: 'Full-time',
-          salaryRange: '$130,000 - $170,000',
-          status: 'paused',
-          applications: 91,
-          views: 1156,
-          hires: 0,
-          postedAt: '2024-06-05T11:00:00Z',
-          description: 'We need a Data Scientist to help us make data-driven decisions...',
-          requirements: ['PhD or Masters in related field', 'Python/R proficiency', 'ML experience'],
-          benefits: ['Health insurance', 'Research time', 'Conference budget']
-        }
-      ];
-      setJobs(mockJobs);
-      setStats({
-        total: 3,
-        active: 2,
-        paused: 1,
-        closed: 0,
-        draft: 0,
-        totalApplications: 247,
-        totalViews: 3295,
-        totalHires: 1
-      });
     } finally {
       setIsLoading(false);
     }

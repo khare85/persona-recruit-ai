@@ -29,7 +29,19 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('/api/admin/dashboard');
+        const token = localStorage.getItem('auth-token');
+        if (!token) {
+          setError('User not authenticated. Please log in.');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/admin/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard data');
         }

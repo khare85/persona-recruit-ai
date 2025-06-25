@@ -1,667 +1,326 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import { Container } from '@/components/shared/Container';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart
-} from 'recharts';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Building, 
-  Briefcase, 
-  DollarSign,
-  Activity,
-  Clock,
-  Target,
-  ArrowUpRight,
-  ArrowDownRight,
-  Download,
-  CalendarDays,
-  Globe,
-  Zap,
-  MessageSquare,
-  Loader2,
-  AlertCircle,
-  Building2,
-  UserCheck,
-  Award
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AIPerformanceDashboard, AnalyticsFilters } from '@/types/analytics.types';
+import { PerformanceOverview } from '@/components/ai-analytics/PerformanceOverview';
+import { BiasMonitoring } from '@/components/ai-analytics/BiasMonitoring'; // Corrected import path
+import { FairnessMetrics } from '@/components/ai-analytics/FairnessMetrics'; // Corrected import path
+import { AlertsPanel } from '@/components/ai-analytics/AlertsPanel'; // Corrected import path
+import { ExportControls } from '@/components/ai-analytics/ExportControls'; // Corrected import path
+import { TimeRangeSelector } from '@/components/ai-analytics/TimeRangeSelector';
+import { AlertTriangle, Activity, Shield, TrendingUp, Download, RefreshCw } from 'lucide-react';
 
-interface SystemAnalytics {
-  overview: {
-    totalCompanies: number;
-    activeCompanies: number;
-    totalUsers: number;
-    candidateCount: number;
-    recruiterCount: number;
-    totalJobs: number;
-    activeJobs: number;
-    totalApplications: number;
-    totalInterviews: number;
-    totalHires: number;
-  };
-  monthlyRegistrations: Array<{ month: string; count: number }>;
-  topCompanies: Array<{
-    id: string;
-    name: string;
-    jobs: number;
-    applications: number;
-    activity: number;
-  }>;
-  platformGrowth: {
-    companiesGrowthRate: number;
-    usersGrowthRate: number;
-    applicationsGrowthRate: number;
-  };
-}
-
-export default function AdminAnalyticsPage() {
-  const [analytics, setAnalytics] = useState<SystemAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function AIAnalyticsPage() {
+  const [dashboardData, setDashboardData] = useState<AIPerformanceDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<AnalyticsFilters>({
+    timeRange: {
+      start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      end: new Date(),
+      preset: '7d'
+    }
+  });
+  const [activeTab, setActiveTab] = useState('overview');
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/admin/analytics', {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        startDate: filters.timeRange.start.toISOString(),
+        endDate: filters.timeRange.end.toISOString(),
+        ...(filters.operationTypes && { operationTypes: filters.operationTypes.join(',') }),
+        ...(filters.companyIds && { companyIds: filters.companyIds.join(',') }),
+        ...(filters.models && { models: filters.models.join(',') }),
+        ...(filters.severityLevels && { severityLevels: filters.severityLevels.join(',') }),
+        ...(filters.biasTypes && { biasTypes: filters.biasTypes.join(',') }),
+        ...(filters.successOnly && { successOnly: 'true' }),
+        ...(filters.withDemographics && { withDemographics: 'true' })
+      });
+
+      const response = await fetch(`/api/ai-analytics/dashboard?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
         },
       });
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data.analytics);
-      } else {
-        setError('Failed to load system analytics');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dashboard data: ${response.status}`);
       }
-    } catch (error) {
-      setError('An error occurred while loading analytics');
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setDashboardData(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to fetch dashboard data');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const exportData = () => {
-    if (!analytics) return;
-    
-    const exportData = {
-      ...analytics,
-      exportedAt: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `system-analytics-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  // Auto-refresh effect
+  useEffect(() => {
+    fetchDashboardData();
+  }, [filters]);
 
-  const getGrowthIcon = (growth: number) => {
-    if (growth > 0) {
-      return <ArrowUpRight className="h-4 w-4 text-green-600" />;
-    } else if (growth < 0) {
-      return <ArrowDownRight className="h-4 w-4 text-red-600" />;
-    } else {
-      return <div className="h-4 w-4" />;
+  useEffect(() => {
+    if (autoRefresh) {
+      const interval = setInterval(fetchDashboardData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
     }
+  }, [autoRefresh, filters]);
+
+  // Handle time range changes
+  const handleTimeRangeChange = (newTimeRange: AnalyticsFilters['timeRange']) => {
+    setFilters(prev => ({
+      ...prev,
+      timeRange: newTimeRange
+    }));
   };
 
-  const getGrowthColor = (growth: number) => {
-    if (growth > 0) return 'text-green-600';
-    if (growth < 0) return 'text-red-600';
-    return 'text-gray-600';
+  // Handle filter changes
+  const handleFilterChange = (key: keyof AnalyticsFilters, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
-  if (isLoading) {
+  if (loading && !dashboardData) {
     return (
-      <AdminLayout>
-        <Container className="py-8">
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p>Loading system analytics...</p>
-            </div>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            <span>Loading AI Analytics Dashboard...</span>
           </div>
-        </Container>
-      </AdminLayout>
+        </div>
+      </div>
     );
   }
 
-  if (!analytics) {
+  if (error) {
     return (
-      <AdminLayout>
-        <Container className="py-8">
-          <div className="min-h-screen flex items-center justify-center">
-            <Alert className="max-w-md">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error || 'No analytics data available'}
-              </AlertDescription>
-            </Alert>
-          </div>
-        </Container>
-      </AdminLayout>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error Loading Dashboard</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={fetchDashboardData} className="mt-4">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <Container className="py-8">
-        <div className="mb-8">
-          <div className="flex justify-between items-start">
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">AI Analytics & Bias Monitoring</h1>
+          <p className="text-muted-foreground">
+            Real-time performance monitoring and fairness analytics for AI operations
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={autoRefresh ? 'bg-green-50 border-green-200' : ''}
+          >
+            <Activity className={`h-4 w-4 mr-2 ${autoRefresh ? 'text-green-600' : ''}`} />
+            Auto Refresh {autoRefresh ? 'On' : 'Off'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchDashboardData} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <ExportControls filters={filters} />
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2" />
+            Filters & Time Range
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <TimeRangeSelector
+              timeRange={filters.timeRange}
+              onChange={handleTimeRangeChange}
+            />
+            
             <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center">
-                <BarChart3 className="mr-3 h-8 w-8 text-primary" />
-                System Analytics
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Platform-wide metrics and insights
-              </p>
+              <label className="text-sm font-medium mb-2 block">Operation Types</label>
+              <Select
+                value={filters.operationTypes?.join(',') || ''}
+                onValueChange={(value) => handleFilterChange('operationTypes', value ? value.split(',') : undefined)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Operations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Operations</SelectItem>
+                  <SelectItem value="resume_processing">Resume Processing</SelectItem>
+                  <SelectItem value="candidate_matching">Candidate Matching</SelectItem>
+                  <SelectItem value="job_generation">Job Generation</SelectItem>
+                  <SelectItem value="skill_extraction">Skill Extraction</SelectItem>
+                  <SelectItem value="interview_analysis">Interview Analysis</SelectItem>
+                  <SelectItem value="talent_search">Talent Search</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                Refresh
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportData}>
-                <Download className="mr-2 h-4 w-4" />
-                Export Data
-              </Button>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Models</label>
+              <Select
+                value={filters.models?.join(',') || ''}
+                onValueChange={(value) => handleFilterChange('models', value ? value.split(',') : undefined)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Models" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Models</SelectItem>
+                  <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+                  <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
+                  <SelectItem value="text-embedding-005">Text Embedding 005</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Bias Types</label>
+              <Select
+                value={filters.biasTypes?.join(',') || ''}
+                onValueChange={(value) => handleFilterChange('biasTypes', value ? value.split(',') : undefined)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Bias Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="gender_bias">Gender Bias</SelectItem>
+                  <SelectItem value="age_bias">Age Bias</SelectItem>
+                  <SelectItem value="racial_bias">Racial Bias</SelectItem>
+                  <SelectItem value="education_bias">Education Bias</SelectItem>
+                  <SelectItem value="location_bias">Location Bias</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Companies</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.overview.totalCompanies}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+{analytics.platformGrowth.companiesGrowthRate}%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+      {/* Critical Alerts Banner */}
+      {dashboardData?.activeAlerts?.filter(alert => alert.severity === 'critical').length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Critical Issues Detected</AlertTitle>
+          <AlertDescription>
+            {dashboardData.activeAlerts.filter(alert => alert.severity === 'critical').length} critical issues require immediate attention.
+            Check the Alerts tab for details.
+          </AlertDescription>
+        </Alert>
+      )}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.overview.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+{analytics.platformGrowth.usersGrowthRate}%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+      {/* Main Dashboard */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center">
+            <Activity className="h-4 w-4 mr-2" />
+            Performance
+          </TabsTrigger>
+          <TabsTrigger value="bias" className="flex items-center">
+            <Shield className="h-4 w-4 mr-2" />
+            Bias Monitoring
+          </TabsTrigger>
+          <TabsTrigger value="fairness" className="flex items-center">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Fairness Metrics
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Alerts
+            {dashboardData?.activeAlerts?.filter(alert => !alert.acknowledged).length > 0 && (
+              <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
+                {dashboardData.activeAlerts.filter(alert => !alert.acknowledged).length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Job Postings</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.overview.totalJobs}</div>
-              <p className="text-xs text-muted-foreground">
-                {analytics.overview.activeJobs} currently active
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="overview" className="space-y-4">
+          <PerformanceOverview 
+            data={dashboardData} 
+            loading={loading}
+            onRefresh={fetchDashboardData}
+          />
+        </TabsContent>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Applications</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.overview.totalApplications}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+{analytics.platformGrowth.applicationsGrowthRate}%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="bias" className="space-y-4">
+          <BiasMonitoring 
+            data={dashboardData} 
+            filters={filters}
+            loading={loading}
+            onRefresh={fetchDashboardData}
+          />
+        </TabsContent>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Successful Hires</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analytics.overview.totalHires}</div>
-              <p className="text-xs text-muted-foreground">
-                {analytics.overview.totalApplications > 0 
-                  ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
-                  : 0}% success rate
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <TabsContent value="fairness" className="space-y-4">
+          <FairnessMetrics 
+            data={dashboardData} 
+            filters={filters}
+            loading={loading}
+            onRefresh={fetchDashboardData}
+          />
+        </TabsContent>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="growth">Growth</TabsTrigger>
-            <TabsTrigger value="companies">Companies</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-          </TabsList>
+        <TabsContent value="alerts" className="space-y-4">
+          <AlertsPanel 
+            alerts={dashboardData?.activeAlerts || []} 
+            loading={loading}
+            onRefresh={fetchDashboardData}
+          />
+        </TabsContent>
+      </Tabs>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* User Registration Trends */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Registration Trends</CardTitle>
-                  <CardDescription>Monthly user registration over the last 12 months</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={analytics.monthlyRegistrations}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="count" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* User Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Distribution</CardTitle>
-                  <CardDescription>Breakdown of users by role</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span>Candidates</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{analytics.overview.candidateCount}</span>
-                        <span className="text-sm text-gray-500">
-                          ({Math.round((analytics.overview.candidateCount / analytics.overview.totalUsers) * 100)}%)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full" 
-                        style={{ width: `${(analytics.overview.candidateCount / analytics.overview.totalUsers) * 100}%` }}
-                      ></div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span>Recruiters</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{analytics.overview.recruiterCount}</span>
-                        <span className="text-sm text-gray-500">
-                          ({Math.round((analytics.overview.recruiterCount / analytics.overview.totalUsers) * 100)}%)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full" 
-                        style={{ width: `${(analytics.overview.recruiterCount / analytics.overview.totalUsers) * 100}%` }}
-                      ></div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                        <span>Others</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">
-                          {analytics.overview.totalUsers - analytics.overview.candidateCount - analytics.overview.recruiterCount}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          ({Math.round(((analytics.overview.totalUsers - analytics.overview.candidateCount - analytics.overview.recruiterCount) / analytics.overview.totalUsers) * 100)}%)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-purple-500 h-2 rounded-full" 
-                        style={{ 
-                          width: `${((analytics.overview.totalUsers - analytics.overview.candidateCount - analytics.overview.recruiterCount) / analytics.overview.totalUsers) * 100}%` 
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Footer */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div>
+              Last updated: {dashboardData ? new Date().toLocaleString() : 'Never'}
             </div>
-
-            {/* Platform Health */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-green-500" />
-                    Platform Health
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Active Companies</span>
-                      <span className="font-semibold">
-                        {Math.round((analytics.overview.activeCompanies / analytics.overview.totalCompanies) * 100)}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Active Jobs</span>
-                      <span className="font-semibold">
-                        {Math.round((analytics.overview.activeJobs / analytics.overview.totalJobs) * 100)}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Interview Rate</span>
-                      <span className="font-semibold">
-                        {analytics.overview.totalApplications > 0 
-                          ? Math.round((analytics.overview.totalInterviews / analytics.overview.totalApplications) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CalendarDays className="h-5 w-5 text-blue-500" />
-                    Activity Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Total Interviews</span>
-                      <span className="font-semibold">{analytics.overview.totalInterviews}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Applications</span>
-                      <span className="font-semibold">{analytics.overview.totalApplications}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Total Hires</span>
-                      <span className="font-semibold">{analytics.overview.totalHires}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-yellow-500" />
-                    Success Metrics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Hire Success Rate</span>
-                      <span className="font-semibold">
-                        {analytics.overview.totalApplications > 0 
-                          ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Avg. Applications/Job</span>
-                      <span className="font-semibold">
-                        {analytics.overview.totalJobs > 0 
-                          ? Math.round(analytics.overview.totalApplications / analytics.overview.totalJobs)
-                          : 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Platform Status</span>
-                      <span className="font-semibold text-green-600">Healthy</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex items-center space-x-4">
+              <span>Auto-refresh: {autoRefresh ? 'Enabled (30s)' : 'Disabled'}</span>
+              <span>Time range: {filters.timeRange.preset || 'Custom'}</span>
             </div>
-          </TabsContent>
-
-          <TabsContent value="growth" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Growth Metrics</CardTitle>
-                <CardDescription>Month-over-month growth across key metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-6 bg-green-50 rounded-lg">
-                    <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-green-600">+{analytics.platformGrowth.companiesGrowthRate}%</div>
-                    <p className="text-sm text-green-700">Company Growth</p>
-                  </div>
-                  <div className="text-center p-6 bg-blue-50 rounded-lg">
-                    <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-blue-600">+{analytics.platformGrowth.usersGrowthRate}%</div>
-                    <p className="text-sm text-blue-700">User Growth</p>
-                  </div>
-                  <div className="text-center p-6 bg-purple-50 rounded-lg">
-                    <Activity className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-purple-600">+{analytics.platformGrowth.applicationsGrowthRate}%</div>
-                    <p className="text-sm text-purple-700">Application Growth</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>User Registration Breakdown</CardTitle>
-                <CardDescription>Detailed monthly registration data</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={analytics.monthlyRegistrations}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="companies" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Active Companies</CardTitle>
-                <CardDescription>Companies ranked by activity (jobs posted + applications received)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {analytics.topCompanies.length > 0 ? (
-                  <div className="space-y-4">
-                    {analytics.topCompanies.map((company, index) => (
-                      <div key={company.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-semibold">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{company.name}</h4>
-                            <p className="text-sm text-gray-600">
-                              {company.jobs} jobs • {company.applications} applications
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">
-                          {company.activity} total activity
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No company data available yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="performance" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform Efficiency</CardTitle>
-                  <CardDescription>Key performance indicators</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Overall Hire Rate</span>
-                        <span>{analytics.overview.totalApplications > 0 
-                          ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
-                          : 0}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
-                          style={{ 
-                            width: `${analytics.overview.totalApplications > 0 
-                              ? (analytics.overview.totalHires / analytics.overview.totalApplications) * 100
-                              : 0}%` 
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Interview Conversion</span>
-                        <span>{analytics.overview.totalApplications > 0 
-                          ? Math.round((analytics.overview.totalInterviews / analytics.overview.totalApplications) * 100)
-                          : 0}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ 
-                            width: `${analytics.overview.totalApplications > 0 
-                              ? (analytics.overview.totalInterviews / analytics.overview.totalApplications) * 100
-                              : 0}%` 
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Company Activation</span>
-                        <span>{analytics.overview.totalCompanies > 0 
-                          ? Math.round((analytics.overview.activeCompanies / analytics.overview.totalCompanies) * 100)
-                          : 0}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-purple-600 h-2 rounded-full" 
-                          style={{ 
-                            width: `${analytics.overview.totalCompanies > 0 
-                              ? (analytics.overview.activeCompanies / analytics.overview.totalCompanies) * 100
-                              : 0}%` 
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resource Utilization</CardTitle>
-                  <CardDescription>How platform resources are being used</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span>Jobs per Company</span>
-                      <span className="font-semibold">
-                        {analytics.overview.totalCompanies > 0 
-                          ? Math.round(analytics.overview.totalJobs / analytics.overview.totalCompanies)
-                          : 0}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span>Applications per Job</span>
-                      <span className="font-semibold">
-                        {analytics.overview.totalJobs > 0 
-                          ? Math.round(analytics.overview.totalApplications / analytics.overview.totalJobs)
-                          : 0}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span>Recruiters per Company</span>
-                      <span className="font-semibold">
-                        {analytics.overview.totalCompanies > 0 
-                          ? Math.round(analytics.overview.recruiterCount / analytics.overview.totalCompanies)
-                          : 0}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span>Success Rate</span>
-                      <span className="font-semibold text-green-600">
-                        {analytics.overview.totalApplications > 0 
-                          ? Math.round((analytics.overview.totalHires / analytics.overview.totalApplications) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </Container>
-    </AdminLayout>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

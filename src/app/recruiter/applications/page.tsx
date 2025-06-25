@@ -74,7 +74,17 @@ export default function RecruiterApplicationsPage() {
 
   const fetchApplications = async () => {
     try {
-      const response = await fetch('/api/recruiter/applications');
+      const token = localStorage.getItem('auth-token');
+      if (!token) {
+        console.error('No auth token found');
+        setIsLoading(false);
+        return;
+      }
+      const response = await fetch('/api/recruiter/applications', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const result = await response.json();
         setApplications(result.data.applications || []);
@@ -82,63 +92,6 @@ export default function RecruiterApplicationsPage() {
       }
     } catch (error) {
       console.error('Error fetching applications:', error);
-      // Use mock data for now
-      const mockApplications: Application[] = [
-        {
-          id: '1',
-          candidateName: 'John Smith',
-          candidateEmail: 'john.smith@email.com',
-          jobTitle: 'Senior Frontend Developer',
-          jobId: 'job_1',
-          department: 'Engineering',
-          appliedAt: '2024-06-20T10:30:00Z',
-          status: 'pending',
-          aiScore: 92,
-          experience: '5+ years',
-          location: 'San Francisco, CA',
-          resumeUrl: '/resumes/john-smith.pdf',
-          lastActivity: '2024-06-20T10:30:00Z'
-        },
-        {
-          id: '2',
-          candidateName: 'Sarah Johnson',
-          candidateEmail: 'sarah.j@email.com',
-          jobTitle: 'Product Manager',
-          jobId: 'job_2',
-          department: 'Product',
-          appliedAt: '2024-06-19T14:15:00Z',
-          status: 'reviewed',
-          aiScore: 88,
-          experience: '3+ years',
-          location: 'New York, NY',
-          resumeUrl: '/resumes/sarah-johnson.pdf',
-          lastActivity: '2024-06-21T09:45:00Z'
-        },
-        {
-          id: '3',
-          candidateName: 'Mike Chen',
-          candidateEmail: 'mike.chen@email.com',
-          jobTitle: 'Data Scientist',
-          jobId: 'job_3',
-          department: 'Engineering',
-          appliedAt: '2024-06-18T16:20:00Z',
-          status: 'interviewed',
-          aiScore: 95,
-          experience: '4+ years',
-          location: 'Seattle, WA',
-          resumeUrl: '/resumes/mike-chen.pdf',
-          lastActivity: '2024-06-22T11:30:00Z'
-        }
-      ];
-      setApplications(mockApplications);
-      setStats({
-        total: 3,
-        pending: 1,
-        reviewed: 1,
-        interviewed: 1,
-        hired: 0,
-        rejected: 0
-      });
     } finally {
       setIsLoading(false);
     }

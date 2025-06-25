@@ -29,7 +29,26 @@ export default function ProtectedRoute({
       if (requiredRole) {
         const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
         if (user.role && !allowedRoles.includes(user.role)) {
-          router.push('/dashboard');
+          // Redirect user to their own dashboard if they access a forbidden page
+          let redirectPath = '/login'; // Default redirect
+          switch (user.role) {
+            case 'super_admin':
+              redirectPath = '/admin/dashboard';
+              break;
+            case 'company_admin':
+              redirectPath = '/company/dashboard';
+              break;
+            case 'recruiter':
+              redirectPath = '/recruiter/dashboard';
+              break;
+            case 'candidate':
+              redirectPath = '/candidates/dashboard';
+              break;
+            case 'interviewer':
+              redirectPath = '/interviewer/dashboard';
+              break;
+          }
+          router.push(redirectPath);
           return;
         }
       }

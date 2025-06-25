@@ -641,9 +641,22 @@ class AIAnalyticsService {
     return [];
   }
 
-  private async getActiveAlerts(companyIds?: string[]): Promise<any[]> {
+  async getActiveAlerts(filters?: any): Promise<any[]> {
     // Implementation for active alerts
     return [];
+  }
+
+  async createAlert(alertData: any): Promise<string> {
+    // Implementation for creating alerts
+    return 'alert-id';
+  }
+
+  async updateAlertAcknowledgment(alertId: string, userId: string): Promise<void> {
+    // Implementation for acknowledging alerts
+  }
+
+  async deleteAlert(alertId: string, userId: string): Promise<void> {
+    // Implementation for deleting alerts
   }
 }
 

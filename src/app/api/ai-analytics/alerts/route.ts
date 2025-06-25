@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { aiAnalyticsService } from '@/services/aiAnalytics.service';
 import { dbLogger } from '@/lib/logger';
 import { verifyUserRole } from '@/utils/auth';
-import { getActiveAlerts, createAlert, updateAlertAcknowledgment, deleteAlert } from '@/services/aiAnalytics.service';
 /**
  * GET /api/ai-analytics/alerts
  * Retrieve active alerts for performance and bias monitoring
@@ -28,7 +27,7 @@ export async function GET(request: NextRequest) {
       offset: parseInt(searchParams.get('offset') || '0')
     };
 
-    const alerts = await getActiveAlerts(filters);
+    const alerts = await aiAnalyticsService.getActiveAlerts(filters);
 
     dbLogger.info('AI analytics alerts retrieved via API', {
       userId: userInfo.user.id,
@@ -93,7 +92,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const alertId = await createAlert({
+    const alertId = await aiAnalyticsService.createAlert({
       type,
       severity,
       message,

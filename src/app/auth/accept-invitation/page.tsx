@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
@@ -38,7 +39,7 @@ function AcceptInvitationContent() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,35 +60,35 @@ function AcceptInvitationContent() {
       return;
     }
 
+    const validateInvitation = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/auth/accept-invitation?token=${token}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Invalid invitation');
+        }
+
+        const result = await response.json();
+        setInvitation(result.data.invitation);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to validate invitation');
+        setInvitation(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     validateInvitation();
   }, [token]);
-
-  const validateInvitation = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/auth/accept-invitation?token=${token}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Invalid invitation');
-      }
-
-      const result = await response.json();
-      setInvitation(result.data.invitation);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to validate invitation');
-      setInvitation(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAcceptInvitation = async (data: AcceptInvitationFormData) => {
     if (!token) return;
 
     try {
-      setIsValidating(true);
+      setIsAccepting(true);
       const response = await fetch('/api/auth/accept-invitation', {
         method: 'POST',
         headers: {
@@ -107,9 +108,8 @@ function AcceptInvitationContent() {
 
       const result = await response.json();
       
-      // TODO: Store auth token and user data
-      localStorage.setItem('authToken', result.data.token);
-      localStorage.setItem('userData', JSON.stringify(result.data.user));
+      localStorage.setItem('auth-token', result.data.token);
+      localStorage.setItem('user', JSON.stringify(result.data.user));
 
       toast({
         title: "🎉 Welcome to the team!",
@@ -117,9 +117,10 @@ function AcceptInvitationContent() {
       });
 
       // Redirect based on role
-      const redirectPath = result.data.user.role === 'company_admin' 
+      const user = result.data.user;
+      const redirectPath = user.role === 'company_admin' 
         ? '/company/dashboard'
-        : result.data.user.role === 'recruiter'
+        : user.role === 'recruiter'
         ? '/recruiter/dashboard'
         : '/interviewer/dashboard';
 
@@ -131,7 +132,7 @@ function AcceptInvitationContent() {
         variant: "destructive"
       });
     } finally {
-      setIsValidating(false);
+      setIsAccepting(false);
     }
   };
 
@@ -276,8 +277,8 @@ function AcceptInvitationContent() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isValidating}>
-                {isValidating ? (
+              <Button type="submit" className="w-full" disabled={isAccepting}>
+                {isAccepting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Creating Account...

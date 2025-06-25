@@ -49,7 +49,8 @@ export default function AuthenticationPage() {
 
       setSuccess('Login successful! Redirecting...');
       
-      // Store user data in localStorage for client-side access
+      // Store auth token and user data in localStorage
+      localStorage.setItem('auth-token', result.data.token);
       localStorage.setItem('user', JSON.stringify(result.data.user));
       
       // Redirect based on user role

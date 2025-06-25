@@ -170,7 +170,7 @@ export default function HomePage() {
       author: "Sarah Johnson",
       role: "VP of Talent",
       company: "TechCorp Inc.",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=100&h=100&fit=crop&crop=face",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
       rating: 5
     },
     {

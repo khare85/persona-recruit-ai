@@ -52,7 +52,7 @@ export default function AboutPage() {
       name: "Sarah Chen",
       role: "CEO & Co-Founder",
       bio: "Former VP of Engineering at Google, passionate about using AI to solve human challenges.",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=300&h=300&fit=crop&crop=face"
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face"
     },
     {
       name: "Michael Rodriguez",

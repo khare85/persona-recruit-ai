@@ -12,8 +12,6 @@ const nextConfig: NextConfig = {
   ...(process.env.NODE_ENV === 'development' && {
     // Disable source maps in dev to save memory
     productionBrowserSourceMaps: false,
-    // Reduce memory usage for dev builds
-    swcMinify: false,
   }),
   images: {
     remotePatterns: [
@@ -39,10 +37,23 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     '@google-cloud/documentai',
     '@google-cloud/storage',
-    'firebase-admin'
+    'firebase-admin',
+    'handlebars',
+    'dotprompt',
+    'genkit'
   ],
   // Configure webpack for better memory management
   webpack: (config, { dev, isServer }) => {
+    // Handle problematic packages
+    if (isServer) {
+      config.externals.push({
+        'handlebars': 'handlebars',
+        'dotprompt': 'dotprompt',
+        '@genkit-ai/core': '@genkit-ai/core',
+        'genkit': 'genkit'
+      });
+    }
+    
     // Development optimizations for memory usage
     if (dev) {
       config.optimization.minimize = false;

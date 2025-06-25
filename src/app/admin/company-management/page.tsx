@@ -227,11 +227,11 @@ export default function AdminCompaniesPage() {
   };
 
   const handleViewCompany = (companyId: string) => {
-    router.push(`/admin/companies/${companyId}`);
+    router.push(`/admin/company-management/${companyId}`);
   };
 
   const handleEditCompany = (companyId: string) => {
-    router.push(`/admin/companies/${companyId}/edit`);
+    router.push(`/admin/company-management/${companyId}/edit`);
   };
 
   const handleSuspendCompany = async (companyId: string) => {

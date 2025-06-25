@@ -166,7 +166,7 @@ class DatabaseService {
           email: userData.email,
           password: plainPassword,
           displayName: `${userData.firstName} ${userData.lastName}`,
-          emailVerified: userData.emailVerified || false,
+          emailVerified: userData.emailVerified || true,
         });
         dbLogger.info('User created in Firebase Auth', { uid: authUser.uid, email: userData.email });
       } catch (authError: any) {
@@ -180,7 +180,10 @@ class DatabaseService {
       }
 
       // 2. Set custom claims for role-based access
-      const customClaims = { role: userData.role, companyId: userData.companyId };
+      const customClaims: { role: string; companyId?: string } = { role: userData.role };
+      if (userData.companyId) {
+        customClaims.companyId = userData.companyId;
+      }
       await admin.auth().setCustomUserClaims(authUser.uid, customClaims);
       dbLogger.info('Custom claims set for user', { uid: authUser.uid, claims: customClaims });
 
@@ -210,7 +213,6 @@ class DatabaseService {
       throw error;
     }
   }
-
 
   async getUserById(id: string): Promise<User | null> {
     return this.get<User>(COLLECTIONS.USERS, id);
@@ -278,6 +280,7 @@ class DatabaseService {
     role?: string;
     status?: string;
     companyId?: string;
+    orderBy?: { field: string; direction: 'asc' | 'desc' };
   }): Promise<{ items: User[]; total: number; hasMore: boolean }> {
     const where: any[] = [];
     
@@ -287,12 +290,15 @@ class DatabaseService {
     if (options?.status) {
       where.push({ field: 'status', operator: '==', value: options.status });
     }
+    if (options?.companyId) {
+      where.push({ field: 'companyId', operator: '==', value: options.companyId });
+    }
 
     return this.list<User>(COLLECTIONS.USERS, {
       limit: options?.limit,
       offset: options?.offset,
       where,
-      orderBy: { field: 'createdAt', direction: 'desc' }
+      orderBy: options?.orderBy || { field: 'createdAt', direction: 'desc' }
     });
   }
 
@@ -1021,9 +1027,18 @@ class DatabaseService {
       }
     };
   }
+
+  async deleteJob(id: string): Promise<void> {
+    return this.delete(COLLECTIONS.JOBS, id);
+  }
+
+  async updateApplication(id: string, data: Partial<JobApplication>): Promise<void> {
+    return this.update(COLLECTIONS.JOB_APPLICATIONS, id, data);
+  }
 }
 
 export const databaseService = new DatabaseService();
 export default databaseService;
 
     
+

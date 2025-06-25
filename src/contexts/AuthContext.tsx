@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -46,31 +47,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const idTokenResult = await firebaseUser.getIdTokenResult(true); // Force refresh
+          // Force a token refresh to get the latest custom claims, especially after signup.
+          const idTokenResult = await firebaseUser.getIdTokenResult(true); 
           let role = (idTokenResult.claims.role as UserRole);
           const companyId = (idTokenResult.claims.companyId as string) || undefined;
           
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          const userData = userDoc.data();
-          const fullName = userData?.fullName || `${userData?.firstName} ${userData?.lastName}` || firebaseUser.displayName || '';
-
-          // If role is not in claims, try to get it from Firestore as a fallback.
-          // This makes the system more resilient to claim propagation delays.
-          if (!role && userData?.role) {
-            role = userData.role;
-          } else if (!role) {
-            role = 'candidate'; // Default if not found anywhere
+          let fullName = firebaseUser.displayName || '';
+          
+          // Fallback to Firestore if claims are not immediately available or name is missing
+          if (!role || !fullName) {
+              const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+              if (userDoc.exists()) {
+                  const userData = userDoc.data();
+                  if (!role) {
+                    role = userData.role || 'candidate'; // Default to candidate if still no role
+                  }
+                  if (!fullName) {
+                    fullName = userData.fullName || `${userData.firstName} ${userData.lastName}` || '';
+                  }
+              }
           }
-
+          
           setUser({
             ...firebaseUser,
-            role,
+            role: role || 'candidate', // Final fallback
             fullName,
             companyId
           } as User);
         } catch (error) {
           console.error("Error fetching user data/claims:", error);
-          // If claims fail, sign out to prevent inconsistent state
           await firebaseSignOut(auth);
           setUser(null);
         }
@@ -162,3 +167,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

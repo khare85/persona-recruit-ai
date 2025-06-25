@@ -21,7 +21,7 @@ import {
   CheckCircle,
   AlertTriangle,
   User,
-  Calendar,
+  CalendarDays,
   ArrowRight,
   Star,
   Flag,
@@ -369,7 +369,7 @@ export default function AdminSupportPage() {
                             <div className="font-medium">{ticket.id}</div>
                             <div className="text-sm text-muted-foreground">{ticket.subject}</div>
                             <div className="text-xs text-muted-foreground flex items-center mt-1">
-                              <Calendar className="mr-1 h-3 w-3" />
+                              <CalendarDays className="mr-1 h-3 w-3" />
                               {formatDate(ticket.createdAt)}
                             </div>
                           </div>

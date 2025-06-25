@@ -20,8 +20,8 @@ if ! firebase projects:list &> /dev/null; then
     exit 1
 fi
 
-# Get current project
-PROJECT=$(firebase use --json | jq -r '.result.current // empty')
+# Get current project more robustly
+PROJECT=$(firebase use --json | jq -r '.result | if type == "object" and .current then .current else empty end')
 if [ -z "$PROJECT" ]; then
     echo "❌ No Firebase project selected. Please run 'firebase use <project-id>' first."
     exit 1
@@ -42,7 +42,8 @@ echo "📋 Validating configuration files..."
 # Check if required files exist
 REQUIRED_FILES=("firestore.indexes.json" "firestore.rules" "storage.rules")
 for file in "${REQUIRED_FILES[@]}"; do
-    if [ ! -f "$file" ]; then
+    if [ ! -f "$file" ];
+        then
         echo "❌ Required file missing: $file"
         exit 1
     fi

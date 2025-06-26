@@ -110,7 +110,12 @@ export default function AdminUsersPage() {
   const form = useForm<NewUserFormValues>({
     resolver: zodResolver(newUserSchema),
     defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
       role: 'candidate',
+      companyId: '',
     },
   });
 

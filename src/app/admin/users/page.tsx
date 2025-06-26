@@ -3,8 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { auth } from '@/config/firebase';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -57,7 +57,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { useForm } from 'react-hook-form';
@@ -107,9 +106,6 @@ interface CompanyForSelect {
 }
 
 export default function AdminUsersPage() {
-  const { user, loading, getToken } = useAuth();
-  const router = useRouter();
-  const [companies, setCompanies] = useState<CompanyForSelect[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');

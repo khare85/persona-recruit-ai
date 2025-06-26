@@ -30,8 +30,8 @@ export const GET = withAuth(
       let { items: users, total, hasMore } = await databaseService.listUsers(options);
 
       // Enrich users with company names
-      const companyIds = [...new Set(users.map(u => u.companyId).filter(Boolean))];
-      const companies = companyIds.length > 0 ? await databaseService.getCompaniesByIds(companyIds as string[]) : [];
+      const companyIds = [...new Set(users.map(u => u.companyId).filter(Boolean))] as string[];
+      const companies = companyIds.length > 0 ? await databaseService.getCompaniesByIds(companyIds) : [];
       const companyMap = new Map(companies.map(c => [c.id, c.name]));
 
       let enrichedUsers = users.map(user => ({
@@ -40,6 +40,7 @@ export const GET = withAuth(
         companyName: user.companyId ? companyMap.get(user.companyId) : undefined
       }));
 
+      // In-memory search after enriching data
       if (search) {
         const searchLower = search.toLowerCase();
         enrichedUsers = enrichedUsers.filter(user => 
@@ -47,10 +48,11 @@ export const GET = withAuth(
           user.email.toLowerCase().includes(searchLower) ||
           user.companyName?.toLowerCase().includes(searchLower)
         );
+        total = enrichedUsers.length; // Update total after filtering
       }
       
-      const totalFiltered = enrichedUsers.length;
       const paginatedUsers = enrichedUsers.slice(0, limit);
+      hasMore = enrichedUsers.length > limit;
 
       return NextResponse.json({
         success: true,
@@ -59,9 +61,9 @@ export const GET = withAuth(
           pagination: {
             page,
             limit,
-            total: totalFiltered,
-            totalPages: Math.ceil(totalFiltered / limit),
-            hasMore: paginatedUsers.length === limit && totalFiltered > limit * page,
+            total,
+            totalPages: Math.ceil(total / limit),
+            hasMore,
           },
         },
       });

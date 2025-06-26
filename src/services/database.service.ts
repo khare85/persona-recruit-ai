@@ -1,5 +1,4 @@
 
-
 import admin from 'firebase-admin';
 import { db } from './firestoreService';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
@@ -86,32 +85,6 @@ class DatabaseService {
     this.ensureDb();
     let query: any = this.db!.collection(collection);
 
-    // For companies, use a simpler query to avoid index requirements for now
-    if (collection === COLLECTIONS.COMPANIES) {
-      // Simple query without complex sorting
-      if (!options?.includeDeleted) {
-        query = query.where('deletedAt', '==', null);
-      }
-      
-      // Apply simple pagination
-      if (options?.limit) {
-        query = query.limit(options.limit);
-      }
-      
-      const snapshot = await query.get();
-      const items = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      } as T));
-
-      return { 
-        items, 
-        total: items.length, // Simplified - in production use count query
-        hasMore: false 
-      };
-    }
-
-    // Original logic for other collections
     // Apply where conditions
     if (options?.where) {
       options.where.forEach(condition => {
@@ -124,16 +97,16 @@ class DatabaseService {
       query = query.where('deletedAt', '==', null);
     }
 
+    // Get total count for pagination before applying order and limit
+    const totalSnapshot = await query.count().get();
+    const total = totalSnapshot.data().count;
+    
     // Apply ordering
     if (options?.orderBy) {
       query = query.orderBy(options.orderBy.field, options.orderBy.direction);
     } else {
       query = query.orderBy('createdAt', 'desc');
     }
-
-    // Get total count for pagination
-    const totalSnapshot = await query.count().get();
-    const total = totalSnapshot.data().count;
 
     // Apply pagination
     if (options?.offset) {
@@ -157,29 +130,26 @@ class DatabaseService {
   // User Management
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
-      const plainPassword = userData.passwordHash; // Misnamed in seeding, this is the plain password
+      const plainPassword = userData.passwordHash; // Seeding script passes plain text here
       
-      // 1. Create user in Firebase Authentication
       let authUser;
       try {
-        authUser = await admin.auth().createUser({
-          email: userData.email,
-          password: plainPassword,
-          displayName: `${userData.firstName} ${userData.lastName}`,
-          emailVerified: userData.emailVerified || true,
-        });
-        dbLogger.info('User created in Firebase Auth', { uid: authUser.uid, email: userData.email });
+        authUser = await admin.auth().getUserByEmail(userData.email);
+        dbLogger.warn('User already exists in Firebase Auth, updating.', { uid: authUser.uid });
       } catch (authError: any) {
-        if (authError.code === 'auth/email-already-exists') {
-          dbLogger.warn('User already exists in Firebase Auth, fetching existing user.', { email: userData.email });
-          authUser = await admin.auth().getUserByEmail(userData.email);
+        if (authError.code === 'auth/user-not-found') {
+          authUser = await admin.auth().createUser({
+            email: userData.email,
+            password: plainPassword,
+            displayName: `${userData.firstName} ${userData.lastName}`,
+            emailVerified: userData.emailVerified || true,
+          });
+          dbLogger.info('User created in Firebase Auth', { uid: authUser.uid, email: userData.email });
         } else {
-          dbLogger.error('Error creating user in Firebase Auth', { error: String(authError), email: userData.email });
           throw authError;
         }
       }
 
-      // 2. Set custom claims for role-based access
       const customClaims: { role: string; companyId?: string } = { role: userData.role };
       if (userData.companyId) {
         customClaims.companyId = userData.companyId;
@@ -187,7 +157,6 @@ class DatabaseService {
       await admin.auth().setCustomUserClaims(authUser.uid, customClaims);
       dbLogger.info('Custom claims set for user', { uid: authUser.uid, claims: customClaims });
 
-      // 3. Create user document in Firestore (for custom login and roles)
       const passwordHash = await bcrypt.hash(plainPassword, 12);
       
       const userFirestoreData = {
@@ -198,16 +167,25 @@ class DatabaseService {
         deletedAt: null
       };
       
-      // Use the UID from Firebase Auth as the document ID in Firestore for consistency
       const userId = authUser.uid;
-      await this.db.collection(COLLECTIONS.USERS).doc(userId).set({
-        ...userFirestoreData,
-        id: userId,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+      const userDocRef = this.db.collection(COLLECTIONS.USERS).doc(userId);
+      const userDoc = await userDocRef.get();
       
-      dbLogger.info('User document created in Firestore', { userId, email: userData.email, role: userData.role });
+      if (!userDoc.exists) {
+        await userDocRef.set({
+          ...userFirestoreData,
+          id: userId,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      } else {
+        await userDocRef.update({
+          ...userFirestoreData,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      
+      dbLogger.info('User document created/updated in Firestore', { userId, email: userData.email, role: userData.role });
       return userId;
     } catch (error) {
       dbLogger.error('Error in createUser database service', { error: String(error), email: userData.email });
@@ -228,7 +206,6 @@ class DatabaseService {
     
     if (snapshot.empty) return null;
     
-    // Filter out deleted users in code instead of query
     for (const doc of snapshot.docs) {
       const userData = doc.data();
       if (!userData.deletedAt) {
@@ -271,7 +248,6 @@ class DatabaseService {
       dbLogger.info('User last login updated', { userId: id });
     } catch (error) {
       dbLogger.error('Error updating user last login', { error: String(error), userId: id });
-      // Don't throw here as login should succeed even if this fails
     }
   }
 
@@ -334,7 +310,7 @@ class DatabaseService {
   }
 
   // Company Management
-  async createCompany(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'stats'>): Promise<string> {
+  async createCompany(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'stats' | 'createdBy'>): Promise<string> {
     try {
       const companyData = {
         ...company,
@@ -343,7 +319,8 @@ class DatabaseService {
           activeJobs: 0,
           totalApplications: 0,
           totalHires: 0
-        }
+        },
+        createdBy: 'system' // or pass in user id
       };
 
       const companyId = await this.create(COLLECTIONS.COMPANIES, companyData);
@@ -604,7 +581,6 @@ class DatabaseService {
   }
 
   async updateJobApplication(id: string, data: Partial<JobApplication>): Promise<void> {
-    // Update lastActivityAt when application is modified
     const updateData = {
       ...data,
       lastActivityAt: new Date()
@@ -643,7 +619,7 @@ class DatabaseService {
     } as JobApplication));
   }
 
-  async checkExistingApplication(jobId: string, candidateId: string): Promise<JobApplication | null> {
+  async getJobApplicationByCandidate(jobId: string, candidateId: string): Promise<any> {
     this.ensureDb();
     const snapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('jobId', '==', jobId)
@@ -654,13 +630,12 @@ class DatabaseService {
     
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as JobApplication;
+    return { id: doc.id, ...doc.data() };
   }
 
   async getCompanyApplications(options: { companyId: string; status?: string; limit?: number }): Promise<JobApplication[]> {
     this.ensureDb();
     
-    // First get all jobs for the company
     const jobsSnapshot = await this.db!.collection(COLLECTIONS.JOBS)
       .where('companyId', '==', options.companyId)
       .where('deletedAt', '==', null)
@@ -670,8 +645,6 @@ class DatabaseService {
     
     const jobIds = jobsSnapshot.docs.map(doc => doc.id);
     
-    // For simplicity, get all applications and filter client-side
-    // In production, you'd want to optimize this with proper indexing
     const applicationsSnapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('deletedAt', '==', null)
       .limit(options.limit || 1000)
@@ -682,10 +655,8 @@ class DatabaseService {
       ...doc.data()
     } as JobApplication));
     
-    // Filter by company jobs
     applications = applications.filter(app => jobIds.includes(app.jobId));
     
-    // Filter by status if provided
     if (options.status) {
       applications = applications.filter(app => app.status === options.status);
     }
@@ -716,12 +687,10 @@ class DatabaseService {
   }
 
   async getInterviews(filters: any = {}): Promise<any[]> {
-    // Implementation would depend on your specific filtering needs
     this.ensureDb();
     let query = this.db!.collection(COLLECTIONS.INTERVIEWS)
       .where('deletedAt', '==', null);
     
-    // Add filters as needed
     if (filters.startDate) {
       query = query.where('scheduledFor', '>=', filters.startDate);
     }
@@ -766,182 +735,7 @@ class DatabaseService {
     
     return interviews;
   }
-
-  async getJobApplicationByCandidate(jobId: string, candidateId: string): Promise<any> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
-      .where('jobId', '==', jobId)
-      .where('candidateId', '==', candidateId)
-      .where('deletedAt', '==', null)
-      .limit(1)
-      .get();
-    
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() };
-  }
-
-  async getJobApplicationById(id: string): Promise<any> {
-    return this.get(COLLECTIONS.JOB_APPLICATIONS, id);
-  }
-
-  async getJobApplications(filters: {
-    companyId?: string;
-    jobId?: string;
-    status?: string;
-    department?: string;
-    minScore?: number;
-    limit?: number;
-    offset?: number;
-  }): Promise<any[]> {
-    this.ensureDb();
-    let query = this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
-      .where('deletedAt', '==', null);
-    
-    if (filters.companyId) {
-      query = query.where('companyId', '==', filters.companyId);
-    }
-    if (filters.jobId) {
-      query = query.where('jobId', '==', filters.jobId);
-    }
-    if (filters.status) {
-      query = query.where('status', '==', filters.status);
-    }
-    if (filters.minScore) {
-      query = query.where('aiMatchScore', '>=', filters.minScore);
-    }
-    
-    query = query.orderBy('appliedAt', 'desc');
-    
-    if (filters.limit) {
-      query = query.limit(filters.limit);
-    }
-    if (filters.offset) {
-      query = query.offset(filters.offset);
-    }
-    
-    const snapshot = await query.get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-
-  async createAuditLog(logData: {
-    userId: string;
-    action: string;
-    resourceType: string;
-    resourceIds: string[];
-    details: any;
-    timestamp: string;
-  }): Promise<void> {
-    try {
-      await this.create('auditLogs', logData);
-    } catch (error) {
-      dbLogger.error('Failed to create audit log', { error: String(error), userId: logData.userId });
-    }
-  }
-
-  // Analytics methods
-  async getCompanyAnalytics(companyId: string): Promise<any> {
-    this.ensureDb();
-    
-    const [
-      jobsSnapshot,
-      applicationsSnapshot,
-      interviewsSnapshot,
-      usersSnapshot
-    ] = await Promise.all([
-      this.db!.collection(COLLECTIONS.JOBS)
-        .where('companyId', '==', companyId)
-        .where('deletedAt', '==', null)
-        .get(),
-      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
-        .where('companyId', '==', companyId)
-        .where('deletedAt', '==', null)
-        .get(),
-      this.db!.collection(COLLECTIONS.INTERVIEWS)
-        .where('companyId', '==', companyId)
-        .get(),
-      this.db!.collection(COLLECTIONS.USERS)
-        .where('companyId', '==', companyId)
-        .where('deletedAt', '==', null)
-        .get()
-    ]);
-
-    const jobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const applications = applicationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const interviews = interviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    // Calculate metrics
-    const totalJobs = jobs.length;
-    const activeJobs = jobs.filter(job => job.status === 'active').length;
-    const totalApplications = applications.length;
-    const pendingApplications = applications.filter(app => app.status === 'pending').length;
-    const totalInterviews = interviews.length;
-    const scheduledInterviews = interviews.filter(int => int.status === 'scheduled').length;
-    const totalHires = applications.filter(app => app.status === 'hired').length;
-    const recruiters = users.filter(user => user.role === 'recruiter').length;
-
-    // Application status breakdown
-    const applicationsByStatus = applications.reduce((acc: any, app: any) => {
-      acc[app.status] = (acc[app.status] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Applications by month (last 12 months)
-    const now = new Date();
-    const monthlyApplications = [];
-    for (let i = 11; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      const monthApps = applications.filter(app => {
-        const appDate = new Date(app.appliedAt);
-        return appDate >= monthStart && appDate <= monthEnd;
-      });
-      monthlyApplications.push({
-        month: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        count: monthApps.length
-      });
-    }
-
-    // Top jobs by applications
-    const jobApplicationCounts = applications.reduce((acc: any, app: any) => {
-      acc[app.jobId] = (acc[app.jobId] || 0) + 1;
-      return acc;
-    }, {});
-
-    const topJobs = Object.entries(jobApplicationCounts)
-      .sort(([,a], [,b]) => (b as number) - (a as number))
-      .slice(0, 5)
-      .map(([jobId, count]) => {
-        const job = jobs.find(j => j.id === jobId);
-        return {
-          jobId,
-          title: job?.title || 'Unknown',
-          department: job?.department || 'Unknown',
-          applications: count
-        };
-      });
-
-    return {
-      overview: {
-        totalJobs,
-        activeJobs,
-        totalApplications,
-        pendingApplications,
-        totalInterviews,
-        scheduledInterviews,
-        totalHires,
-        recruiters
-      },
-      applicationsByStatus,
-      monthlyApplications,
-      topJobs,
-      averageMatchScore: applications.length > 0 
-        ? Math.round(applications.reduce((sum: number, app: any) => sum + (app.aiMatchScore || 0), 0) / applications.length)
-        : 0
-    };
-  }
-
+  
   async getSystemAnalytics(): Promise<any> {
     this.ensureDb();
     
@@ -952,88 +746,20 @@ class DatabaseService {
       applicationsSnapshot,
       interviewsSnapshot
     ] = await Promise.all([
-      this.db!.collection(COLLECTIONS.COMPANIES)
-        .where('deletedAt', '==', null)
-        .get(),
-      this.db!.collection(COLLECTIONS.USERS)
-        .where('deletedAt', '==', null)
-        .get(),
-      this.db!.collection(COLLECTIONS.JOBS)
-        .where('deletedAt', '==', null)
-        .get(),
-      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
-        .where('deletedAt', '==', null)
-        .get(),
-      this.db!.collection(COLLECTIONS.INTERVIEWS)
-        .get()
+      this.db!.collection(COLLECTIONS.COMPANIES).where('deletedAt', '==', null).count().get(),
+      this.db!.collection(COLLECTIONS.USERS).where('deletedAt', '==', null).count().get(),
+      this.db!.collection(COLLECTIONS.JOBS).where('deletedAt', '==', null).where('status', '==', 'active').count().get(),
+      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS).where('deletedAt', '==', null).count().get(),
+      this.db!.collection(COLLECTIONS.INTERVIEWS).count().get()
     ]);
-
-    const companies = companiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const jobs = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const applications = applicationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const interviews = interviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    // Calculate system-wide metrics
-    const totalCompanies = companies.length;
-    const activeCompanies = companies.filter(c => c.status === 'active').length;
-    const totalUsers = users.length;
-    const candidateCount = users.filter(u => u.role === 'candidate').length;
-    const recruiterCount = users.filter(u => u.role === 'recruiter').length;
-    const totalJobs = jobs.length;
-    const activeJobs = jobs.filter(j => j.status === 'active').length;
-    const totalApplications = applications.length;
-    const totalInterviews = interviews.length;
-    const totalHires = applications.filter(app => app.status === 'hired').length;
-
-    // User registration trends (last 12 months)
-    const now = new Date();
-    const monthlyRegistrations = [];
-    for (let i = 11; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      const monthUsers = users.filter(user => {
-        const userDate = new Date(user.createdAt);
-        return userDate >= monthStart && userDate <= monthEnd;
-      });
-      monthlyRegistrations.push({
-        month: monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        count: monthUsers.length
-      });
-    }
-
-    // Top companies by activity
-    const companyActivity = companies.map(company => {
-      const companyJobs = jobs.filter(j => j.companyId === company.id).length;
-      const companyApplications = applications.filter(a => a.companyId === company.id).length;
-      return {
-        id: company.id,
-        name: company.name,
-        jobs: companyJobs,
-        applications: companyApplications,
-        activity: companyJobs + companyApplications
-      };
-    }).sort((a, b) => b.activity - a.activity).slice(0, 10);
-
+    
     return {
       overview: {
-        totalCompanies,
-        activeCompanies,
-        totalUsers,
-        candidateCount,
-        recruiterCount,
-        totalJobs,
-        activeJobs,
-        totalApplications,
-        totalInterviews,
-        totalHires
-      },
-      monthlyRegistrations,
-      topCompanies: companyActivity,
-      platformGrowth: {
-        companiesGrowthRate: 12.5, // Placeholder - would calculate from historical data
-        usersGrowthRate: 18.3,
-        applicationsGrowthRate: 25.7
+        totalCompanies: companiesSnapshot.data().count,
+        totalUsers: usersSnapshot.data().count,
+        activeJobs: jobsSnapshot.data().count,
+        totalApplications: applicationsSnapshot.data().count,
+        totalInterviews: interviewsSnapshot.data().count,
       }
     };
   }
@@ -1049,7 +775,3 @@ class DatabaseService {
 
 export const databaseService = new DatabaseService();
 export default databaseService;
-
-    
-
-

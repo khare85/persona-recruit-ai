@@ -25,15 +25,6 @@ import {
   Building
 } from 'lucide-react';
 
-interface UserStats {
-  totalUsers: number;
-  activeUsers: number;
-  companiesCount: number;
-  candidatesCount: number;
-  recruitersCount: number;
-  adminsCount: number;
-}
-
 interface AdminUser {
   id: string;
   email: string;
@@ -113,7 +104,7 @@ export default function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
+            <div className="relative md:col-span-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search users..."

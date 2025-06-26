@@ -6,6 +6,7 @@ import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
+import { databaseService } from '@/services/database.service';
 import admin from 'firebase-admin';
 
 const inviteTeamMemberSchema = z.object({
@@ -53,30 +54,20 @@ export const POST = withRateLimit('invite',
           invitedBy: req.user?.id
         });
 
-        // Check if email is already registered or invited
-        const existingUserSnapshot = await admin.firestore()
-          .collection('users')
-          .where('email', '==', inviteData.email)
-          .limit(1)
-          .get();
-
-        if (!existingUserSnapshot.empty) {
+        // Check if email is already registered
+        const existingUser = await databaseService.getUserByEmail(inviteData.email);
+        if (existingUser) {
           return NextResponse.json(
             { error: 'User with this email already exists' },
             { status: 400 }
           );
         }
 
-        const existingInviteSnapshot = await admin.firestore()
-          .collection('companyInvitations')
-          .where('companyId', '==', companyId)
-          .where('email', '==', inviteData.email)
-          .where('status', '==', 'pending')
-          .where('deletedAt', '==', null)
-          .limit(1)
-          .get();
-
-        if (!existingInviteSnapshot.empty) {
+        // Check if invitation already exists for this email/company
+        const existingInvitations = await databaseService.getCompanyInvitations(companyId, 'pending');
+        const duplicateInvite = existingInvitations.find(inv => inv.email === inviteData.email);
+        
+        if (duplicateInvite) {
           return NextResponse.json(
             { error: 'Invitation already sent to this email' },
             { status: 400 }
@@ -85,7 +76,8 @@ export const POST = withRateLimit('invite',
 
         const invitationToken = `comp_inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        const newInvitation = {
+        // Create invitation using database service
+        const invitationId = await databaseService.createCompanyInvitation({
           companyId,
           email: inviteData.email,
           firstName: inviteData.firstName,
@@ -93,27 +85,18 @@ export const POST = withRateLimit('invite',
           role: inviteData.role,
           department: inviteData.department,
           status: 'pending',
-          invitedAt: admin.firestore.FieldValue.serverTimestamp(),
-          invitedBy: req.user?.id,
+          invitedBy: req.user?.id || '',
           invitationType: 'company_admin',
           invitationToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          deletedAt: null
-        };
-
-        // Save invitation to database
-        const inviteRef = await admin.firestore()
-          .collection('companyInvitations')
-          .add(newInvitation);
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        });
 
         // TODO: Send email invitation with token
         // TODO: Get company name for email template
         const companyName = 'Your Company'; // TODO: Get from database
 
         apiLogger.info('Company team member invitation created', {
-          invitationId: inviteRef.id,
+          invitationId,
           companyId,
           email: inviteData.email,
           role: inviteData.role,
@@ -124,7 +107,7 @@ export const POST = withRateLimit('invite',
           success: true,
           data: { 
             invitation: {
-              id: inviteRef.id,
+              id: invitationId,
               email: inviteData.email,
               firstName: inviteData.firstName,
               lastName: inviteData.lastName,
@@ -172,29 +155,7 @@ export const GET = withRateLimit('standard',
         });
 
         // Get invitations from database
-        const invitationsSnapshot = await admin.firestore()
-          .collection('companyInvitations')
-          .where('companyId', '==', companyId)
-          .where('deletedAt', '==', null)
-          .orderBy('invitedAt', 'desc')
-          .get();
-
-        const invitations = invitationsSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            email: data.email,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            role: data.role,
-            department: data.department,
-            status: data.status,
-            invitedAt: data.invitedAt?.toDate?.()?.toISOString() || data.invitedAt,
-            expiresAt: data.expiresAt?.toDate?.()?.toISOString() || data.expiresAt,
-            acceptedAt: data.acceptedAt?.toDate?.()?.toISOString() || data.acceptedAt,
-            invitedBy: data.invitedBy
-          };
-        });
+        const invitations = await databaseService.getCompanyInvitations(companyId);
 
         let filteredInvitations = invitations;
         if (status) {

@@ -5,6 +5,7 @@ import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
+import { databaseService } from '@/services/database.service';
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin if not already initialized
@@ -59,53 +60,59 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       ip: req.ip
     });
 
-    // TODO: Implement invitation token validation from database
-    // For now, using mock data for demo
-    const mockInvitation = {
-      email: 'newuser@techcorp.com',
-      firstName: 'New',
-      lastName: 'User',
-      role: 'recruiter',
-      companyId: 'company_123',
-    };
+    // Get invitation from database
+    const invitation = await databaseService.getInvitationByToken(token);
+    if (!invitation) {
+      return NextResponse.json(
+        { error: 'Invalid or expired invitation token' },
+        { status: 400 }
+      );
+    }
 
-    // Create user in Firebase Auth
-    const userRecord = await admin.auth().createUser({
-      email: mockInvitation.email,
-      password: password,
-      displayName: `${mockInvitation.firstName} ${mockInvitation.lastName}`,
-      emailVerified: true,
-    });
+    // Check if invitation has expired
+    if (invitation.expiresAt && new Date() > new Date(invitation.expiresAt)) {
+      return NextResponse.json(
+        { error: 'Invitation has expired' },
+        { status: 400 }
+      );
+    }
 
-    // Set custom claims for role
-    await admin.auth().setCustomUserClaims(userRecord.uid, {
-      role: mockInvitation.role,
-      companyId: mockInvitation.companyId
-    });
+    // Check if user already exists
+    const existingUser = await databaseService.getUserByEmail(invitation.email);
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 400 }
+      );
+    }
 
-    // Create user document in Firestore
-    await admin.firestore().collection('users').doc(userRecord.uid).set({
-      id: userRecord.uid,
-      email: mockInvitation.email,
-      firstName: mockInvitation.firstName,
-      lastName: mockInvitation.lastName,
-      role: mockInvitation.role,
-      companyId: mockInvitation.companyId,
+    // Create user account using database service
+    const userId = await databaseService.createUser({
+      email: invitation.email,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
+      role: invitation.role,
+      companyId: invitation.companyId,
       status: 'active',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      emailVerified: true,
+      passwordHash: password // Will be hashed in the service
     });
 
     // Mark invitation as accepted
-    // await databaseService.acceptInvitation(token, userRecord.uid);
+    await databaseService.updateInvitation(invitation.id, {
+      status: 'accepted',
+      acceptedAt: new Date(),
+      acceptedBy: userId
+    });
     
     // Generate a custom token for client-side sign-in
-    const customToken = await admin.auth().createCustomToken(userRecord.uid);
+    const customToken = await admin.auth().createCustomToken(userId);
 
     apiLogger.info('User created from invitation', {
-      userId: userRecord.uid,
-      email: mockInvitation.email,
-      role: mockInvitation.role
+      userId,
+      email: invitation.email,
+      role: invitation.role,
+      companyId: invitation.companyId
     });
 
     return NextResponse.json({
@@ -113,11 +120,12 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       data: {
         customToken: customToken,
         user: {
-          id: userRecord.uid,
-          email: userRecord.email,
-          firstName: mockInvitation.firstName,
-          lastName: mockInvitation.lastName,
-          role: mockInvitation.role
+          id: userId,
+          email: invitation.email,
+          firstName: invitation.firstName,
+          lastName: invitation.lastName,
+          role: invitation.role,
+          companyId: invitation.companyId
         }
       },
       message: 'Welcome! Your account has been created successfully.'

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth, withRole } from '@/middleware/auth';
@@ -29,7 +30,7 @@ export const GET = withRateLimit('api',
       try {
         const { searchParams } = new URL(req.url);
         const page = parseInt(searchParams.get('page') || '1');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+        const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 1000);
         const search = searchParams.get('search') || '';
         const status = searchParams.get('status') || '';
 
@@ -49,24 +50,10 @@ export const GET = withRateLimit('api',
           status: status || undefined
         });
 
-        const companiesWithStats = await Promise.all(
-          companiesResult.items.map(async (company) => {
-            // Get user count and active jobs for each company
-            const userCount = await databaseService.getCompanyUserCount(company.id);
-            const activeJobsCount = await databaseService.getCompanyActiveJobsCount(company.id);
-            
-            return {
-              ...company,
-              userCount,
-              activeJobs: activeJobsCount
-            };
-          })
-        );
-
         return NextResponse.json({
           success: true,
           data: {
-            companies: companiesWithStats,
+            companies: companiesResult.items,
             pagination: {
               page,
               limit,
@@ -138,13 +125,13 @@ export const POST = withRateLimit('api',
 
         // Add optional fields only if they exist
         if (companyData.website) {
-          companyToCreate.website = companyData.website;
+          (companyToCreate as any).website = companyData.website;
         }
         if (companyData.description) {
-          companyToCreate.description = companyData.description;
+          (companyToCreate as any).description = companyData.description;
         }
         if (companyData.founded) {
-          companyToCreate.founded = companyData.founded;
+          (companyToCreate as any).founded = companyData.founded;
         }
 
         const companyId = await databaseService.createCompany(companyToCreate);

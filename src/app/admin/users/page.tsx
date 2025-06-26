@@ -57,6 +57,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { useForm } from 'react-hook-form';
@@ -123,6 +124,7 @@ export default function AdminUsersPage() {
 
   const { data: companyData, isLoading: isLoadingCompanies } = useAdminData<{
     companies: CompanyForSelect[];
+    pagination: any;
   }>({
     endpoint: '/api/admin/companies?limit=1000' // Fetch all companies for the dropdown
   });
@@ -450,3 +452,4 @@ export default function AdminUsersPage() {
     </AdminPageWrapper>
   );
 }
+

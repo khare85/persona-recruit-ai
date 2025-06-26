@@ -55,6 +55,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,7 +64,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 
 // Zod schema for the new user form
 const newUserSchema = z.object({
@@ -74,11 +75,15 @@ const newUserSchema = z.object({
   role: z.enum(['candidate', 'recruiter', 'interviewer', 'company_admin', 'super_admin']),
   companyId: z.string().optional(),
 }).refine(data => {
-  return data.role === 'super_admin' || !!data.companyId;
+  if (data.role === 'super_admin' || data.role === 'candidate') {
+      return true; // No companyId needed for super admin or candidate
+  }
+  return !!data.companyId; // companyId is required for other roles
 }, {
   message: 'Company is required for this role',
   path: ['companyId'],
 });
+
 
 type NewUserFormValues = z.infer<typeof newUserSchema>;
 
@@ -258,7 +263,7 @@ export default function AdminUsersPage() {
                     <FormMessage />
                   </FormItem>
                 )}/>
-                {selectedRole !== 'super_admin' && (
+                {(selectedRole !== 'super_admin' && selectedRole !== 'candidate') && (
                   <FormField control={form.control} name="companyId" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Company</FormLabel>

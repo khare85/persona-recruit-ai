@@ -61,8 +61,7 @@ export default function AdminJobsPage() {
     activeJobs: 0,
     totalApplications: 0,
     avgApplicationsPerJob: 0
-  });
-  const [statusFilter, setStatusFilter] = useState('all');
+  };
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase()) ||

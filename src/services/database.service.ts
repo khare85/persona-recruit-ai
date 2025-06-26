@@ -83,7 +83,7 @@ class DatabaseService {
     }
   ): Promise<{ items: T[]; total: number; hasMore: boolean }> {
     this.ensureDb();
-    let query: any = this.db!.collection(collection);
+    let query: any = this.db!.collectionGroup(collection);
 
     // Apply where conditions
     if (options?.where) {

@@ -87,6 +87,7 @@ async function setupUser(userData) {
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
+      fullName: `${userData.firstName} ${userData.lastName}`,
       role: userData.role,
       status: 'active',
       emailVerified: true,

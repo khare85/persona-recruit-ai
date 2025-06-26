@@ -49,33 +49,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           // Force a token refresh to get the latest custom claims, especially after signup.
           const idTokenResult = await firebaseUser.getIdTokenResult(true); 
-          let role = (idTokenResult.claims.role as UserRole);
+          const role = (idTokenResult.claims.role as UserRole) || 'candidate'; // Default to candidate if no role claim
           const companyId = (idTokenResult.claims.companyId as string) || undefined;
           
           let fullName = firebaseUser.displayName || '';
           
           // Fallback to Firestore if claims are not immediately available or name is missing
-          if (!role || !fullName) {
+          if (!fullName) {
               try {
                   const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
                   if (userDoc.exists()) {
                       const userData = userDoc.data();
-                      if (!role) {
-                        role = userData.role || 'candidate'; // Default to candidate if still no role
-                      }
                       if (!fullName) {
-                        fullName = userData.fullName || `${userData.firstName} ${userData.lastName}` || '';
+                        fullName = userData.fullName || `${userData.firstName} ${userData.lastName}`.trim() || '';
                       }
                   }
               } catch (firestoreError) {
                   console.warn("Could not read user document from Firestore:", firestoreError);
-                  // Continue with claims-based role or default
               }
           }
           
           setUser({
             ...firebaseUser,
-            role: role || 'candidate', // Final fallback
+            role,
             fullName,
             companyId
           } as User);
@@ -104,7 +100,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      // User state will be updated by onAuthStateChanged
+      // User state will be updated by onAuthStateChanged after token refresh
       return userCredential.user;
     } catch (error) {
       const authError = error as AuthError;
@@ -130,7 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // This is more secure than relying on a client-side call after signup.
       // For this project, we're assuming this trigger exists to set the role.
 
-      // Send verification email
+      // Send verification email - can be re-enabled later
       // await sendEmailVerification(firebaseUser);
       toast({ title: "Account Created", description: "Your account has been created successfully!" });
 
@@ -172,4 +168,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

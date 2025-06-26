@@ -1,7 +1,7 @@
 
+
 import { NextRequest, NextResponse } from 'next/server';
 import admin from 'firebase-admin';
-import * as jwt from 'jsonwebtoken';
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -56,31 +56,7 @@ export async function verifyFirebaseToken(token: string): Promise<AuthenticatedU
 }
 
 /**
- * Verify our own JWT token.
- */
-export function verifyJwtToken(token: string): AuthenticatedUser | null {
-  try {
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      console.error('JWT_SECRET is not configured');
-      return null;
-    }
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    return {
-      id: decoded.id || decoded.userId,
-      email: decoded.email,
-      role: decoded.role,
-      companyId: decoded.companyId
-    };
-  } catch (error) {
-    console.error('JWT verification failed:', error);
-    return null;
-  }
-}
-
-/**
  * Higher-order function (middleware) to protect API routes.
- * It tries to verify a Firebase ID token first, then falls back to a custom JWT.
  */
 export function withAuth(
   handler: (req: AuthenticatedRequest, ...args: any[]) => Promise<NextResponse>
@@ -93,13 +69,7 @@ export function withAuth(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Try Firebase token verification first
-    let user = await verifyFirebaseToken(token);
-
-    // If Firebase token fails, try JWT verification (for backwards compatibility/other flows)
-    if (!user) {
-      user = verifyJwtToken(token);
-    }
+    const user = await verifyFirebaseToken(token);
     
     if (!user) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });

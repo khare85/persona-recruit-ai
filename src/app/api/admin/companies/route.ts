@@ -48,26 +48,19 @@ export const GET = withRateLimit('api',
           status: status || undefined
         });
 
-        // Simplify the returned data for dropdowns
-        const simplifiedCompanies = companiesResult.items.map(company => ({
-          id: company.id,
-          name: company.name
-        }));
-
+        // The company management page expects full company objects.
+        // The user management dropdown only needs id/name, but we can filter that on the client if needed.
+        // Returning the full object is safer for all use cases.
         return NextResponse.json({
           success: true,
           data: {
-            companies: simplifiedCompanies,
+            companies: companiesResult.items,
             pagination: {
               page,
               limit,
               total: companiesResult.total,
               totalPages: Math.ceil(companiesResult.total / limit),
               hasMore: companiesResult.hasMore
-            },
-            filters: {
-              search,
-              status
             }
           },
           message: 'Companies retrieved successfully'

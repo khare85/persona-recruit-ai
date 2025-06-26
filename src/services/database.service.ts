@@ -386,7 +386,7 @@ class DatabaseService {
   }): Promise<{ items: Company[]; total: number; hasMore: boolean }> {
     const where: any[] = [];
     
-    if (options?.status) {
+    if (options?.status && options.status !== 'all') {
       where.push({ field: 'status', operator: '==', value: options.status });
     }
 
@@ -784,5 +784,3 @@ class DatabaseService {
 
 export const databaseService = new DatabaseService();
 export default databaseService;
-
-    

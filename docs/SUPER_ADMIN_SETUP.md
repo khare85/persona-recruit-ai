@@ -1,14 +1,30 @@
 # Super Admin Setup Guide
 
-## Issue: Super Admin Login Shows Candidate Dashboard
+## Issue: Super Admin Login Shows Candidate Dashboard + Firebase Permission Errors
 
-This guide helps resolve the issue where a super admin user is being redirected to the candidate dashboard instead of the admin dashboard.
+This guide helps resolve the issue where a super admin user is being redirected to the candidate dashboard instead of the admin dashboard, and getting "Missing or insufficient permissions" errors.
 
 ## Root Cause
 
 The issue occurs when Firebase custom claims are not properly set for the super admin user. The authentication system checks for a `role` claim in the Firebase ID token, and if it's missing or incorrect, it defaults to 'candidate'.
 
-## Solution Steps
+## Immediate Fix
+
+1. **Deploy the updated Firestore rules:**
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+
+2. **Initialize your super admin account:**
+   ```bash
+   node scripts/init-super-admin.js your-email@example.com
+   ```
+
+3. **Sign out and sign back in**
+
+4. **Verify at `/debug-auth`** - You should see `role: "super_admin"` in the token claims
+
+## Detailed Solution Steps
 
 ### 1. Debug Current Auth State
 

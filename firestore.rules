@@ -23,9 +23,10 @@ service cloud.firestore {
 
     // Users can read their own data, admins can read all
     match /users/{userId} {
-      allow read, update: if isUser(userId);
+      allow read: if isUser(userId) || hasRole('super_admin') || hasRole('company_admin');
+      allow update: if isUser(userId);
       allow create: if !exists(/databases/$(database)/documents/users/$(request.resource.data.id));
-      allow list, read: if hasRole('super_admin') || hasRole('company_admin');
+      allow list: if hasRole('super_admin') || hasRole('company_admin');
     }
 
     // Candidate profiles can be written by owner, read by recruiters/admins

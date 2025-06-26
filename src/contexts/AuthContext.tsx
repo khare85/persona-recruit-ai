@@ -56,15 +56,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           // Fallback to Firestore if claims are not immediately available or name is missing
           if (!role || !fullName) {
-              const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-              if (userDoc.exists()) {
-                  const userData = userDoc.data();
-                  if (!role) {
-                    role = userData.role || 'candidate'; // Default to candidate if still no role
+              try {
+                  const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+                  if (userDoc.exists()) {
+                      const userData = userDoc.data();
+                      if (!role) {
+                        role = userData.role || 'candidate'; // Default to candidate if still no role
+                      }
+                      if (!fullName) {
+                        fullName = userData.fullName || `${userData.firstName} ${userData.lastName}` || '';
+                      }
                   }
-                  if (!fullName) {
-                    fullName = userData.fullName || `${userData.firstName} ${userData.lastName}` || '';
-                  }
+              } catch (firestoreError) {
+                  console.warn("Could not read user document from Firestore:", firestoreError);
+                  // Continue with claims-based role or default
               }
           }
           

@@ -400,43 +400,5 @@
         }
       ]
     }
-  ],
-  "fieldOverrides": [
-    {
-      "collectionGroup": "candidates_with_embeddings",
-      "fieldPath": "resumeEmbedding",
-      "indexes": [
-        {
-          "queryScope": "COLLECTION",
-          "fields": [
-            {
-              "fieldPath": "resumeEmbedding",
-              "vectorConfig": {
-                "dimension": 768,
-                "flat": {}
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "collectionGroup": "jobs_with_embeddings",
-      "fieldPath": "jobEmbedding",
-      "indexes": [
-        {
-          "queryScope": "COLLECTION",
-          "fields": [
-            {
-              "fieldPath": "jobEmbedding",
-              "vectorConfig": {
-                "dimension": 768,
-                "flat": {}
-              }
-            }
-          ]
-        }
-      ]
-    }
   ]
 }

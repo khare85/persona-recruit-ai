@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
@@ -14,21 +14,29 @@ interface UseAdminDataOptions {
 }
 
 export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOptions) {
-  const { getToken } = useAuth();
+  const { getToken, user, loading: authLoading } = useAuth();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    // Only proceed if authentication is no longer loading
+    if (authLoading) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    // If not authenticated after loading, set error and stop
+    if (!user) {
+      setError('User not authenticated. Please log in.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      setIsLoading(true);
-      setError(null);
-      
       const token = await getToken();
       if (!token) {
-        setError('User not authenticated. Please log in.');
-        setIsLoading(false);
-        return;
+        throw new Error('Could not retrieve authentication token.');
       }
 
       const response = await fetch(endpoint, {
@@ -45,16 +53,16 @@ export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOpt
 
       const result = await response.json();
       setData(result.data || result);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to load data');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [endpoint, getToken, authLoading, user, ...dependencies]);
 
   useEffect(() => {
     fetchData();
-  }, dependencies);
+  }, [fetchData]);
 
   return { data, isLoading, error, refetch: fetchData };
 }

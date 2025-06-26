@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Building, 
@@ -58,7 +57,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -124,7 +122,6 @@ export default function AdminUsersPage() {
 
   const { data: companyData, isLoading: isLoadingCompanies } = useAdminData<{
     companies: CompanyForSelect[];
-    pagination: any;
   }>({
     endpoint: '/api/admin/companies?limit=1000' // Fetch all companies for the dropdown
   });
@@ -452,4 +449,3 @@ export default function AdminUsersPage() {
     </AdminPageWrapper>
   );
 }
-

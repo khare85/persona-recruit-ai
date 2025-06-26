@@ -19,8 +19,6 @@ const createCompanySchema = z.object({
   founded: z.number().min(1800).max(new Date().getFullYear()).optional()
 });
 
-const updateCompanySchema = createCompanySchema.partial();
-
 /**
  * GET /api/admin/companies - Get all companies
  */
@@ -50,10 +48,16 @@ export const GET = withRateLimit('api',
           status: status || undefined
         });
 
+        // Simplify the returned data for dropdowns
+        const simplifiedCompanies = companiesResult.items.map(company => ({
+          id: company.id,
+          name: company.name
+        }));
+
         return NextResponse.json({
           success: true,
           data: {
-            companies: companiesResult.items,
+            companies: simplifiedCompanies,
             pagination: {
               page,
               limit,

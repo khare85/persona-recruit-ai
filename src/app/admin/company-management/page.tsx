@@ -4,20 +4,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { auth } from '@/config/firebase';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import { Container } from '@/components/shared/Container';
+import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Building, 
   Search, 
-  Filter, 
   Plus, 
   MoreHorizontal, 
   Eye, 
@@ -25,17 +20,11 @@ import {
   Trash2, 
   Ban, 
   CheckCircle,
-  AlertCircle,
   Clock,
   Users,
   Briefcase,
   DollarSign,
   TrendingUp,
-  Download,
-  Upload,
-  Star,
-  MapPin,
-  CalendarDays,
   Loader2
 } from 'lucide-react';
 import {
@@ -63,7 +52,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
 interface Company {
   id: string;
@@ -90,15 +78,11 @@ interface CompanyStats {
 }
 
 export default function AdminCompaniesPage() {
-  const { user, loading, getToken } = useAuth();
   const router = useRouter();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [companyStats, setCompanyStats] = useState<CompanyStats | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddingCompany, setIsAddingCompany] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isAddingCompany, setIsAddingCompany] = useState(false);
   const [newCompany, setNewCompany] = useState({
     name: '',
     domain: '',
@@ -110,48 +94,21 @@ export default function AdminCompaniesPage() {
     founded: new Date().getFullYear()
   });
 
+  const { data, isLoading, error, refetch } = useAdminData<{
+    companies: Company[];
+    pagination: any;
+  }>({
+    endpoint: `/api/admin/companies?search=${searchTerm}&status=${statusFilter}`,
+    dependencies: [searchTerm, statusFilter]
+  });
 
-  useEffect(() => {
-    if (!loading && (!user || user.role !== 'super_admin')) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
-
-  const fetchCompanies = async () => {
-    try {
-      setIsLoading(true);
-      const token = await getToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-      const response = await fetch('/api/admin/companies', { 
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch companies');
-      }
-
-      const data = await response.json();
-      setCompanies(data.data.companies);
-      setCompanyStats({
-        total: data.data.pagination.total,
-        active: data.data.companies.filter((c: Company) => c.status === 'active').length,
-        suspended: data.data.companies.filter((c: Company) => c.status === 'suspended').length,
-        pending: data.data.companies.filter((c: Company) => c.status === 'pending').length,
-      });
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user?.role === 'super_admin') {
-      fetchCompanies();
-    }
-  }, [user]);
+  const companies = data?.companies || [];
+  const companyStats: CompanyStats | null = data ? {
+    total: data.pagination.total,
+    active: data.companies.filter((c: Company) => c.status === 'active').length,
+    suspended: data.companies.filter((c: Company) => c.status === 'suspended').length,
+    pending: data.companies.filter((c: Company) => c.status === 'pending').length,
+  } : null;
 
   const handleAddCompany = () => {
     setShowAddModal(true);
@@ -160,14 +117,9 @@ export default function AdminCompaniesPage() {
   const handleCreateCompany = async () => {
     try {
       setIsAddingCompany(true);
-      const token = await getToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
       const response = await fetch('/api/admin/companies', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(newCompany),
@@ -178,7 +130,7 @@ export default function AdminCompaniesPage() {
       }
       
       setShowAddModal(false);
-      fetchCompanies();
+      refetch();
     } catch (error) {
       console.error('Error creating company:', error);
     } finally {
@@ -199,27 +151,15 @@ export default function AdminCompaniesPage() {
     }
   };
 
-  const filteredCompanies = companies.filter(company => {
-    const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.industry.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || company.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
   return (
-    <AdminLayout>
-      <Container className="py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground flex items-center">
-            <Building className="mr-3 h-8 w-8 text-primary" />
-            Company Management
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage company accounts, subscriptions, and monitor business metrics
-          </p>
-        </div>
-
+    <AdminPageWrapper
+      title="Company Management"
+      description="Manage company accounts, subscriptions, and monitor business metrics"
+      icon={Building}
+      isLoading={isLoading}
+      error={error}
+      onRefresh={refetch}
+    >
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -295,7 +235,7 @@ export default function AdminCompaniesPage() {
         {/* Companies Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Companies ({filteredCompanies.length})</CardTitle>
+            <CardTitle>Companies ({companies.length})</CardTitle>
             <CardDescription>Manage company accounts and subscriptions</CardDescription>
           </CardHeader>
           <CardContent>
@@ -317,7 +257,7 @@ export default function AdminCompaniesPage() {
                         </TableCell>
                     </TableRow>
                 ) : (
-                    filteredCompanies.map((company) => (
+                    companies.map((company) => (
                       <TableRow key={company.id}>
                         <TableCell>
                           <div>
@@ -454,27 +394,6 @@ export default function AdminCompaniesPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newCompany.description}
-                  onChange={(e) => setNewCompany({...newCompany, description: e.target.value})}
-                  placeholder="Brief description of the company..."
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="founded">Founded Year</Label>
-                <Input
-                  id="founded"
-                  type="number"
-                  min="1800"
-                  max={new Date().getFullYear()}
-                  value={newCompany.founded}
-                  onChange={(e) => setNewCompany({...newCompany, founded: parseInt(e.target.value)})}
-                />
-              </div>
             </div>
             <DialogFooter>
               <Button 
@@ -493,7 +412,6 @@ export default function AdminCompaniesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </Container>
-    </AdminLayout>
+    </AdminPageWrapper>
   );
 }

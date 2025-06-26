@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,59 +19,46 @@ import {
   Trash2,
   MapPin,
   Clock,
-  Users,
-  Loader2,
-  AlertCircle
+  Users
 } from 'lucide-react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-
-interface JobStats {
-  totalJobs: number;
-  activeJobs: number;
-  totalApplications: number;
-  avgApplicationsPerJob: number;
-}
 
 interface AdminJob {
   id: string;
   title: string;
-  company: string;
-  companyId: string;
+  companyName?: string;
   location: string;
-  employmentType: string;
+  employmentType?: string;
   status: string;
   applicationsCount: number;
   createdAt: string;
-  lastUpdated: string;
-  recruiterName: string;
+  recruiterName?: string;
 }
 
 export default function AdminJobsPage() {
   const { data, isLoading, error, refetch } = useAdminData<{
     jobs: AdminJob[];
-    stats: JobStats;
+    stats: any;
     pagination: any;
   }>({ endpoint: '/api/admin/jobs' });
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [companyFilter, setCompanyFilter] = useState('all');
 
   const jobs = data?.jobs || [];
   const stats = data?.stats || {
-    totalJobs: 0,
-    activeJobs: 0,
-    totalApplications: 0,
-    avgApplicationsPerJob: 0
+    total: 0,
+    active: 0,
+    paused: 0,
+    closed: 0,
+    draft: 0,
   };
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase()) ||
-                         job.company.toLowerCase().includes(search.toLowerCase());
+                         job.companyName?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
-    const matchesCompany = companyFilter === 'all' || job.company === companyFilter;
     
-    return matchesSearch && matchesStatus && matchesCompany;
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusBadgeVariant = (status: string) => {
@@ -78,6 +66,7 @@ export default function AdminJobsPage() {
       case 'active': return 'default';
       case 'closed': return 'secondary';
       case 'draft': return 'outline';
+      case 'paused': return 'outline';
       default: return 'secondary';
     }
   };
@@ -87,12 +76,10 @@ export default function AdminJobsPage() {
   };
 
   const handleEditJob = (jobId: string) => {
-    // Navigate to edit job page (would need to be implemented)
     alert(`Edit job functionality would navigate to job ${jobId} edit page`);
   };
 
   const handleDeleteJob = (jobId: string) => {
-    // Delete job functionality (would need to be implemented)
     alert(`Delete job functionality would delete job ${jobId}`);
   };
 
@@ -112,8 +99,7 @@ export default function AdminJobsPage() {
             <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalJobs}</div>
-            <p className="text-xs text-muted-foreground">Across all companies</p>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         <Card>
@@ -121,26 +107,23 @@ export default function AdminJobsPage() {
             <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.activeJobs}</div>
-            <p className="text-xs text-muted-foreground">Currently accepting applications</p>
+            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+            <CardTitle className="text-sm font-medium">Paused</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalApplications}</div>
-            <p className="text-xs text-muted-foreground">Across all jobs</p>
+            <div className="text-2xl font-bold text-yellow-600">{stats.paused}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Avg Applications</CardTitle>
+            <CardTitle className="text-sm font-medium">Closed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.avgApplicationsPerJob}</div>
-            <p className="text-xs text-muted-foreground">Per job posting</p>
+            <div className="text-2xl font-bold text-red-600">{stats.closed}</div>
           </CardContent>
         </Card>
       </div>
@@ -155,7 +138,7 @@ export default function AdminJobsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
+            <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search jobs or companies..."
@@ -173,17 +156,7 @@ export default function AdminJobsPage() {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by company" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {Array.from(new Set(jobs.map(job => job.company))).map(company => (
-                  <SelectItem key={company} value={company}>{company}</SelectItem>
-                ))}
+                <SelectItem value="paused">Paused</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -219,7 +192,7 @@ export default function AdminJobsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Building className="h-4 w-4 text-muted-foreground" />
-                      {job.company}
+                      {job.companyName || 'N/A'}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -237,7 +210,7 @@ export default function AdminJobsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      {job.applicationsCount}
+                      {job.applicationsCount || 0}
                     </div>
                   </TableCell>
                   <TableCell>

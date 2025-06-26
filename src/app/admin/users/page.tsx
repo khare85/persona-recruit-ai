@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,11 +22,8 @@ import {
   Shield,
   Crown,
   Briefcase,
-  Building,
-  Loader2,
-  AlertCircle
+  Building
 } from 'lucide-react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
 
 interface UserStats {
   totalUsers: number;
@@ -51,77 +49,19 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
-  const { getToken } = useAuth();
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [stats, setStats] = useState<UserStats>({
-    totalUsers: 0,
-    activeUsers: 0,
-    companiesCount: 0,
-    candidatesCount: 0,
-    recruitersCount: 0,
-    adminsCount: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  const { data, isLoading, error, refetch } = useAdminData<{
+    users: AdminUser[];
+    pagination: any;
+  }>({
+    endpoint: `/api/admin/users?search=${search}&role=${roleFilter}&status=${statusFilter}`,
+    dependencies: [search, roleFilter, statusFilter]
+  });
 
-  useEffect(() => {
-    fetchUsersData();
-  }, [search, roleFilter, statusFilter]);
-
-  const fetchUsersData = async () => {
-    try {
-      setIsLoading(true);
-      const token = await getToken();
-      if (!token) {
-        setError('User not authenticated. Please log in.');
-        setIsLoading(false);
-        return;
-      }
-
-      const params = new URLSearchParams({
-        page: '1',
-        limit: '100',
-        role: roleFilter !== 'all' ? roleFilter : '',
-        status: statusFilter !== 'all' ? statusFilter : '',
-        search: search
-      });
-
-      const response = await fetch(`/api/admin/users?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users data');
-      }
-
-      const result = await response.json();
-      const usersList = result.data.users;
-      
-      setUsers(usersList);
-      
-      // Calculate stats from the users data
-      const stats = {
-        totalUsers: usersList.length,
-        activeUsers: usersList.filter((u: AdminUser) => u.status === 'active').length,
-        companiesCount: new Set(usersList.filter((u: AdminUser) => u.companyId).map((u: AdminUser) => u.companyId)).size,
-        candidatesCount: usersList.filter((u: AdminUser) => u.role === 'candidate').length,
-        recruitersCount: usersList.filter((u: AdminUser) => u.role === 'recruiter').length,
-        adminsCount: usersList.filter((u: AdminUser) => u.role === 'super_admin' || u.role === 'company_admin').length
-      };
-      
-      setStats(stats);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const users = data?.users || [];
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -154,105 +94,15 @@ export default function AdminUsersPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="container mx-auto p-6">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading users data...</p>
-            </div>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <AdminLayout>
-        <div className="container mx-auto p-6">
-          <Card className="max-w-md mx-auto">
-            <CardHeader className="text-center">
-              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <CardTitle>Error Loading Users</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={() => window.location.reload()}>Try Again</Button>
-            </CardContent>
-          </Card>
-        </div>
-      </AdminLayout>
-    );
-  }
-
   return (
-    <AdminLayout>
-      <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <Users className="h-8 w-8 text-primary" />
-          User Management
-        </h1>
-        <p className="text-muted-foreground">
-          Manage and monitor all users across the platform.
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.activeUsers}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Companies</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.companiesCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Candidates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.candidatesCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Recruiters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-indigo-600">{stats.recruitersCount}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.adminsCount}</div>
-          </CardContent>
-        </Card>
-      </div>
-
+    <AdminPageWrapper
+      title="User Management"
+      description="Manage and monitor all users across the platform."
+      icon={Users}
+      isLoading={isLoading}
+      error={error}
+      onRefresh={refetch}
+    >
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>
@@ -314,9 +164,7 @@ export default function AdminUsersPage() {
               <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Users Found</h3>
               <p className="text-muted-foreground">
-                {search || roleFilter !== 'all' || statusFilter !== 'all'
-                  ? 'No users match your current filters.'
-                  : 'No users have been registered yet.'}
+                No users match your current filters.
               </p>
             </div>
           ) : (
@@ -410,7 +258,6 @@ export default function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
-      </div>
-    </AdminLayout>
+    </AdminPageWrapper>
   );
 }

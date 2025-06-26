@@ -1,3 +1,6 @@
+
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -24,6 +27,7 @@ export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOpt
       const token = await getToken();
       if (!token) {
         setError('User not authenticated. Please log in.');
+        setIsLoading(false);
         return;
       }
 

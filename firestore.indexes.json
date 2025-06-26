@@ -3,15 +3,7 @@
   "indexes": [
     {
       "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
@@ -19,51 +11,7 @@
     },
     {
       "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "email", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "companyId", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "role", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "role", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
@@ -73,7 +21,7 @@
     },
     {
       "collectionGroup": "companies",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
@@ -81,7 +29,7 @@
     },
     {
       "collectionGroup": "companies",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
@@ -90,7 +38,7 @@
     },
     {
       "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "companyId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
@@ -100,44 +48,16 @@
     },
     {
       "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "recruiterId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "publishedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "location", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "department", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "jobApplications",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "candidateId", "order": "ASCENDING" },
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
@@ -146,117 +66,46 @@
     },
     {
       "collectionGroup": "jobApplications",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "jobId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "appliedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "jobApplications",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "companyId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" },
-        { "fieldPath": "lastActivityAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "jobApplications",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "jobId", "order": "ASCENDING" },
-        { "fieldPath": "candidateId", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "jobApplications",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "aiMatchScore", "order": "DESCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "companyInvitations",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "invitationToken", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "companyInvitations",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "companyId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "sentAt", "order": "DESCENDING" }
       ]
     },
     {
       "collectionGroup": "interviews",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "candidateId", "order": "ASCENDING" },
+        { "fieldPath": "scheduledFor", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "interviews",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "interviewerId", "order": "ASCENDING" },
-        { "fieldPath": "scheduledFor", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "scheduledFor", "order": "DESCENDING" }
       ]
     },
     {
       "collectionGroup": "interviews",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "candidateId", "order": "ASCENDING" },
-        { "fieldPath": "scheduledFor", "order": "ASCENDING" },
-        { "fieldPath": "deletedAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "interviews",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "companyId", "order": "ASCENDING" },
-        { "fieldPath": "scheduledFor", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "auditLogs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "auditLogs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "resourceType", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "scheduledFor", "order": "DESCENDING" }
       ]
     },
     {
       "collectionGroup": "notifications",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "read", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "category", "order": "ASCENDING" },
         { "fieldPath": "read", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]

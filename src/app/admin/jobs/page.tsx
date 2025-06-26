@@ -54,6 +54,7 @@ export default function AdminJobsPage() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
 
   const jobs = data?.jobs || [];
   const stats = data?.stats || {
@@ -67,8 +68,9 @@ export default function AdminJobsPage() {
     const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase()) ||
                          job.company.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
+    const matchesCompany = companyFilter === 'all' || job.company === companyFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesCompany;
   });
 
   const getStatusBadgeVariant = (status: string) => {
@@ -87,6 +89,11 @@ export default function AdminJobsPage() {
   const handleEditJob = (jobId: string) => {
     // Navigate to edit job page (would need to be implemented)
     alert(`Edit job functionality would navigate to job ${jobId} edit page`);
+  };
+
+  const handleDeleteJob = (jobId: string) => {
+    // Delete job functionality (would need to be implemented)
+    alert(`Delete job functionality would delete job ${jobId}`);
   };
 
   return (

@@ -1,3 +1,4 @@
+
 /**
  * Firebase Configuration Management Service
  * Manages Firebase rules, authentication settings, and other backend configurations
@@ -129,7 +130,7 @@ export class FirebaseConfigService {
             data: Buffer.from(secretValue, 'utf8'),
           },
         });
-      } catch (error) {
+      } catch (error: any) {
         // If secret doesn't exist, create it
         if (error.code === 5) { // NOT_FOUND
           await secretClient.createSecret({
@@ -571,3 +572,5 @@ service firebase.storage {
 }
 
 export const firebaseConfigService = FirebaseConfigService.getInstance();
+
+    

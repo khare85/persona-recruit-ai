@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/config/firebase';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -15,9 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Users, 
+  Building, 
   Search, 
-  Filter, 
   Plus, 
   MoreHorizontal, 
   Eye, 
@@ -25,12 +23,9 @@ import {
   Trash2, 
   Ban, 
   CheckCircle,
-  AlertCircle,
   Clock,
-  Shield,
   Crown,
   Briefcase,
-  Building,
   Loader2
 } from 'lucide-react';
 import {
@@ -56,14 +51,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 
 // Zod schema for the new user form
 const newUserSchema = z.object({
@@ -73,6 +69,11 @@ const newUserSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['candidate', 'recruiter', 'interviewer', 'company_admin', 'super_admin']),
   companyId: z.string().optional(),
+}).refine(data => {
+  return data.role === 'super_admin' || !!data.companyId;
+}, {
+  message: 'Company is required for this role',
+  path: ['companyId'],
 });
 
 type NewUserFormValues = z.infer<typeof newUserSchema>;
@@ -91,6 +92,11 @@ interface AdminUser {
   emailVerified: boolean;
 }
 
+interface CompanyForSelect {
+  id: string;
+  name: string;
+}
+
 export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -99,12 +105,18 @@ export default function AdminUsersPage() {
   
   const { toast } = useToast();
 
-  const { data, isLoading, error, refetch } = useAdminData<{
+  const { data: userData, isLoading: isLoadingUsers, error: userError, refetch: refetchUsers } = useAdminData<{
     users: AdminUser[];
     pagination: any;
   }>({
     endpoint: `/api/admin/users?search=${search}&role=${roleFilter}&status=${statusFilter}`,
     dependencies: [search, roleFilter, statusFilter]
+  });
+
+  const { data: companyData, isLoading: isLoadingCompanies } = useAdminData<{
+    companies: CompanyForSelect[];
+  }>({
+    endpoint: '/api/admin/companies?limit=1000' // Fetch all companies for the dropdown
   });
 
   const form = useForm<NewUserFormValues>({
@@ -114,12 +126,13 @@ export default function AdminUsersPage() {
       lastName: '',
       email: '',
       password: '',
-      role: 'candidate',
+      role: 'recruiter',
       companyId: '',
     },
   });
 
-  const { formState: { isSubmitting: isAddingUser }, handleSubmit: handleFormSubmit } = form;
+  const { formState: { isSubmitting: isAddingUser }, handleSubmit: handleFormSubmit, watch, reset } = form;
+  const selectedRole = watch('role');
 
   const onAddUserSubmit = async (values: NewUserFormValues) => {
     try {
@@ -139,8 +152,8 @@ export default function AdminUsersPage() {
         description: `${values.email} has been created successfully.`,
       });
       setIsAddUserOpen(false);
-      form.reset();
-      refetch(); // Refetch the user list
+      reset();
+      refetchUsers(); // Refetch the user list
     } catch (error) {
       toast({
         title: "❌ Error",
@@ -150,7 +163,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  const users = data?.users || [];
+  const users = userData?.users || [];
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -188,9 +201,9 @@ export default function AdminUsersPage() {
       title="User Management"
       description="Manage and monitor all users across the platform."
       icon={Users}
-      isLoading={isLoading}
-      error={error}
-      onRefresh={refetch}
+      isLoading={isLoadingUsers}
+      error={userError}
+      onRefresh={refetchUsers}
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">All Users</h2>
@@ -238,6 +251,28 @@ export default function AdminUsersPage() {
                     <FormMessage />
                   </FormItem>
                 )}/>
+                {selectedRole !== 'super_admin' && (
+                  <FormField control={form.control} name="companyId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company</FormLabel>
+                       <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger>
+                          <SelectValue placeholder="Select a company" />
+                        </SelectTrigger></FormControl>
+                        <SelectContent>
+                          {isLoadingCompanies ? (
+                            <SelectItem value="loading" disabled>Loading...</SelectItem>
+                          ) : (
+                            companyData?.companies.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                )}
                 <DialogFooter>
                   <Button type="submit" disabled={isAddingUser}>
                     {isAddingUser ? 'Creating...' : 'Create User'}

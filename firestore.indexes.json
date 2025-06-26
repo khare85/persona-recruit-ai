@@ -5,20 +5,6 @@
       "collectionGroup": "users",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "email", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "resetToken", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
         { "fieldPath": "deletedAt", "order": "ASCENDING" },
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
@@ -38,7 +24,8 @@
       "collectionGroup": "companies",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "domain", "order": "ASCENDING" }
+        { "fieldPath": "deletedAt", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -58,13 +45,6 @@
         { "fieldPath": "companyId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "recruiterId", "order": "ASCENDING" }
       ]
     },
     {
@@ -107,18 +87,6 @@
       "fieldPath": "resumeEmbedding",
       "indexes": [
         {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
           "queryScope": "COLLECTION_GROUP",
           "order": "ASCENDING",
           "vectorConfig": {
@@ -132,18 +100,6 @@
       "collectionGroup": "jobs_with_embeddings",
       "fieldPath": "jobEmbedding",
       "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
-        },
         {
           "queryScope": "COLLECTION_GROUP",
           "order": "ASCENDING",

@@ -39,7 +39,8 @@ import {
   XCircle,
   BarChart3,
   Activity,
-  RefreshCw
+  RefreshCw,
+  Target
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 

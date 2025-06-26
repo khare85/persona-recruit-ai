@@ -92,7 +92,8 @@ async function setupUser(userData) {
       emailVerified: true,
       passwordHash: passwordHash,
       companyId: userData.companyId || null,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      deletedAt: null
     };
     
     const doc = await userDocRef.get();

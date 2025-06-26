@@ -195,6 +195,7 @@ class DatabaseService {
         passwordHash,
         emailVerified: authUser.emailVerified,
         status: 'active' as const,
+        deletedAt: null
       };
       
       // Use the UID from Firebase Auth as the document ID in Firestore for consistency
@@ -204,7 +205,7 @@ class DatabaseService {
         id: userId,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      }, { merge: true });
       
       dbLogger.info('User document created in Firestore', { userId, email: userData.email, role: userData.role });
       return userId;
@@ -378,6 +379,15 @@ class DatabaseService {
 
   async getCompanyById(id: string): Promise<Company | null> {
     return this.get<Company>(COLLECTIONS.COMPANIES, id);
+  }
+
+  async getCompaniesByIds(ids: string[]): Promise<Company[]> {
+    if (ids.length === 0) return [];
+    this.ensureDb();
+    const snapshot = await this.db!.collection(COLLECTIONS.COMPANIES)
+        .where(admin.firestore.FieldPath.documentId(), 'in', ids)
+        .get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
   }
 
   async updateCompany(id: string, data: Partial<Company>): Promise<void> {
@@ -1041,4 +1051,5 @@ export const databaseService = new DatabaseService();
 export default databaseService;
 
     
+
 

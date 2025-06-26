@@ -27,19 +27,30 @@ export const GET = withAuth(
 
       apiLogger.info('Admin users list requested', { userId: req.user?.id, options, search });
       
-      // In a real implementation, 'search' would be part of the database query
       let { items: users, total, hasMore } = await databaseService.listUsers(options);
 
+      // Enrich users with company names
+      const companyIds = [...new Set(users.map(u => u.companyId).filter(Boolean))];
+      const companies = companyIds.length > 0 ? await databaseService.getCompaniesByIds(companyIds as string[]) : [];
+      const companyMap = new Map(companies.map(c => [c.id, c.name]));
+
+      let enrichedUsers = users.map(user => ({
+        ...user,
+        fullName: `${user.firstName} ${user.lastName}`,
+        companyName: user.companyId ? companyMap.get(user.companyId) : undefined
+      }));
+
       if (search) {
-        users = users.filter(user => 
-          user.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-          user.email.toLowerCase().includes(search.toLowerCase())
+        const searchLower = search.toLowerCase();
+        enrichedUsers = enrichedUsers.filter(user => 
+          user.fullName.toLowerCase().includes(searchLower) ||
+          user.email.toLowerCase().includes(searchLower) ||
+          user.companyName?.toLowerCase().includes(searchLower)
         );
       }
       
-      // We might need to adjust total/hasMore after in-memory search
-      const totalFiltered = users.length;
-      const paginatedUsers = users.slice(0, limit);
+      const totalFiltered = enrichedUsers.length;
+      const paginatedUsers = enrichedUsers.slice(0, limit);
 
       return NextResponse.json({
         success: true,

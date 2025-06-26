@@ -26,7 +26,11 @@ import {
   Clock,
   Crown,
   Briefcase,
-  Loader2
+  Loader2,
+  Users,
+  Shield,
+  XCircle,
+  Filter
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -98,7 +102,10 @@ interface CompanyForSelect {
 }
 
 export default function AdminUsersPage() {
-  const [search, setSearch] = useState('');
+  const { user, loading, getToken } = useAuth();
+  const router = useRouter();
+  const [companies, setCompanies] = useState<CompanyForSelect[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -109,8 +116,8 @@ export default function AdminUsersPage() {
     users: AdminUser[];
     pagination: any;
   }>({
-    endpoint: `/api/admin/users?search=${search}&role=${roleFilter}&status=${statusFilter}`,
-    dependencies: [search, roleFilter, statusFilter]
+    endpoint: `/api/admin/users?search=${searchTerm}&role=${roleFilter}&status=${statusFilter}`,
+    dependencies: [searchTerm, roleFilter, statusFilter]
   });
 
   const { data: companyData, isLoading: isLoadingCompanies } = useAdminData<{
@@ -298,8 +305,8 @@ export default function AdminUsersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>

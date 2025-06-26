@@ -83,7 +83,7 @@ class DatabaseService {
     }
   ): Promise<{ items: T[]; total: number; hasMore: boolean }> {
     this.ensureDb();
-    let query: any = this.db!.collectionGroup(collection);
+    let query: any = this.db!.collection(collection);
 
     // Apply where conditions
     if (options?.where) {
@@ -102,9 +102,13 @@ class DatabaseService {
     const total = totalSnapshot.data().count;
     
     // Apply ordering
-    if (options?.orderBy) {
+    // Note: Firestore requires composite indexes for queries with where + orderBy on different fields
+    // For now, we'll skip ordering if we have where conditions to avoid index requirements
+    const hasWhereConditions = (options?.where && options.where.length > 0) || !options?.includeDeleted;
+    
+    if (options?.orderBy && !hasWhereConditions) {
       query = query.orderBy(options.orderBy.field, options.orderBy.direction);
-    } else {
+    } else if (!hasWhereConditions) {
       query = query.orderBy('createdAt', 'desc');
     }
 
@@ -117,10 +121,31 @@ class DatabaseService {
     }
 
     const snapshot = await query.get();
-    const items = snapshot.docs.map((doc: any) => ({
+    let items = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as T));
+
+    // If we skipped ordering due to index constraints, sort in memory
+    if (hasWhereConditions && (options?.orderBy || !options?.orderBy)) {
+      const orderField = options?.orderBy?.field || 'createdAt';
+      const orderDirection = options?.orderBy?.direction || 'desc';
+      
+      items.sort((a: any, b: any) => {
+        const aValue = a[orderField];
+        const bValue = b[orderField];
+        
+        // Handle Firestore timestamps
+        const aTime = aValue?._seconds ? aValue._seconds * 1000 : (aValue instanceof Date ? aValue.getTime() : aValue);
+        const bTime = bValue?._seconds ? bValue._seconds * 1000 : (bValue instanceof Date ? bValue.getTime() : bValue);
+        
+        if (orderDirection === 'desc') {
+          return bTime - aTime;
+        } else {
+          return aTime - bTime;
+        }
+      });
+    }
 
     const hasMore = options?.limit ? items.length === options.limit : false;
 

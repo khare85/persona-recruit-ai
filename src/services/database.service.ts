@@ -80,10 +80,13 @@ class DatabaseService {
       orderBy?: { field: string; direction: 'asc' | 'desc' };
       where?: { field: string; operator: any; value: any }[];
       includeDeleted?: boolean;
+      useCollectionGroup?: boolean;
     }
   ): Promise<{ items: T[]; total: number; hasMore: boolean }> {
     this.ensureDb();
-    let query: any = this.db!.collectionGroup(collection);
+    let query: any = options?.useCollectionGroup 
+      ? this.db!.collectionGroup(collection)
+      : this.db!.collection(collection);
 
     // Apply where conditions
     if (options?.where) {
@@ -274,7 +277,8 @@ class DatabaseService {
       limit: options?.limit,
       offset: options?.offset,
       where,
-      orderBy: options?.orderBy || { field: 'createdAt', direction: 'desc' }
+      orderBy: options?.orderBy || { field: 'createdAt', direction: 'desc' },
+      useCollectionGroup: false
     });
   }
 
@@ -390,7 +394,8 @@ class DatabaseService {
       limit: options?.limit,
       offset: options?.offset,
       where,
-      orderBy: { field: 'createdAt', direction: 'desc' }
+      orderBy: { field: 'createdAt', direction: 'desc' },
+      useCollectionGroup: false
     });
   }
 
@@ -507,7 +512,11 @@ class DatabaseService {
   }
   
   async getRecentJobs(limit: number): Promise<Job[]> {
-    const { items } = await this.list<Job>(COLLECTIONS.JOBS, { limit, orderBy: { field: 'publishedAt', direction: 'desc' } });
+    const { items } = await this.list<Job>(COLLECTIONS.JOBS, { 
+      limit, 
+      orderBy: { field: 'publishedAt', direction: 'desc' },
+      useCollectionGroup: false
+    });
     return items;
   }
 
@@ -539,7 +548,8 @@ class DatabaseService {
       limit: options?.limit,
       offset: options?.offset,
       where,
-      orderBy: { field: 'createdAt', direction: 'desc' }
+      orderBy: { field: 'createdAt', direction: 'desc' },
+      useCollectionGroup: false
     });
   }
 

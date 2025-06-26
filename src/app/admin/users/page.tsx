@@ -2,29 +2,53 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/config/firebase';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Users, 
   Search, 
   Filter, 
+  Plus, 
+  MoreHorizontal, 
   Eye, 
-  Edit,
-  Ban,
+  Edit, 
+  Trash2, 
+  Ban, 
   CheckCircle,
-  XCircle,
+  AlertCircle,
   Clock,
   Shield,
   Crown,
   Briefcase,
   Building,
-  Plus
+  Loader2
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -34,12 +58,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 // Zod schema for the new user form
 const newUserSchema = z.object({
@@ -184,7 +208,7 @@ export default function AdminUsersPage() {
                 <FormField control={form.control} name="firstName" render={({ field }) => (
                   <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
-                <FormField control={form.control} name="lastName" render={({ field }) => (
+                 <FormField control={form.control} name="lastName" render={({ field }) => (
                   <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="email" render={({ field }) => (
@@ -378,5 +402,3 @@ export default function AdminUsersPage() {
     </AdminPageWrapper>
   );
 }
-
-    

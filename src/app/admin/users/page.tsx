@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
+  const { getToken } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<UserStats>({
     totalUsers: 0,
@@ -72,6 +74,13 @@ export default function AdminUsersPage() {
   const fetchUsersData = async () => {
     try {
       setIsLoading(true);
+      const token = await getToken();
+      if (!token) {
+        setError('User not authenticated. Please log in.');
+        setIsLoading(false);
+        return;
+      }
+
       const params = new URLSearchParams({
         page: '1',
         limit: '100',
@@ -82,7 +91,7 @@ export default function AdminUsersPage() {
 
       const response = await fetch(`/api/admin/users?${params}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 

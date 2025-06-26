@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,50 +30,47 @@ import {
   Eye,
   Settings,
   Download,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 
-const systemStatus = {
-  overall: 'healthy',
-  uptime: 99.92,
-  lastIncident: '12 days ago',
-  services: [
-    { name: 'Web Application', status: 'healthy', uptime: 99.95, responseTime: 142 },
-    { name: 'API Gateway', status: 'healthy', uptime: 99.98, responseTime: 89 },
-    { name: 'Database', status: 'healthy', uptime: 99.87, responseTime: 23 },
-    { name: 'AI Services', status: 'warning', uptime: 98.45, responseTime: 256 },
-    { name: 'File Storage', status: 'healthy', uptime: 99.99, responseTime: 67 },
-    { name: 'Authentication', status: 'healthy', uptime: 99.92, responseTime: 134 },
-    { name: 'Email Service', status: 'healthy', uptime: 99.78, responseTime: 890 },
-    { name: 'Analytics Engine', status: 'healthy', uptime: 99.56, responseTime: 445 }
-  ],
-  servers: [
-    { name: 'Web Server 1', cpu: 45, memory: 62, disk: 38, status: 'healthy', location: 'US-East' },
-    { name: 'Web Server 2', cpu: 52, memory: 58, disk: 41, status: 'healthy', location: 'US-West' },
-    { name: 'Database Primary', cpu: 67, memory: 78, disk: 55, status: 'warning', location: 'US-East' },
-    { name: 'Database Replica', cpu: 34, memory: 45, disk: 52, status: 'healthy', location: 'EU-West' },
-    { name: 'AI Processing', cpu: 89, memory: 91, disk: 23, status: 'critical', location: 'US-Central' },
-    { name: 'File Storage', cpu: 23, memory: 34, disk: 67, status: 'healthy', location: 'Global CDN' }
-  ],
-  metrics: {
-    totalRequests: 2456789,
-    successRate: 99.94,
-    avgResponseTime: 167,
-    concurrentUsers: 1247,
-    dataTransfer: 2.4,
-    errorRate: 0.06
-  },
-  security: {
-    threatBlocked: 1247,
-    lastScan: '2 hours ago',
-    vulnerabilities: 0,
-    ssl: 'A+',
-    compliance: 'SOC2, GDPR',
-    lastUpdate: '1 day ago'
-  }
-};
-
 export default function AdminSystemPage() {
+  const { getToken } = useAuth();
+  const [systemStatus, setSystemStatus] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSystemData = async () => {
+    try {
+      setIsLoading(true);
+      const token = await getToken();
+      if (!token) {
+        setError('User not authenticated. Please log in.');
+        return;
+      }
+
+      const response = await fetch('/api/admin/system', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch system data');
+      }
+
+      const result = await response.json();
+      setSystemStatus(result.data);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to load system data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSystemData();
+  }, []);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
@@ -104,6 +103,37 @@ export default function AdminSystemPage() {
     return 'bg-red-500';
   };
 
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <Container className="py-8 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading system data...</p>
+          </div>
+        </Container>
+      </AdminLayout>
+    );
+  }
+
+  if (error || !systemStatus) {
+    return (
+      <AdminLayout>
+        <Container className="py-8">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Failed to Load System Data</h2>
+            <p className="text-muted-foreground mb-4">{error || 'Unable to fetch system status'}</p>
+            <Button onClick={fetchSystemData}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </div>
+        </Container>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <Container className="py-8">
@@ -119,7 +149,7 @@ export default function AdminSystemPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={fetchSystemData}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>

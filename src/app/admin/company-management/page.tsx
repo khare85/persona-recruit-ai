@@ -90,7 +90,7 @@ interface CompanyStats {
 }
 
 export default function AdminCompaniesPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, getToken } = useAuth();
   const router = useRouter();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companyStats, setCompanyStats] = useState<CompanyStats | null>(null);
@@ -110,17 +110,6 @@ export default function AdminCompaniesPage() {
     founded: new Date().getFullYear()
   });
 
-  const getAuthHeaders = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      throw new Error('Not authenticated');
-    }
-    const idToken = await currentUser.getIdToken();
-    return {
-      'Authorization': `Bearer ${idToken}`,
-      'Content-Type': 'application/json'
-    };
-  };
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'super_admin')) {
@@ -131,8 +120,13 @@ export default function AdminCompaniesPage() {
   const fetchCompanies = async () => {
     try {
       setIsLoading(true);
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/admin/companies', { headers: { 'Authorization': headers.Authorization }});
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      const response = await fetch('/api/admin/companies', { 
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch companies');
@@ -166,10 +160,16 @@ export default function AdminCompaniesPage() {
   const handleCreateCompany = async () => {
     try {
       setIsAddingCompany(true);
-      const headers = await getAuthHeaders();
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
       const response = await fetch('/api/admin/companies', {
         method: 'POST',
-        headers,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(newCompany),
       });
 

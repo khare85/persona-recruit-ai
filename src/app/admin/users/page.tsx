@@ -22,8 +22,36 @@ import {
   Shield,
   Crown,
   Briefcase,
-  Building
+  Building,
+  Plus
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+
+// Zod schema for the new user form
+const newUserSchema = z.object({
+  firstName: z.string().min(2, 'First name is required'),
+  lastName: z.string().min(2, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['candidate', 'recruiter', 'interviewer', 'company_admin', 'super_admin']),
+  companyId: z.string().optional(),
+});
+
+type NewUserFormValues = z.infer<typeof newUserSchema>;
 
 interface AdminUser {
   id: string;
@@ -43,7 +71,10 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   
+  const { toast } = useToast();
+
   const { data, isLoading, error, refetch } = useAdminData<{
     users: AdminUser[];
     pagination: any;
@@ -51,6 +82,44 @@ export default function AdminUsersPage() {
     endpoint: `/api/admin/users?search=${search}&role=${roleFilter}&status=${statusFilter}`,
     dependencies: [search, roleFilter, statusFilter]
   });
+
+  const form = useForm<NewUserFormValues>({
+    resolver: zodResolver(newUserSchema),
+    defaultValues: {
+      role: 'candidate',
+    },
+  });
+
+  const { formState: { isSubmitting: isAddingUser }, handleSubmit: handleFormSubmit } = form;
+
+  const onAddUserSubmit = async (values: NewUserFormValues) => {
+    try {
+      const response = await fetch('/api/auth/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create user');
+      }
+
+      toast({
+        title: "✅ User Created",
+        description: `${values.email} has been created successfully.`,
+      });
+      setIsAddUserOpen(false);
+      form.reset();
+      refetch(); // Refetch the user list
+    } catch (error) {
+      toast({
+        title: "❌ Error",
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const users = data?.users || [];
 
@@ -94,6 +163,63 @@ export default function AdminUsersPage() {
       error={error}
       onRefresh={refetch}
     >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">All Users</h2>
+        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+              <DialogDescription>
+                Create a new user account and assign them a role.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={handleFormSubmit(onAddUserSubmit)} className="space-y-4">
+                <FormField control={form.control} name="firstName" render={({ field }) => (
+                  <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="lastName" render={({ field }) => (
+                  <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                 <FormField control={form.control} name="password" render={({ field }) => (
+                  <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                )}/>
+                <FormField control={form.control} name="role" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="candidate">Candidate</SelectItem>
+                        <SelectItem value="recruiter">Recruiter</SelectItem>
+                        <SelectItem value="interviewer">Interviewer</SelectItem>
+                        <SelectItem value="company_admin">Company Admin</SelectItem>
+                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}/>
+                <DialogFooter>
+                  <Button type="submit" disabled={isAddingUser}>
+                    {isAddingUser ? 'Creating...' : 'Create User'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>

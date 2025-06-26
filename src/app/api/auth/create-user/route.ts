@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/auth';
 import { firebaseConfigService } from '@/services/firebaseConfig.service';
@@ -98,7 +99,7 @@ export const POST = withAuth(async (request: NextRequest) => {
       message: 'User created successfully'
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating user:', error);
     
     // Handle specific Firebase Auth errors

@@ -58,7 +58,7 @@ export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOpt
     } finally {
       setIsLoading(false);
     }
-  }, [endpoint, getToken, authLoading, user, ...dependencies]);
+  }, [endpoint, getToken, authLoading, user, ...(dependencies || [])]);
 
   useEffect(() => {
     fetchData();

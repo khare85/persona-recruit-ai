@@ -74,4 +74,95 @@ export const GET = withAuth(
   })
 );
 
+/**
+ * POST /api/admin/users - Create a new user (alternative to /api/auth/create-user)
+ */
+export const POST = withAuth(
+  withRole(['super_admin'], async (req: NextRequest): Promise<NextResponse> => {
+    try {
+      const body = await req.json();
+      const { 
+        email, 
+        password, 
+        firstName, 
+        lastName, 
+        role, 
+        companyId, 
+        department 
+      } = body;
+
+      // Validate required fields
+      if (!email || !firstName || !lastName || !role) {
+        return NextResponse.json(
+          { error: 'Email, first name, last name, and role are required' },
+          { status: 400 }
+        );
+      }
+
+      // Validate password if provided
+      if (!password) {
+        return NextResponse.json(
+          { error: 'Password is required' },
+          { status: 400 }
+        );
+      }
+
+      // Check if user already exists
+      const existingUser = await databaseService.getUserByEmail(email);
+      if (existingUser) {
+        return NextResponse.json(
+          { error: 'A user with this email already exists' },
+          { status: 400 }
+        );
+      }
+
+      apiLogger.info('Super admin creating user', {
+        adminId: req.user?.id,
+        targetEmail: email,
+        targetRole: role,
+        companyId
+      });
+
+      // Create user using database service
+      const userId = await databaseService.createUser({
+        email,
+        firstName,
+        lastName,
+        role,
+        companyId,
+        status: 'active',
+        emailVerified: true,
+        passwordHash: password // Will be hashed in the service
+      });
+
+      apiLogger.info('User created successfully by super admin', {
+        userId,
+        email,
+        role,
+        createdBy: req.user?.id
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          userId,
+          email,
+          firstName,
+          lastName,
+          role,
+          companyId
+        },
+        message: 'User created successfully'
+      }, { status: 201 });
+
+    } catch (error) {
+      apiLogger.error('Error creating user via admin endpoint', {
+        error: String(error),
+        userId: req.user?.id
+      });
+      return handleApiError(error);
+    }
+  })
+);
+
     

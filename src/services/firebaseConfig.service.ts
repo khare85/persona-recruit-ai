@@ -287,7 +287,13 @@ export class FirebaseConfigService {
     department?: string;
     permissions?: string[];
   }): Promise<admin.auth.UserRecord> {
-    const config = await this.getFirebaseConfig();
+    let config;
+    try {
+      config = await this.getFirebaseConfig();
+    } catch (error) {
+      console.warn('Failed to get Firebase config from Secret Manager, using default config:', error);
+      config = this.getDefaultConfig();
+    }
     
     // Validate role
     if (!config.roles[userData.role]) {

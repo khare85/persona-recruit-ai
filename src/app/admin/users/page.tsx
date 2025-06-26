@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -111,6 +112,7 @@ export default function AdminUsersPage() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   
   const { toast } = useToast();
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const { data: userData, isLoading: isLoadingUsers, error: userError, refetch: refetchUsers } = useAdminData<{
     users: AdminUser[];
@@ -143,16 +145,10 @@ export default function AdminUsersPage() {
 
   const onAddUserSubmit = async (values: NewUserFormValues) => {
     try {
-      const response = await fetch('/api/auth/create-user', {
+      await authenticatedFetch('/api/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create user');
-      }
 
       toast({
         title: "✅ User Created",

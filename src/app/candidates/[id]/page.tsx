@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,7 +33,9 @@ import Link from 'next/link';
 import { InterviewTimeline, type InterviewTimelineItem } from '@/components/interviews/InterviewTimeline';
 import { Loader2 } from 'lucide-react';
 
-export default function CandidateProfilePage({ params }: { params: { id: string } }) {
+export default function CandidateProfilePage() {
+  const params = useParams();
+  const id = params.id as string;
   const [candidate, setCandidate] = useState<any>(null);
   const [timelineItems, setTimelineItems] = useState<InterviewTimelineItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +44,7 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
     async function loadCandidateData() {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/candidates/${params.id}`);
+        const response = await fetch(`/api/candidates/${id}`);
         if (response.ok) {
           const data = await response.json();
           setCandidate(data.data);
@@ -69,8 +72,10 @@ export default function CandidateProfilePage({ params }: { params: { id: string 
       }
     }
 
-    loadCandidateData();
-  }, [params.id]);
+    if (id) {
+      loadCandidateData();
+    }
+  }, [id]);
 
   if (isLoading) {
     return (

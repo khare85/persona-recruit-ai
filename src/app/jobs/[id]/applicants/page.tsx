@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +27,9 @@ interface ScheduleInterviewState {
   candidateName: string;
 }
 
-export default function JobApplicantsPage({ params }: { params: { id: string } }) {
+export default function JobApplicantsPage() {
+  const params = useParams();
+  const jobId = params.id as string;
   const [job, setJob] = useState<MockJob | null>(null);
   const [applicants, setApplicants] = useState<ApplicantWithScore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,9 +42,6 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
   useEffect(() => {
     async function loadJobAndApplicants() {
       setIsLoading(true);
-      
-      // Get the id from params
-      const jobId = params.id;
       
       const jobData = getMockJob(jobId);
       if (!jobData) {
@@ -111,8 +112,10 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
       setIsLoading(false);
     }
 
-    loadJobAndApplicants();
-  }, [params.id]);
+    if (jobId) {
+      loadJobAndApplicants();
+    }
+  }, [jobId]);
 
   const handleScheduleInterview = (candidateId: string, candidateName: string) => {
     setScheduleInterviewState({

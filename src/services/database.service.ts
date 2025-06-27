@@ -77,7 +77,7 @@ class DatabaseService {
     options?: {
       limit?: number;
       offset?: number;
-      orderBy?: { field: string; direction: 'asc' | 'desc' };
+      orderBy?: { field: string; direction: 'asc' | 'desc' } | null;
       where?: { field: string; operator: any; value: any }[];
       includeDeleted?: boolean;
       useCollectionGroup?: boolean;
@@ -106,7 +106,7 @@ class DatabaseService {
     
     if (options?.orderBy) {
       query = query.orderBy(options.orderBy.field, options.orderBy.direction);
-    } else {
+    } else if (options?.orderBy !== null) {
       query = query.orderBy('createdAt', 'desc');
     }
 
@@ -531,6 +531,7 @@ class DatabaseService {
     companyId?: string;
     status?: string;
     recruiterId?: string;
+    orderBy?: { field: string; direction: 'asc' | 'desc' } | null;
   }): Promise<{ items: Job[]; total: number; hasMore: boolean }> {
     const where: any[] = [];
     
@@ -548,7 +549,7 @@ class DatabaseService {
       limit: options?.limit,
       offset: options?.offset,
       where,
-      orderBy: { field: 'createdAt', direction: 'desc' },
+      orderBy: options?.orderBy === null ? null : (options?.orderBy || { field: 'createdAt', direction: 'desc' }),
       useCollectionGroup: false
     });
   }
@@ -626,6 +627,33 @@ class DatabaseService {
       id: doc.id,
       ...doc.data()
     } as JobApplication));
+  }
+
+  async getApplicationsForJobs(jobIds: string[]): Promise<JobApplication[]> {
+    if (jobIds.length === 0) return [];
+    this.ensureDb();
+    
+    const chunks = [];
+    for (let i = 0; i < jobIds.length; i += 30) {
+      chunks.push(jobIds.slice(i, i + 30));
+    }
+
+    const promises = chunks.map(chunk => 
+      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+        .where('jobId', 'in', chunk)
+        .where('deletedAt', '==', null)
+        .get()
+    );
+
+    const snapshots = await Promise.all(promises);
+    const applications: JobApplication[] = [];
+    snapshots.forEach(snapshot => {
+      snapshot.forEach(doc => {
+        applications.push({ id: doc.id, ...doc.data() } as JobApplication);
+      });
+    });
+
+    return applications;
   }
 
   async getJobApplicationByCandidate(jobId: string, candidateId: string): Promise<any> {
@@ -779,3 +807,4 @@ class DatabaseService {
 
 export const databaseService = new DatabaseService();
 export default databaseService;
+

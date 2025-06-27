@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withRole } from '@/middleware/auth';
 import { handleApiError } from '@/lib/errors';
@@ -11,23 +12,25 @@ export const GET = withAuth(
   withRole(['recruiter'], async (req: NextRequest): Promise<NextResponse> => {
     try {
       const recruiterId = req.user!.id;
-      const companyId = req.user!.companyId;
 
-      if (!companyId) {
-        return NextResponse.json({ error: 'Recruiter not associated with a company' }, { status: 400 });
-      }
-
-      apiLogger.info('Fetching recruiter applications', { recruiterId, companyId });
+      apiLogger.info('Fetching recruiter applications', { recruiterId });
 
       // Get jobs assigned to this recruiter
       const jobs = await databaseService.listJobs({ recruiterId });
       const recruiterJobIds = jobs.items.map(job => job.id);
 
+      if (recruiterJobIds.length === 0) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            applications: [],
+            stats: { total: 0, pending: 0, reviewed: 0, interviewed: 0, hired: 0, rejected: 0 }
+          }
+        });
+      }
+
       // Get applications for those jobs
-      const allApplications = await databaseService.getCompanyApplications({ companyId });
-      const recruiterApplications = allApplications.filter(app => 
-        recruiterJobIds.includes(app.jobId)
-      );
+      const recruiterApplications = await databaseService.getApplicationsForJobs(recruiterJobIds);
 
       // Calculate stats
       const stats = {

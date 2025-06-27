@@ -1,13 +1,14 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
 import { Building, Users, Briefcase, DollarSign, Search, Settings, PlusCircle, ExternalLink, Activity, BarChart3, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface CompanyDashboardData {
   companyName: string;
@@ -24,35 +25,24 @@ export default function CompanyDashboardPage() {
   const [data, setData] = useState<CompanyDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const authenticatedFetch = useAuthenticatedFetch();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const token = localStorage.getItem('auth-token');
-        if (!token) {
-          setError('User not authenticated. Please log in.');
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/company/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-        const result = await response.json();
-        setData(result.data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await authenticatedFetch('/api/company/dashboard');
+      setData(result.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
     }
+  }, [authenticatedFetch]);
+  
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   if (isLoading) {
     return (

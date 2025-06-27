@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { AlertsPanel } from '@/components/ai-analytics/AlertsPanel'; // Correcte
 import { ExportControls } from '@/components/ai-analytics/ExportControls'; // Corrected import path
 import { TimeRangeSelector } from '@/components/ai-analytics/TimeRangeSelector';
 import { AlertTriangle, Activity, Shield, TrendingUp, Download, RefreshCw } from 'lucide-react';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 export default function AIAnalyticsPage() {
   const [dashboardData, setDashboardData] = useState<AIPerformanceDashboard | null>(null);
@@ -29,9 +31,10 @@ export default function AIAnalyticsPage() {
   });
   const [activeTab, setActiveTab] = useState('overview');
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const authenticatedFetch = useAuthenticatedFetch();
 
   // Fetch dashboard data
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -48,41 +51,27 @@ export default function AIAnalyticsPage() {
         ...(filters.withDemographics && { withDemographics: 'true' })
       });
 
-      const response = await fetch(`/api/ai-analytics/dashboard?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-        },
-      });
+      const result = await authenticatedFetch(`/api/ai-analytics/dashboard?${params}`);
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch dashboard data: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setDashboardData(result.data);
-      } else {
-        throw new Error(result.error || 'Failed to fetch dashboard data');
-      }
+      setDashboardData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, authenticatedFetch]);
 
   // Auto-refresh effect
   useEffect(() => {
     fetchDashboardData();
-  }, [filters]);
+  }, [fetchDashboardData]);
 
   useEffect(() => {
     if (autoRefresh) {
       const interval = setInterval(fetchDashboardData, 30000); // Refresh every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, filters]);
+  }, [autoRefresh, fetchDashboardData]);
 
   // Handle time range changes
   const handleTimeRangeChange = (newTimeRange: AnalyticsFilters['timeRange']) => {

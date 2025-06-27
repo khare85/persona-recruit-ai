@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useCallback } from 'react';
 
@@ -30,7 +31,13 @@ export function useAuthenticatedFetch() {
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return response.json();
+    // Handle responses with no content
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    }
+    return response.text().then(text => text ? JSON.parse(text) : {});
+
   }, [getToken]);
 
   return authenticatedFetch;

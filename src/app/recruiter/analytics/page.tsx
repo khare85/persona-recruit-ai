@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,13 +15,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
+  ResponsiveContainer
 } from 'recharts';
 import { 
   TrendingUp, 
@@ -43,6 +38,7 @@ import {
   Target
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface RecruiterMetrics {
   totalApplications: number;
@@ -88,39 +84,27 @@ export default function RecruiterAnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('last-3-months');
+  const authenticatedFetch = useAuthenticatedFetch();
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const token = localStorage.getItem('auth-token');
-      if (!token) {
-        setError('User not authenticated. Please log in.');
-        setIsLoading(false);
-        return;
-      }
-      const response = await fetch(`/api/recruiter/analytics?timeRange=${timeRange}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setMetrics(result.data.metrics);
-        setJobPerformance(result.data.jobPerformance);
-        setMonthlyTrends(result.data.monthlyTrends);
-        setSourceMetrics(result.data.sourceMetrics);
-      } else {
-        setError('Failed to load analytics data');
-      }
+      const result = await authenticatedFetch(`/api/recruiter/analytics?timeRange=${timeRange}`);
+      setMetrics(result.data.metrics);
+      setJobPerformance(result.data.jobPerformance);
+      setMonthlyTrends(result.data.monthlyTrends);
+      setSourceMetrics(result.data.sourceMetrics);
     } catch (error) {
-      setError('An error occurred while loading analytics');
+      setError(error instanceof Error ? error.message : 'An error occurred while loading analytics');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [timeRange, authenticatedFetch]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   return (
     <DashboardLayout>

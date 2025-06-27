@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +28,7 @@ import {
   FileText,
   RefreshCw
 } from 'lucide-react';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface Application {
   id: string;
@@ -63,41 +65,26 @@ export default function RecruiterApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [jobFilter, setJobFilter] = useState('all');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
+  const authenticatedFetch = useAuthenticatedFetch();
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  useEffect(() => {
-    filterApplications();
-  }, [applications, searchTerm, statusFilter, jobFilter]);
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const token = localStorage.getItem('auth-token');
-      if (!token) {
-        console.error('No auth token found');
-        setIsLoading(false);
-        return;
-      }
-      const response = await fetch('/api/recruiter/applications', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setApplications(result.data.applications || []);
-        setStats(result.data.stats || null);
-      }
+      const result = await authenticatedFetch('/api/recruiter/applications');
+      setApplications(result.data.applications || []);
+      setStats(result.data.stats || null);
     } catch (error) {
       console.error('Error fetching applications:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authenticatedFetch]);
 
-  const filterApplications = () => {
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useEffect(() => {
     let filtered = applications;
 
     if (searchTerm) {
@@ -117,7 +104,7 @@ export default function RecruiterApplicationsPage() {
     }
 
     setFilteredApplications(filtered);
-  };
+  }, [applications, searchTerm, statusFilter, jobFilter]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

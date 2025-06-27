@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -9,30 +9,34 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Briefcase, Star, List, Grid3X3, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Briefcase, Star, Users, Loader2 } from 'lucide-react';
 import type { MockCandidate } from '@/services/mockDataService';
 
 export default function CandidatesPage() {
-  const [isGridView, setIsGridView] = useState(true);
   const [candidates, setCandidates] = useState<MockCandidate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
-    async function fetchCandidates() {
-      try {
-        const response = await fetch('/api/candidates');
-        if (response.ok) {
-          const data = await response.json();
-          setCandidates(data.data.candidates);
-        }
-      } catch (error) {
-        console.error("Failed to fetch candidates:", error);
-      } finally {
-        setIsLoading(false);
+  // This function will now be called by the search button
+  const findCandidates = async () => {
+    setIsLoading(true);
+    setHasSearched(true);
+    try {
+      const response = await fetch('/api/candidates');
+      if (response.ok) {
+        const data = await response.json();
+        setCandidates(data.data.candidates);
+      } else {
+        // Handle error case, maybe show a toast
+        setCandidates([]);
       }
+    } catch (error) {
+      console.error("Failed to fetch candidates:", error);
+      setCandidates([]);
+    } finally {
+      setIsLoading(false);
     }
-    fetchCandidates();
-  }, []);
+  };
 
   return (
     <Container>
@@ -66,79 +70,30 @@ export default function CandidatesPage() {
               </label>
               <Input id="experience" type="number" placeholder="e.g., 5 years" />
             </div>
-            <Button className="w-full md:w-auto mt-4 md:mt-0 md:col-start-3">
-              <Search className="mr-2 h-4 w-4" /> Find Candidates
+            <Button 
+              className="w-full md:w-auto mt-4 md:mt-0 md:col-start-3"
+              onClick={findCandidates}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
+              Find Candidates
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      <div className="flex justify-end mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsGridView(!isGridView)}
-          className="flex items-center"
-        >
-          {isGridView ? (
-            <>
-              <List className="h-4 w-4 mr-2" /> List View
-            </>
-          ) : (
-            <>
-              <Grid3X3 className="h-4 w-4 mr-2" /> Grid View
-            </>
-          )}
-        </Button>
-      </div>
-
+      
       {isLoading ? (
         <div className="flex justify-center items-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : (
-        <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
-          {(candidates || []).map((candidate) =>
-            isGridView ? (
-              <Card key={candidate.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="items-center text-center p-6">
-                  <Avatar className="w-24 h-24 mb-3 border-2 border-primary/50">
-                    <AvatarImage src={candidate.profilePictureUrl} alt={candidate.fullName} data-ai-hint="profile person" />
-                    <AvatarFallback>{candidate.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <CardTitle className="font-headline text-xl">
-                    <Link href={`/candidates/${candidate.id}`} className="hover:text-primary transition-colors">{candidate.fullName}</Link>
-                  </CardTitle>
-                  <CardDescription className="text-sm">{candidate.currentTitle}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow text-sm px-6">
-                  <div className="mb-3">
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {(candidate.skills || []).slice(0, 4).map(skill => (
-                        <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center text-muted-foreground mb-1">
-                    <Briefcase className="h-3.5 w-3.5 mr-1.5 text-primary/80" /> Experience: {candidate.experience} years
-                  </div>
-                  <div className="flex items-center justify-center text-muted-foreground">
-                    <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500" /> AI Match: <span className="font-semibold ml-1 text-foreground">{candidate.aiMatchScore || 85}%</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex-col items-stretch space-y-2 p-6">
-                  <Badge variant={candidate.availability === 'Available immediately' ? 'default' : 'outline'} className="self-center py-1 text-xs">
-                    {candidate.availability === 'Available immediately' ? `Available Now` : `Available: ${candidate.availability}`}
-                  </Badge>
-                  <Link href={`/candidates/${candidate.id}`} passHref className="w-full">
-                    <Button variant="outline" className="w-full">
-                      View Profile
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ) : (
+      ) : hasSearched ? (
+        candidates.length > 0 ? (
+          <div className="space-y-4">
+            {(candidates || []).map((candidate) => (
               <Card key={candidate.id} className="hover:shadow-lg transition-shadow duration-300">
                 <CardContent className="p-4 flex items-center justify-between gap-4">
                   {/* Left Part: Avatar & Info */}
@@ -176,15 +131,30 @@ export default function CandidatesPage() {
                   </div>
                 </CardContent>
               </Card>
-            )
-          )}
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">No Candidates Found</h3>
+            <p className="text-muted-foreground">Try adjusting your search filters.</p>
+          </div>
+        )
+      ) : (
+        <div className="text-center py-20">
+            <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">Find Top Talent</h3>
+            <p className="text-muted-foreground">Use the search and filters above to find candidates.</p>
         </div>
       )}
 
-      <div className="mt-12 flex justify-center">
-        <Button variant="outline" className="mr-2">Previous</Button>
-        <Button variant="outline">Next</Button>
-      </div>
+      {hasSearched && candidates.length > 0 && (
+        <div className="mt-12 flex justify-center">
+          <Button variant="outline" className="mr-2">Previous</Button>
+          <Button variant="outline">Next</Button>
+        </div>
+      )}
     </Container>
   );
 }
+

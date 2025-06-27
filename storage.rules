@@ -1,45 +1,67 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Helper function for authentication
-    function isAuthenticated() {
-      return request.auth != null;
+    // Helper function to check for role in custom claims
+    function hasRole(role) {
+      return request.auth != null && request.auth.token != null && request.auth.token.role == role;
+    }
+    
+    // Helper function to check if user is a member of a company
+    function isCompanyMember(companyId) {
+      return request.auth != null && request.auth.token != null && request.auth.token.companyId == companyId;
     }
 
-    // User profile files (avatars, resumes, videos)
-    match /users/{userId}/{allPaths=**} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Company assets (logos, documents)
-    match /companies/{companyId}/{allPaths=**} {
-      allow read: if true; // Public read for logos
-      allow write: if isAuthenticated() && 
-                    (request.auth.token.role == 'super_admin' || 
-                     (request.auth.token.role == 'company_admin' && request.auth.token.companyId == companyId));
-    }
-    
-    // Candidate-specific uploads, readable by company staff
-    match /resumes/{userId}/{fileName} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
-        allow read: if isAuthenticated() && (request.auth.token.role == 'recruiter' || request.auth.token.role == 'company_admin');
-    }
-    
-    match /video-intros/{userId}/{fileName} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
-        allow read: if isAuthenticated() && (request.auth.token.role == 'recruiter' || request.auth.token.role == 'company_admin');
-    }
-    
-    // Job attachments (e.g., images for job postings)
-    match /jobs/{jobId}/{allPaths=**} {
+    // AVATARS: Publicly readable, but only the user can write their own.
+    match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuthenticated() && (request.auth.token.role == 'recruiter' || request.auth.token.role == 'company_admin');
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Default deny
+    // RESUMES: Only readable/writable by owner and relevant company staff.
+    match /resumes/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Admins/Recruiters can read if there is an application linking the candidate and company.
+      // This is complex to enforce here. For now, we allow admins to read all resumes for simplicity.
+      // A better solution involves restructuring storage paths.
+      allow read: if request.auth != null && (hasRole('super_admin') || hasRole('company_admin') || hasRole('recruiter'));
+    }
+    
+    // VIDEO INTRODUCTIONS: Same rules as resumes.
+    match /video-intros/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (hasRole('super_admin') || hasRole('company_admin') || hasRole('recruiter'));
+    }
+    
+    // COMPANY LOGOS: Publicly readable, writable by company admins.
+    match /company-logos/{companyId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && isCompanyMember(companyId) && hasRole('company_admin');
+    }
+    
+    // JOB ATTACHMENTS: Readable by authenticated users, writable by company staff.
+    match /job-attachments/{jobId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      // Write access would require checking job ownership via Firestore.
+      // This is complex. We will allow any authenticated company member to write for now.
+      allow write: if request.auth != null && (hasRole('recruiter') || hasRole('company_admin'));
+    }
+    
+    // SUPPORT ATTACHMENTS: Writable by authenticated users.
+    match /support-attachments/{userId}/{allPaths=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // Admins should also have access.
+        allow read, write: if request.auth != null && hasRole('super_admin');
+    }
+    
+    // TEMP: Writable by authenticated users with a size limit.
+    match /temp/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId && request.resource.size < 10 * 1024 * 1024; // 10MB limit
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default deny all other paths
     match /{allPaths=**} {
       allow read, write: if false;
     }

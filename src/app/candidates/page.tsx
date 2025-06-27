@@ -97,53 +97,87 @@ export default function CandidatesPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-6"}>
-          {candidates.map((candidate) => (
-            <Card key={candidate.id} className={`flex ${isGridView ? 'flex-col' : 'flex-row items-center p-6'} hover:shadow-lg transition-shadow duration-300`}>
-              <div className={`flex ${isGridView ? 'flex-col items-center text-center' : 'items-center mr-6'}`}>
-                <Avatar className={`mb-3 border-2 border-primary/50 ${isGridView ? 'w-24 h-24' : 'w-16 h-16'}`}>
-                  <AvatarImage src={candidate.profilePictureUrl} alt={candidate.fullName} data-ai-hint="profile person" />
-                  <AvatarFallback>{candidate.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className={isGridView ? 'text-center' : 'flex-grow'}>
-                  <CardTitle className={`font-headline hover:text-primary transition-colors ${isGridView ? 'text-xl' : 'text-lg'}`}>
-                    <Link href={`/candidates/${candidate.id}`}>{candidate.fullName}</Link>
+        <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
+          {candidates.map((candidate) =>
+            isGridView ? (
+              <Card key={candidate.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="items-center text-center p-6">
+                  <Avatar className="w-24 h-24 mb-3 border-2 border-primary/50">
+                    <AvatarImage src={candidate.profilePictureUrl} alt={candidate.fullName} data-ai-hint="profile person" />
+                    <AvatarFallback>{candidate.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <CardTitle className="font-headline text-xl">
+                    <Link href={`/candidates/${candidate.id}`} className="hover:text-primary transition-colors">{candidate.fullName}</Link>
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">{candidate.currentTitle}</CardDescription>
-                </div>
-              </div>
-              <CardContent className={`flex-grow text-sm ${isGridView ? '' : 'flex items-center justify-between w-full'}`}>
-                <div className={isGridView ? 'flex-grow' : 'flex-grow flex items-center space-x-6'}>
-                  {isGridView && (
-                    <div className="mb-3">
-                      <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {(candidate.skills || []).slice(0, 4).map(skill => (
-                          <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
-                        ))}
-                      </div>
+                  <CardDescription className="text-sm">{candidate.currentTitle}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow text-sm px-6">
+                  <div className="mb-3">
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {(candidate.skills || []).slice(0, 4).map(skill => (
+                        <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
+                      ))}
                     </div>
-                  )}
-                  <div className="flex items-center text-muted-foreground mb-1">
+                  </div>
+                  <div className="flex items-center justify-center text-muted-foreground mb-1">
                     <Briefcase className="h-3.5 w-3.5 mr-1.5 text-primary/80" /> Experience: {candidate.experience} years
                   </div>
-                  <div className="flex items-center text-muted-foreground">
+                  <div className="flex items-center justify-center text-muted-foreground">
                     <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500" /> AI Match: <span className="font-semibold ml-1 text-foreground">{candidate.aiMatchScore || 85}%</span>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className={`${isGridView ? 'flex-col items-stretch space-y-2' : 'flex-row items-center space-x-4 mt-0 p-0'}`}>
-                <Badge variant={candidate.availability === 'Available immediately' ? 'default' : 'outline'} className={`${isGridView ? 'self-center' : ''} py-1 text-xs`}>
-                  {candidate.availability === 'Available immediately' ? `Available Now` : `Available: ${candidate.availability}`}
-                </Badge>
-                <Link href={`/candidates/${candidate.id}`} passHref className={isGridView ? "w-full" : ""}>
-                  <Button variant="outline" className={isGridView ? "w-full" : ""}>
-                    View Profile
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
+                </CardContent>
+                <CardFooter className="flex-col items-stretch space-y-2 p-6">
+                  <Badge variant={candidate.availability === 'Available immediately' ? 'default' : 'outline'} className="self-center py-1 text-xs">
+                    {candidate.availability === 'Available immediately' ? `Available Now` : `Available: ${candidate.availability}`}
+                  </Badge>
+                  <Link href={`/candidates/${candidate.id}`} passHref className="w-full">
+                    <Button variant="outline" className="w-full">
+                      View Profile
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            ) : (
+              <Card key={candidate.id} className="hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                  {/* Left Part: Avatar & Info */}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <Avatar className="h-12 w-12 border">
+                        <AvatarImage src={candidate.profilePictureUrl} alt={candidate.fullName} data-ai-hint="profile person" />
+                        <AvatarFallback>{candidate.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                        <Link href={`/candidates/${candidate.id}`} className="font-semibold truncate hover:text-primary block">{candidate.fullName}</Link>
+                        <p className="text-sm text-muted-foreground truncate">{candidate.currentTitle}</p>
+                    </div>
+                  </div>
+
+                  {/* Middle Part: Key Info (hidden on medium screens and below) */}
+                  <div className="hidden lg:flex items-center gap-6 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4" />
+                          <span>{candidate.experience} years</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-amber-500" />
+                          <span className="font-medium text-foreground">{candidate.aiMatchScore || 85}% Match</span>
+                      </div>
+                  </div>
+                  
+                  {/* Right Part: Availability & Action */}
+                  <div className="flex items-center gap-4">
+                      <Badge variant={candidate.availability === 'Available immediately' ? 'default' : 'outline'} className="hidden sm:inline-flex">
+                        {candidate.availability === 'Available immediately' ? `Now` : `Available`}
+                      </Badge>
+                      <Link href={`/candidates/${candidate.id}`} passHref>
+                          <Button variant="outline" size="sm">View</Button>
+                      </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          )}
         </div>
       )}
 

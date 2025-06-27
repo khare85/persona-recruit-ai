@@ -656,6 +656,33 @@ class DatabaseService {
     return applications;
   }
 
+  async getInterviewsForJobs(jobIds: string[]): Promise<any[]> {
+    if (jobIds.length === 0) return [];
+    this.ensureDb();
+    
+    const chunks = [];
+    for (let i = 0; i < jobIds.length; i += 30) {
+      chunks.push(jobIds.slice(i, i + 30));
+    }
+
+    const promises = chunks.map(chunk => 
+      this.db!.collection(COLLECTIONS.INTERVIEWS)
+        .where('jobId', 'in', chunk)
+        .where('deletedAt', '==', null)
+        .get()
+    );
+
+    const snapshots = await Promise.all(promises);
+    const interviews: any[] = [];
+    snapshots.forEach(snapshot => {
+      snapshot.forEach(doc => {
+        interviews.push({ id: doc.id, ...doc.data() });
+      });
+    });
+
+    return interviews;
+  }
+
   async getJobApplicationByCandidate(jobId: string, candidateId: string): Promise<any> {
     this.ensureDb();
     const snapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
@@ -807,4 +834,3 @@ class DatabaseService {
 
 export const databaseService = new DatabaseService();
 export default databaseService;
-

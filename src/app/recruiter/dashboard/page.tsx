@@ -5,26 +5,46 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Briefcase, Users, CalendarDays, Award, Search, Activity, PlusCircle, Eye, LayoutDashboard, Loader2, AlertCircle } from 'lucide-react';
+import { Briefcase, Users, CalendarDays, Award, Search, PlusCircle, Eye, LayoutDashboard, Loader2, AlertCircle, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import { format, formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 interface RecruiterDashboardData {
   activeJobs: number;
-  candidatesViewed: number;
-  interviewsScheduled: number;
-  hires: number;
-  recentJobs: Array<{ id: string; title: string; applicants: number; views: number; }>;
+  newApplications: number;
+  upcomingInterviews: number;
+  hiresThisMonth: number;
+  upcomingInterviewList: {
+    id: string;
+    candidateName: string;
+    jobTitle: string;
+    scheduledFor: string;
+    duration: number;
+  }[];
+  recentApplicationList: {
+    id: string;
+    candidateName: string;
+    jobTitle: string;
+    appliedAt: string;
+    status: string;
+    aiMatchScore: number;
+  }[];
 }
 
 export default function RecruiterDashboardPage() {
+  const { loading: authLoading } = useAuth();
   const [data, setData] = useState<RecruiterDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchData = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -35,7 +55,7 @@ export default function RecruiterDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch]);
+  }, [authenticatedFetch, authLoading]);
   
   useEffect(() => {
     fetchData();
@@ -61,7 +81,7 @@ export default function RecruiterDashboardPage() {
       </DashboardLayout>
     );
   }
-
+  
   return (
     <DashboardLayout>
       <Container>
@@ -76,91 +96,113 @@ export default function RecruiterDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-md">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
               <Briefcase className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{data.activeJobs}</div>
-              <Link href="/jobs" className="text-xs text-primary hover:underline">Manage all jobs</Link>
+              <Link href="/recruiter/jobs" className="text-xs text-primary hover:underline">Manage jobs</Link>
             </CardContent>
           </Card>
-
-          <Card className="shadow-md">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Candidates Viewed</CardTitle>
+              <CardTitle className="text-sm font-medium">New Applications</CardTitle>
               <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.candidatesViewed}</div>
-              <Link href="/candidates" className="text-xs text-primary hover:underline">Browse candidates</Link>
+              <div className="text-2xl font-bold">{data.newApplications}</div>
+              <p className="text-xs text-muted-foreground">In the last 7 days</p>
             </CardContent>
           </Card>
-
-          <Card className="shadow-md">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Interviews Scheduled</CardTitle>
+              <CardTitle className="text-sm font-medium">Upcoming Interviews</CardTitle>
               <CalendarDays className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.interviewsScheduled}</div>
-              <Link href="/interviews" className="text-xs text-primary hover:underline">View schedule</Link>
+              <div className="text-2xl font-bold">{data.upcomingInterviews}</div>
+              <Link href="/recruiter/interviews" className="text-xs text-primary hover:underline">View schedule</Link>
             </CardContent>
           </Card>
-
-          <Card className="shadow-md">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Successful Hires</CardTitle>
+              <CardTitle className="text-sm font-medium">Hires This Month</CardTitle>
               <Award className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.hires}</div>
-              <span className="text-xs text-muted-foreground">This month</span>
+              <div className="text-2xl font-bold">{data.hiresThisMonth}</div>
+              <p className="text-xs text-muted-foreground">Successful placements</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="shadow-lg">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Briefcase className="mr-2 h-6 w-6 text-primary" /> Recent Job Postings
+                  <FileText className="mr-2 h-5 w-5 text-primary" /> Recent Applications
                 </CardTitle>
-                <CardDescription>Track the performance of your latest job postings</CardDescription>
+                <CardDescription>Latest candidates who applied to your jobs</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {data.recentJobs.map(job => (
-                  <div key={job.id} className="flex justify-between items-center p-3 border rounded-md">
+                {data.recentApplicationList.length > 0 ? data.recentApplicationList.map(app => (
+                  <div key={app.id} className="flex justify-between items-center p-3 border rounded-md">
                     <div>
-                      <h4 className="font-semibold">{job.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {job.applicants} applicants • {job.views} views
-                      </p>
+                      <div className="font-semibold">{app.candidateName}</div>
+                      <p className="text-sm text-muted-foreground">{app.jobTitle}</p>
+                      <p className="text-xs text-muted-foreground">Applied {formatDistanceToNow(new Date(app.appliedAt), { addSuffix: true })}</p>
                     </div>
-                    <div className="flex space-x-2">
-                      <Link href={`/jobs/${job.id}`}>
-                        <Button variant="outline" size="sm">
-                          <Eye className="mr-1 h-4 w-4" /> View
-                        </Button>
-                      </Link>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span className="font-semibold">{app.aiMatchScore}%</span>
+                      </div>
+                      <Badge variant="secondary" className="mt-1">{app.status}</Badge>
                     </div>
                   </div>
-                ))}
+                )) : <p className="text-muted-foreground text-center">No recent applications.</p>}
               </CardContent>
               <CardFooter>
-                <Link href="/jobs/new">
-                  <Button className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Post New Job
-                  </Button>
+                <Link href="/recruiter/applications" className="w-full">
+                  <Button variant="outline" className="w-full">View All Applications</Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CalendarDays className="mr-2 h-5 w-5 text-primary" /> Upcoming Interviews
+                </CardTitle>
+                <CardDescription>Your next scheduled interviews</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {data.upcomingInterviewList.length > 0 ? data.upcomingInterviewList.map(interview => (
+                  <div key={interview.id} className="flex justify-between items-center p-3 border rounded-md">
+                    <div>
+                      <div className="font-semibold">{interview.candidateName}</div>
+                      <p className="text-sm text-muted-foreground">{interview.jobTitle}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-sm">{format(new Date(interview.scheduledFor), 'MMM d, h:mm a')}</div>
+                      <p className="text-xs text-muted-foreground">{interview.duration} min</p>
+                    </div>
+                  </div>
+                )) : <p className="text-muted-foreground text-center">No upcoming interviews.</p>}
+              </CardContent>
+              <CardFooter>
+                <Link href="/recruiter/interviews" className="w-full">
+                  <Button variant="outline" className="w-full">Manage Interviews</Button>
                 </Link>
               </CardFooter>
             </Card>
           </div>
 
           <div className="space-y-6">
-            <Card className="shadow-md">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
@@ -170,17 +212,17 @@ export default function RecruiterDashboardPage() {
                     <PlusCircle className="mr-2 h-4 w-4 text-primary" />Post New Job
                   </Button>
                 </Link>
-                <Link href="/candidates">
+                <Link href="/company/talent-search">
                   <Button variant="ghost" className="w-full justify-start">
-                    <Search className="mr-2 h-4 w-4 text-primary" />Browse Candidates
+                    <Search className="mr-2 h-4 w-4 text-primary" />AI Talent Search
                   </Button>
                 </Link>
-                <Link href="/interviews">
+                <Link href="/recruiter/analytics">
                   <Button variant="ghost" className="w-full justify-start">
-                    <Activity className="mr-2 h-4 w-4 text-primary" />AI Interview Analysis
+                    <BarChart3 className="mr-2 h-4 w-4 text-primary" />View Analytics
                   </Button>
                 </Link>
-                <Link href="/jobs">
+                <Link href="/recruiter/jobs">
                   <Button variant="default" className="w-full mt-2">
                     <Briefcase className="mr-2 h-4 w-4" />Manage All Jobs
                   </Button>

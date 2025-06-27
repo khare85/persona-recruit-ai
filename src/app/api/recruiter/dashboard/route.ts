@@ -12,40 +12,91 @@ export const GET = withAuth(
   withRole(['recruiter'], async (req: NextRequest): Promise<NextResponse> => {
     try {
       const recruiterId = req.user!.id;
-      const companyId = req.user!.companyId;
+      apiLogger.info('Fetching recruiter dashboard data', { recruiterId });
 
-      if (!companyId) {
-        return NextResponse.json({ error: 'Recruiter not associated with a company' }, { status: 400 });
+      // 1. Get jobs for the recruiter
+      const jobsResult = await databaseService.listJobs({ recruiterId });
+      const recruiterJobs = jobsResult.items;
+      const recruiterJobIds = recruiterJobs.map(job => job.id);
+
+      if (recruiterJobIds.length === 0) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            activeJobs: 0,
+            newApplications: 0,
+            upcomingInterviews: 0,
+            hiresThisMonth: 0,
+            upcomingInterviewList: [],
+            recentApplicationList: [],
+          },
+        });
       }
 
-      apiLogger.info('Fetching recruiter dashboard data', { recruiterId, companyId });
-
-      const [jobs, applications, interviews] = await Promise.all([
-        databaseService.listJobs({ recruiterId }),
-        databaseService.getCompanyApplications({ companyId }),
-        databaseService.getInterviews({ companyId }),
+      // 2. Fetch applications & interviews for those jobs
+      const [applications, interviews] = await Promise.all([
+        databaseService.getApplicationsForJobs(recruiterJobIds),
+        databaseService.getInterviewsForJobs(recruiterJobIds),
       ]);
+      
+      const allCandidates = await databaseService.listUsers({ role: 'candidate' });
 
-      const recruiterJobs = jobs.items;
-      const recruiterApplications = applications.filter(app => recruiterJobs.some(j => j.id === app.jobId));
-      const recruiterInterviews = interviews.filter(i => recruiterJobs.some(j => j.id === i.jobId));
+      // 3. Calculate metrics
+      const activeJobs = recruiterJobs.filter(j => j.status === 'active').length;
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const newApplications = applications.filter(app => new Date(app.appliedAt) > sevenDaysAgo).length;
+      const upcomingInterviews = interviews.filter(i => new Date(i.scheduledFor) > new Date() && i.status === 'scheduled').length;
+      
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const hiresThisMonth = applications.filter(app => 
+        app.status === 'hired' && new Date(app.lastActivityAt) > thirtyDaysAgo
+      ).length;
 
-      const metrics = {
-        activeJobs: recruiterJobs.filter(j => j.status === 'active').length,
-        candidatesViewed: recruiterApplications.length,
-        interviewsScheduled: recruiterInterviews.filter(i => i.status === 'scheduled').length,
-        hires: recruiterApplications.filter(a => a.status === 'hired').length,
-        recentJobs: recruiterJobs.slice(0, 3).map(j => ({
-          id: j.id,
-          title: j.title,
-          applicants: j.stats.applications || 0,
-          views: j.stats.views || 0,
-        })),
+      // 4. Prepare data for UI
+      const upcomingInterviewList = interviews
+        .filter(i => new Date(i.scheduledFor) > new Date() && i.status === 'scheduled')
+        .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime())
+        .slice(0, 5)
+        .map(i => {
+          const job = recruiterJobs.find(j => j.id === i.jobId);
+          const candidate = allCandidates.items.find(c => c.id === i.candidateId);
+          return {
+            id: i.id,
+            candidateName: candidate ? `${candidate.firstName} ${candidate.lastName}` : 'Unknown Candidate',
+            jobTitle: job?.title || 'Unknown Job',
+            scheduledFor: i.scheduledFor,
+            duration: i.duration,
+          };
+        });
+
+      const recentApplicationList = applications
+        .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+        .slice(0, 5)
+        .map(app => {
+          const job = recruiterJobs.find(j => j.id === app.jobId);
+          const candidate = allCandidates.items.find(c => c.id === app.candidateId);
+          return {
+            id: app.id,
+            candidateName: candidate ? `${candidate.firstName} ${candidate.lastName}` : 'Unknown Candidate',
+            jobTitle: job?.title || 'Unknown Job',
+            appliedAt: app.appliedAt,
+            status: app.status,
+            aiMatchScore: app.matchScore?.overall || 0,
+          };
+        });
+
+      const data = {
+        activeJobs,
+        newApplications,
+        upcomingInterviews,
+        hiresThisMonth,
+        upcomingInterviewList,
+        recentApplicationList,
       };
 
       return NextResponse.json({
         success: true,
-        data: metrics,
+        data,
       });
 
     } catch (error) {

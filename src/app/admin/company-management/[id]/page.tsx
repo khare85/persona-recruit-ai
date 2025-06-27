@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
@@ -22,37 +22,37 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 export default function CompanyDetailsPage() {
+  const { loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const [company, setCompany] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    
-    const fetchCompanyDetails = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/admin/companies/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch company details');
-        }
-        const data = await response.json();
-        setCompany(data.data.company);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchCompanyDetails = useCallback(async () => {
+    if (authLoading || !id) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await authenticatedFetch(`/api/admin/companies/${id}`);
+      setCompany(result.data.company);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, authLoading, authenticatedFetch]);
 
+  useEffect(() => {
     fetchCompanyDetails();
-  }, [id]);
+  }, [fetchCompanyDetails]);
 
   if (isLoading) {
     return (

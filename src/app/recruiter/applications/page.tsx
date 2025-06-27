@@ -28,6 +28,7 @@ import {
   FileText,
   RefreshCw
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface Application {
@@ -57,6 +58,7 @@ interface ApplicationStats {
 }
 
 export default function RecruiterApplicationsPage() {
+  const { loading: authLoading } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState<ApplicationStats | null>(null);
@@ -68,6 +70,7 @@ export default function RecruiterApplicationsPage() {
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchApplications = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     try {
       const result = await authenticatedFetch('/api/recruiter/applications');
@@ -78,7 +81,7 @@ export default function RecruiterApplicationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch]);
+  }, [authenticatedFetch, authLoading]);
 
   useEffect(() => {
     fetchApplications();

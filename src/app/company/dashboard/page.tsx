@@ -8,6 +8,7 @@ import { Container } from '@/components/shared/Container';
 import { Building, Users, Briefcase, DollarSign, Search, Settings, PlusCircle, ExternalLink, Activity, BarChart3, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface CompanyDashboardData {
@@ -22,12 +23,14 @@ interface CompanyDashboardData {
 }
 
 export default function CompanyDashboardPage() {
+  const { loading: authLoading } = useAuth();
   const [data, setData] = useState<CompanyDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchData = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -38,7 +41,7 @@ export default function CompanyDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch]);
+  }, [authenticatedFetch, authLoading]);
   
   useEffect(() => {
     fetchData();

@@ -65,7 +65,7 @@ interface JobStats {
 }
 
 export default function RecruiterJobsPage() {
-  const { getToken } = useAuth();
+  const { getToken, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
@@ -75,6 +75,7 @@ export default function RecruiterJobsPage() {
   const [departmentFilter, setDepartmentFilter] = useState('all');
 
   const fetchJobs = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     try {
       const token = await getToken();
@@ -98,7 +99,7 @@ export default function RecruiterJobsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, authLoading]);
 
   useEffect(() => {
     fetchJobs();

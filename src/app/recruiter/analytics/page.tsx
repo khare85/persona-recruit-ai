@@ -38,6 +38,7 @@ import {
   Target
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface RecruiterMetrics {
@@ -77,6 +78,7 @@ interface SourceMetrics {
 }
 
 export default function RecruiterAnalyticsPage() {
+  const { loading: authLoading } = useAuth();
   const [metrics, setMetrics] = useState<RecruiterMetrics | null>(null);
   const [jobPerformance, setJobPerformance] = useState<JobPerformance[]>([]);
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
@@ -87,6 +89,7 @@ export default function RecruiterAnalyticsPage() {
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchAnalytics = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -100,7 +103,7 @@ export default function RecruiterAnalyticsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [timeRange, authenticatedFetch]);
+  }, [timeRange, authenticatedFetch, authLoading]);
 
   useEffect(() => {
     fetchAnalytics();

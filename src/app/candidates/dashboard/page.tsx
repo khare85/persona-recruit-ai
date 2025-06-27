@@ -24,20 +24,19 @@ interface CandidateDashboardData {
 }
 
 export default function CandidateDashboardPage() {
-  const { getToken } = useAuth();
+  const { getToken, loading: authLoading } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
       const token = await getToken();
       if (!token) {
-        setError('User not authenticated. Please log in.');
-        setIsLoading(false);
-        return;
+        throw new Error('User not authenticated. Please log in.');
       }
 
       const response = await fetch('/api/candidates/dashboard', {
@@ -55,7 +54,7 @@ export default function CandidateDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, authLoading]);
   
   useEffect(() => {
     fetchData();

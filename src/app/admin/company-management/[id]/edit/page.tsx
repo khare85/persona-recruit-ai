@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ArrowLeft, Building, Save, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 const updateCompanySchema = z.object({
   name: z.string().min(2, 'Company name must be at least 2 characters'),
@@ -33,10 +35,12 @@ const updateCompanySchema = z.object({
 type UpdateCompanyFormValues = z.infer<typeof updateCompanySchema>;
 
 export default function EditCompanyPage() {
+  const { loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
   const { toast } = useToast();
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -56,54 +60,44 @@ export default function EditCompanyPage() {
     }
   });
 
+  const fetchCompanyData = useCallback(async () => {
+    if (authLoading || !id) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await authenticatedFetch(`/api/admin/companies/${id}`);
+      const company = result.data.company;
+
+      form.reset({
+        name: company.name,
+        domain: company.domain,
+        website: company.website,
+        size: company.size,
+        industry: company.industry,
+        location: company.location,
+        description: company.description,
+        founded: company.founded,
+        status: company.status.toLowerCase() as any,
+      });
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load company data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, authLoading, authenticatedFetch, form]);
+
   useEffect(() => {
-    if (!id) return;
-
-    const fetchCompanyData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/admin/companies/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch company data');
-        }
-        const data = await response.json();
-        const company = data.data.company;
-
-        form.reset({
-          name: company.name,
-          domain: company.domain,
-          website: company.website,
-          size: company.size,
-          industry: company.industry,
-          location: company.location,
-          description: company.description,
-          founded: company.founded,
-          status: company.status.toLowerCase() as any,
-        });
-
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load company data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCompanyData();
-  }, [id, form]);
+  }, [fetchCompanyData]);
 
   const onSubmit = async (data: UpdateCompanyFormValues) => {
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/companies/${id}`, {
+      await authenticatedFetch(`/api/admin/companies/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update company');
-      }
       
       toast({
         title: '✅ Success',

@@ -26,6 +26,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface InterviewerDashboardData {
@@ -65,12 +66,14 @@ interface InterviewerDashboardData {
 }
 
 export default function InterviewerDashboardPage() {
+  const { loading: authLoading } = useAuth();
   const [data, setData] = useState<InterviewerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchData = useCallback(async () => {
+    if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -81,7 +84,7 @@ export default function InterviewerDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch]);
+  }, [authenticatedFetch, authLoading]);
   
   useEffect(() => {
     fetchData();

@@ -14,16 +14,21 @@ import {z} from 'genkit';
 
 const GenerateJobDescriptionInputSchema = z.object({
   jobTitle: z.string().describe('The title of the job.'),
-  jobLevel: z.string().describe('The level of the job (e.g., Entry, Mid, Senior).'),
-  department: z.string().describe('The department the job belongs to.'),
-  location: z.string().describe('The location of the job.'),
-  responsibilities: z.string().describe('A list of responsibilities for the job, potentially as bullet points or comma-separated items.'),
-  qualifications: z.string().describe('A list of qualifications for the job, potentially as bullet points or comma-separated items.'),
+  yearsOfExperience: z.string().describe('The level of experience required for the job (e.g., "3-5 years", "Entry Level").'),
+  company: z.string().optional().describe('The name of the company.'),
+  department: z.string().optional().describe('The department the job belongs to.'),
+  location: z.string().optional().describe('The location of the job.'),
+  jobType: z.string().optional().describe('The type of employment (e.g., Full-time).'),
 });
 export type GenerateJobDescriptionInput = z.infer<typeof GenerateJobDescriptionInputSchema>;
 
 const GenerateJobDescriptionOutputSchema = z.object({
-  jobDescription: z.string().describe('The generated job description, formatted professionally and ready to be posted.'),
+  description: z.string().describe("A comprehensive 2-3 paragraph job description that explains the role, its importance, and what the candidate will be doing."),
+  responsibilities: z.array(z.string()).describe("A list of 5-7 key responsibilities."),
+  requirements: z.array(z.string()).describe("A list of 6-8 general requirements, including education, experience, and nice-to-have skills."),
+  mustHaveRequirements: z.array(z.string()).describe("A list of exactly 4-5 CRITICAL, NON-NEGOTIABLE requirements."),
+  skills: z.array(z.string()).describe("A list of 8-12 relevant technical and soft skills."),
+  benefits: z.array(z.string()).describe("A list of 6-10 attractive benefits and perks."),
 });
 export type GenerateJobDescriptionOutput = z.infer<typeof GenerateJobDescriptionOutputSchema>;
 
@@ -39,21 +44,24 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateJobDescriptionOutputSchema},
   prompt: `You are an expert HR copywriter specializing in creating compelling job descriptions that attract top talent.
 
-  Based on the following information, generate a comprehensive, professional, and engaging job description. The description should be well-structured, highlight the key aspects of the role, and entice qualified candidates to apply.
+  Based on the following information, generate a comprehensive, professional, and engaging job description. Return ONLY a valid JSON object matching the provided schema.
 
   Job Title: {{{jobTitle}}}
-  Job Level: {{{jobLevel}}}
-  Department: {{{department}}}
-  Location: {{{location}}}
+  Experience Required: {{{yearsOfExperience}}}
+  {{#if company}}Company: {{{company}}}{{/if}}
+  {{#if department}}Department: {{{department}}}{{/if}}
+  {{#if location}}Location: {{{location}}}{{/if}}
+  {{#if jobType}}Job Type: {{{jobType}}}{{/if}}
 
-  Key Responsibilities (ensure these are clearly listed and elaborated upon if needed):
-  {{{responsibilities}}}
+  Structure your response into the following JSON keys:
+  - "description": A comprehensive 2-3 paragraph job description.
+  - "responsibilities": An array of 5-7 key responsibilities.
+  - "requirements": An array of 6-8 general requirements (nice-to-haves).
+  - "mustHaveRequirements": An array of 4-5 CRITICAL, non-negotiable requirements.
+  - "skills": An array of 8-12 relevant technical and soft skills.
+  - "benefits": An array of 6-10 attractive benefits and perks.
 
-  Key Qualifications (ensure these are clearly listed and elaborated upon if needed):
-  {{{qualifications}}}
-
-  Structure the output with clear sections like "About Us" (you can make a generic positive statement if company info isn't provided), "Role Overview", "Key Responsibilities", "Qualifications", and "Why Join Us?" or "Benefits" (again, generic positive statements if not provided).
-  Ensure the tone is professional yet inviting.
+  Ensure the tone is professional yet inviting. Adjust the complexity based on the experience level. For senior roles, emphasize leadership and strategy.
   `,
 });
 
@@ -73,5 +81,3 @@ const generateJobDescriptionFlow = ai.defineFlow(
     return output;
   }
 );
-
-    

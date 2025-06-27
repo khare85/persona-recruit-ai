@@ -98,7 +98,7 @@ export default function CandidatesPage() {
         </div>
       ) : (
         <div className={isGridView ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
-          {candidates.map((candidate) =>
+          {(candidates || []).map((candidate) =>
             isGridView ? (
               <Card key={candidate.id} className="flex flex-col hover:shadow-lg transition-shadow duration-300">
                 <CardHeader className="items-center text-center p-6">
@@ -153,15 +153,15 @@ export default function CandidatesPage() {
                     </div>
                   </div>
 
-                  {/* Middle Part: Key Info (hidden on medium screens and below) */}
-                  <div className="hidden lg:flex items-center gap-6 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
+                  {/* Middle Part: Key Info */}
+                  <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2" title="Experience">
                           <Briefcase className="h-4 w-4" />
-                          <span>{candidate.experience} years</span>
+                          <span>{candidate.experience} yrs</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" title="AI Match Score">
                           <Star className="h-4 w-4 text-amber-500" />
-                          <span className="font-medium text-foreground">{candidate.aiMatchScore || 85}% Match</span>
+                          <span className="font-medium text-foreground">{candidate.aiMatchScore || 85}%</span>
                       </div>
                   </div>
                   

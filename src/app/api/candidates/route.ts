@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { databaseService } from '@/services/database.service';
 import { z } from 'zod';
+import { CandidateProfile, User } from '@/models/user.model';
 
 // Candidate schema for validation
 const candidateSchema = z.object({
@@ -28,17 +29,50 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
     
-    // In a real app, you'd have more sophisticated filtering here
-    const { items: candidates, total } = await databaseService.listUsers({
+    const { items: users, total } = await databaseService.listUsers({
       role: 'candidate',
       limit,
       offset: (page - 1) * limit,
     });
     
+    const candidatesWithProfiles = await Promise.all(
+      users.map(async (user: User) => {
+        const profile: CandidateProfile | null = await databaseService.getCandidateProfile(user.id);
+        
+        const experienceMap: { [key: string]: number } = {
+          'Entry Level': 1,
+          '1-2 years': 2,
+          '3-5 years': 4,
+          '5-10 years': 7,
+          '10+ years': 10,
+        };
+        
+        return {
+          id: user.id,
+          fullName: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          phone: profile?.phone || '',
+          currentTitle: profile?.currentTitle || 'N/A',
+          experience: profile?.experience ? experienceMap[profile.experience] || 0 : 0,
+          location: profile?.location || 'N/A',
+          skills: profile?.skills || [], // Ensure skills is always an array
+          education: 'N/A', // This data is not in the current user/profile model
+          previousCompanies: [], // This data is not in the current user/profile model
+          profilePictureUrl: `https://placehold.co/150x150.png?text=${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`,
+          availability: profile?.availability || 'Not Specified',
+          expectedSalary: profile?.expectedSalary ? `$${profile.expectedSalary.min} - $${profile.expectedSalary.max}` : 'Not Specified',
+          summary: profile?.summary || '',
+          certifications: [], // This data is not in the current user/profile model
+          languages: [], // This data is not in the current user/profile model
+          aiMatchScore: Math.floor(Math.random() * 20) + 75, // Mock score
+        };
+      })
+    );
+    
     return NextResponse.json({
       success: true,
       data: {
-        candidates,
+        candidates: candidatesWithProfiles,
         total,
       }
     });

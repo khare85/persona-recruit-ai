@@ -118,7 +118,7 @@ export default function CandidatesPage() {
                     <div className="mb-3">
                       <h4 className="text-xs font-semibold text-muted-foreground mb-1">Top Skills:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {candidate.skills.slice(0, 4).map(skill => (
+                        {(candidate.skills || []).slice(0, 4).map(skill => (
                           <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
                         ))}
                       </div>

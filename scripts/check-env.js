@@ -50,7 +50,6 @@ if (!hasJwtSecret) {
 
 // Check other required variables
 const requiredVars = [
-  'GOOGLE_API_KEY',
   'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
   'NEXT_PUBLIC_FIREBASE_API_KEY'
 ];
@@ -66,6 +65,14 @@ requiredVars.forEach(varName => {
     missingVars.push(varName);
   }
 });
+
+// Custom check for Google API key
+const hasGoogleApiKey = envLines.some(line => line.trim().startsWith('GOOGLE_API_KEY=') && line.split('=')[1]?.trim().length > 0);
+const hasGeminiSecret = envLines.some(line => line.trim().startsWith('GEMINI_API_KEY_SECRET=') && line.split('=')[1]?.trim().length > 0);
+
+if (!hasGoogleApiKey && !hasGeminiSecret) {
+    missingVars.push('GOOGLE_API_KEY or GEMINI_API_KEY_SECRET');
+}
 
 if (missingVars.length > 0) {
   console.log('\n⚠️  Missing environment variables:');

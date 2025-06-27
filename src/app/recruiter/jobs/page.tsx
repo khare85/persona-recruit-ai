@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,6 +65,7 @@ interface JobStats {
 }
 
 export default function RecruiterJobsPage() {
+  const { getToken } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<JobStats | null>(null);
@@ -71,17 +74,10 @@ export default function RecruiterJobsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  useEffect(() => {
-    filterJobs();
-  }, [jobs, searchTerm, statusFilter, departmentFilter]);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const token = localStorage.getItem('auth-token');
+      const token = await getToken();
       if (!token) {
         console.error('No auth token found');
         setIsLoading(false);
@@ -102,9 +98,13 @@ export default function RecruiterJobsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getToken]);
 
-  const filterJobs = () => {
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  useEffect(() => {
     let filtered = jobs;
 
     if (searchTerm) {
@@ -124,7 +124,7 @@ export default function RecruiterJobsPage() {
     }
 
     setFilteredJobs(filtered);
-  };
+  }, [jobs, searchTerm, statusFilter, departmentFilter]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

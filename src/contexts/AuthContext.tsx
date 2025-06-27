@@ -3,7 +3,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, db } from '@/config/firebase';
 import type { User as FirebaseUser, AuthError } from 'firebase/auth';
 import { 
@@ -89,12 +89,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const getToken = async (): Promise<string | null> => {
+  const getToken = useCallback(async (): Promise<string | null> => {
     if (auth.currentUser) {
       return auth.currentUser.getIdToken(true); // Force refresh
     }
     return null;
-  };
+  }, []);
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     setLoading(true);

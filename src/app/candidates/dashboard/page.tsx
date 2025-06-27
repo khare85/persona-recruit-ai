@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
@@ -23,38 +24,42 @@ interface CandidateDashboardData {
 }
 
 export default function CandidateDashboardPage() {
+  const { getToken } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) {
+        setError('User not authenticated. Please log in.');
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/candidates/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+      const result = await response.json();
+      setDashboardData(result.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getToken]);
   
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const token = localStorage.getItem('auth-token');
-        if (!token) {
-          setError('User not authenticated. Please log in.');
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await fetch('/api/candidates/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-        const result = await response.json();
-        setDashboardData(result.data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    }
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   if (isLoading) {
     return (

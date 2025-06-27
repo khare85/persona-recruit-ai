@@ -68,6 +68,14 @@
       "collectionGroup": "jobApplications",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "jobId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobApplications",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
         { "fieldPath": "candidateId", "order": "ASCENDING" },
         { "fieldPath": "appliedAt", "order": "DESCENDING" }
       ]

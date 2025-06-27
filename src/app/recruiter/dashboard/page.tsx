@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Briefcase, Users, CalendarDays, Award, Search, PlusCircle, Eye, LayoutDashboard, Loader2, AlertCircle, FileText } from 'lucide-react';
+import { Briefcase, Users, CalendarDays, Award, Search, PlusCircle, Eye, LayoutDashboard, Loader2, AlertCircle, FileText, Star, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';

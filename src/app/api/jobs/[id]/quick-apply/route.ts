@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth, withRole } from '@/middleware/auth';
@@ -109,10 +110,10 @@ export const POST = withRateLimit('apply',
           candidateId,
           companyId: job.companyId,
           status: 'pending',
-          coverLetter: validation.data.coverNote,
+          coverNote: validation.data.coverNote,
           applicationMethod: 'quick_apply',
           videoIntroUrl: candidateProfile.videoIntroUrl,
-          appliedAt: new Date().toISOString()
+          videoIntroIncluded: !!candidateProfile.videoIntroUrl
         });
 
         // Get candidate details for notifications

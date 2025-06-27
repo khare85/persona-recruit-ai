@@ -642,35 +642,30 @@ class DatabaseService {
     return { id: doc.id, ...doc.data() };
   }
 
-  async getCompanyApplications(options: { companyId: string; status?: string; limit?: number }): Promise<JobApplication[]> {
+  async getCompanyApplications(options: { companyId: string; status?: string; limit?: number; offset?: number }): Promise<JobApplication[]> {
     this.ensureDb();
-    
-    const jobsSnapshot = await this.db!.collection(COLLECTIONS.JOBS)
+    let query = this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('companyId', '==', options.companyId)
-      .where('deletedAt', '==', null)
-      .get();
+      .where('deletedAt', '==', null);
+      
+    if (options.status && options.status !== 'all') {
+      query = query.where('status', '==', options.status);
+    }
     
-    if (jobsSnapshot.empty) return [];
+    query = query.orderBy('appliedAt', 'desc');
+
+    if (options.offset) {
+      query = query.offset(options.offset);
+    }
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
     
-    const jobIds = jobsSnapshot.docs.map(doc => doc.id);
-    
-    const applicationsSnapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
-      .where('deletedAt', '==', null)
-      .limit(options.limit || 1000)
-      .get();
-    
-    let applications = applicationsSnapshot.docs.map((doc: any) => ({
+    const snapshot = await query.get();
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as JobApplication));
-    
-    applications = applications.filter(app => jobIds.includes(app.jobId));
-    
-    if (options.status) {
-      applications = applications.filter(app => app.status === options.status);
-    }
-    
-    return applications;
   }
 
   // Utility methods

@@ -8,21 +8,21 @@ set -e
 echo "🚀 Starting database and storage deployment..."
 
 # Check if Firebase CLI is installed
-if ! command -v firebase &> /dev/null; then
+if ! command -v npx firebase &> /dev/null; then
     echo "❌ Firebase CLI is not installed. Please install it first:"
     echo "npm install -g firebase-tools"
     exit 1
 fi
 
-# Check if user is logged in to Firebase
+# Check if user is logged in to Firebase using the local CLI
 if ! firebase projects:list &> /dev/null; then
     echo "❌ Not logged in to Firebase. Please run 'firebase login' first."
     exit 1
 fi
 
 # Get current project more robustly
-PROJECT=$(firebase use --json | jq -r '.result | if type == "object" and .current then .current else empty end')
-if [ -z "$PROJECT" ]; then
+PROJECT=$(firebase use --json | jq -r '.result')
+if [ -z "$PROJECT" ] || [ "$PROJECT" == "null" ]; then
     echo "❌ No Firebase project selected. Please run 'firebase use <project-id>' first."
     exit 1
 fi
@@ -51,13 +51,13 @@ for file in "${REQUIRED_FILES[@]}"; do
 done
 
 echo "🔍 Validating Firestore rules..."
-if ! firebase firestore:rules:validate firestore.rules; then
+if ! firebase deploy --only firestore:rules --dry-run; then
     echo "❌ Firestore rules validation failed"
     exit 1
 fi
 
 echo "🔍 Validating Storage rules..."
-if ! firebase storage:rules:validate storage.rules; then
+if ! firebase deploy --only storage:rules --dry-run; then
     echo "❌ Storage rules validation failed"
     exit 1
 fi

@@ -1,10 +1,11 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Container } from '@/components/shared/Container';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Settings, 
   User, 
@@ -66,6 +68,7 @@ export default function RecruiterSettingsPage() {
     department: 'Human Resources',
     phone: '+1 (555) 123-4567',
     bio: 'Experienced technical recruiter with 5+ years in talent acquisition, specializing in engineering and product roles.',
+    profileImage: 'https://placehold.co/100x100.png?text=JS',
     specializations: ['Engineering', 'Product Management', 'Data Science']
   });
 
@@ -87,9 +90,26 @@ export default function RecruiterSettingsPage() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
+  const profilePicRef = useRef<HTMLInputElement>(null);
 
   const handleProfileChange = (field: keyof RecruiterProfile, value: string | string[]) => {
     setProfile(prev => ({ ...prev, [field]: value }));
+  };
+  
+  const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Here you would typically upload the file and get a URL
+      // For this demo, we'll just show a preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicPreview(reader.result as string);
+        // In a real app, you'd set the file object to be uploaded, e.g.:
+        // setProfile(prev => ({...prev, newProfileImageFile: file}));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleNotificationChange = (field: keyof NotificationSettings, value: boolean) => {
@@ -183,16 +203,29 @@ export default function RecruiterSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={profilePicPreview || profile.profileImage} alt={profile.firstName} />
+                    <AvatarFallback className="text-2xl">
                       {profile.firstName[0]}{profile.lastName[0]}
-                    </span>
-                  </div>
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      type="button"
+                      onClick={() => profilePicRef.current?.click()}
+                    >
                       <Camera className="mr-2 h-4 w-4" />
                       Change Photo
                     </Button>
+                    <input
+                      type="file"
+                      ref={profilePicRef}
+                      onChange={handleProfilePicChange}
+                      className="hidden"
+                      accept="image/png, image/jpeg, image/gif"
+                    />
                     <p className="text-xs text-muted-foreground mt-1">JPG, PNG or GIF. Max size 2MB.</p>
                   </div>
                 </div>

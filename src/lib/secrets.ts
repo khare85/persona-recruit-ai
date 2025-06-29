@@ -1,3 +1,4 @@
+import 'server-only';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import { dbLogger } from '@/lib/logger';
 

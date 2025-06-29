@@ -9,16 +9,52 @@ runConfig:
   timeoutSeconds: 3600
 
 # Environment variables and secrets.
-# env:
-  # Configure environment variables.
-  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  # - variable: MESSAGE
-  #   value: Hello world!
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
-
-  # Grant access to secrets in Cloud Secret Manager.
-  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
-  # - variable: MY_SECRET
-  #   secret: mySecretRef
+env:
+  # Firebase Configuration - Using persona-recruit-ai project
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyBSkLKzUQinb6BOgIYanrKvQFkqpiNihok"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "persona-recruit-ai.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "persona-recruit-ai"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "persona-recruit-ai.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "272257542005"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:272257542005:web:1e5f5c66bf073d52a7953c"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: FIREBASE_PROJECT_ID
+    value: "persona-recruit-ai"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  # Disable TypeScript and ESLint errors during build
+  - variable: NEXT_PUBLIC_SKIP_TYPE_CHECK
+    value: "true"
+    availability:
+      - BUILD

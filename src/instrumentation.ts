@@ -2,10 +2,10 @@
  * Next.js instrumentation file
  * This runs once when the server starts
  */
-import { loadSecrets } from './lib/secrets';
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { loadSecrets } = await import('./lib/secrets');
     await loadSecrets(); // Load secrets at startup
 
     // Only initialize in production to prevent memory issues in development

@@ -210,3 +210,63 @@ io.netty.handler.codec.http2.Http2Exception: HTTP/2 client preface string missin
 [debug] [2025-06-29T21:21:12.096Z] Jun 29, 2025 9:21:12 PM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
 INFO: Connected to new websocket client
  {"metadata":{"emulator":{"name":"firestore"},"message":"Jun 29, 2025 9:21:12 PM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel\nINFO: Connected to new websocket client\n"}}
+[debug] [2025-06-29T21:31:46.293Z] ----------------------------------------------------------------------
+[debug] [2025-06-29T21:31:46.296Z] Command:       /nix/store/rbdrkcs5kkwpalxcd7c6bnm33lk2955n-nodejs-20.19.0/bin/node /nix/store/fprgfkwna33crhc86jqbf5878piivvgw-firebase-tools-14.7.0/lib/node_modules/firebase-tools/lib/bin/firebase.js deploy --project persona-recruit-ai --debug
+[debug] [2025-06-29T21:31:46.296Z] CLI Version:   14.7.0
+[debug] [2025-06-29T21:31:46.297Z] Platform:      linux
+[debug] [2025-06-29T21:31:46.297Z] Node Version:  v20.19.0
+[debug] [2025-06-29T21:31:46.297Z] Time:          Sun Jun 29 2025 21:31:46 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-06-29T21:31:46.297Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-06-29T21:31:46.751Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-06-29T21:31:46.753Z] > authorizing via signed-in user (brighttiercloud@gmail.com)
+[debug] [2025-06-29T21:31:46.753Z] [iam] checking project persona-recruit-ai for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2025-06-29T21:31:46.756Z] Checked if tokens are valid: false, expires at: 1751067478906
+[debug] [2025-06-29T21:31:46.756Z] Checked if tokens are valid: false, expires at: 1751067478906
+[debug] [2025-06-29T21:31:46.759Z] > refreshing access token with scopes: []
+[debug] [2025-06-29T21:31:46.763Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-06-29T21:31:46.764Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-06-29T21:31:46.910Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-06-29T21:31:46.913Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-06-29T21:31:46.931Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/persona-recruit-ai:testIamPermissions [none]
+[debug] [2025-06-29T21:31:46.931Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/persona-recruit-ai:testIamPermissions x-goog-quota-user=projects/persona-recruit-ai
+[debug] [2025-06-29T21:31:46.931Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/persona-recruit-ai:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-06-29T21:31:47.792Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/persona-recruit-ai:testIamPermissions 200
+[debug] [2025-06-29T21:31:47.794Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/persona-recruit-ai:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[info] 
+[info] === Deploying to 'persona-recruit-ai'...
+[info] 
+[info] i  deploying storage, firestore 
+[info] i  storage: ensuring required API firebasestorage.googleapis.com is enabled... 
+[debug] [2025-06-29T21:31:47.800Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:47.800Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:47.800Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/persona-recruit-ai/services/firebasestorage.googleapis.com [none]
+[debug] [2025-06-29T21:31:47.801Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/persona-recruit-ai/services/firebasestorage.googleapis.com x-goog-quota-user=projects/persona-recruit-ai
+[debug] [2025-06-29T21:31:48.906Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/persona-recruit-ai/services/firebasestorage.googleapis.com 200
+[debug] [2025-06-29T21:31:48.909Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/persona-recruit-ai/services/firebasestorage.googleapis.com [omitted]
+[info] ✔  storage: required API firebasestorage.googleapis.com is enabled 
+[debug] [2025-06-29T21:31:48.910Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:48.910Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:48.910Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/persona-recruit-ai/defaultBucket [none]
+[debug] [2025-06-29T21:31:49.857Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/persona-recruit-ai/defaultBucket 200
+[debug] [2025-06-29T21:31:49.858Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/persona-recruit-ai/defaultBucket {"name":"projects/persona-recruit-ai/defaultBucket","location":"US-CENTRAL1","bucket":{"name":"projects/persona-recruit-ai/buckets/persona-recruit-ai.firebasestorage.app"},"storageClass":"REGIONAL"}
+[info] i  firebase.storage: checking storage.rules for compilation errors... 
+[debug] [2025-06-29T21:31:49.864Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:49.864Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:49.864Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test [none]
+[debug] [2025-06-29T21:31:49.864Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test [omitted]
+[debug] [2025-06-29T21:31:50.286Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test 200
+[debug] [2025-06-29T21:31:50.286Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test {}
+[info] ✔  firebase.storage: rules file storage.rules compiled successfully 
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2025-06-29T21:31:50.297Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:50.297Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:50.297Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test [none]
+[debug] [2025-06-29T21:31:50.298Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test [omitted]
+[debug] [2025-06-29T21:31:51.338Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test 200
+[debug] [2025-06-29T21:31:51.339Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2025-06-29T21:31:51.340Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:51.340Z] Checked if tokens are valid: true, expires at: 1751236305916
+[debug] [2025-06-29T21:31:51.341Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/persona-recruit-ai/releases pageSize=10&pageToken=

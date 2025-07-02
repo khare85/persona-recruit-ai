@@ -91,7 +91,7 @@ const interviewers = [
     email: 'alex.rodriguez@techcorp.com',
     avatar: '/avatars/alex.jpg',
     department: 'Engineering',
-    specializations: ['Frontend Development', 'System Design'],
+    specialty: 'Frontend & System Design',
     rating: 4.8,
     availability: 'available',
     totalInterviews: 156
@@ -102,7 +102,7 @@ const interviewers = [
     email: 'maria.garcia@techcorp.com',
     avatar: '/avatars/maria.jpg',
     department: 'Product',
-    specializations: ['Product Strategy', 'User Research'],
+    specialty: 'Product Strategy & Behavioral',
     rating: 4.6,
     availability: 'busy',
     totalInterviews: 89
@@ -113,7 +113,7 @@ const interviewers = [
     email: 'david.chen@techcorp.com',
     avatar: '/avatars/david.jpg',
     department: 'Engineering',
-    specializations: ['Backend Development', 'DevOps'],
+    specialty: 'Backend & DevOps',
     rating: 4.9,
     availability: 'available',
     totalInterviews: 203
@@ -126,7 +126,7 @@ const mockAgents = [
     name: 'Alex - Technical Screener',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
     specialty: 'Deep technical and coding assessments',
-    availability: '24/7',
+    availability: '',
     rating: 4.7,
   },
   {
@@ -134,7 +134,7 @@ const mockAgents = [
     name: 'Jordan - Behavioral Analyst',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan',
     specialty: 'Situational and behavioral questions',
-    availability: '24/7',
+    availability: '',
     rating: 4.9,
   },
   {
@@ -142,7 +142,7 @@ const mockAgents = [
     name: 'Casey - General Interviewer',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey',
     specialty: 'Well-rounded initial screening',
-    availability: '24/7',
+    availability: '',
     rating: 4.6,
   },
   {
@@ -150,7 +150,7 @@ const mockAgents = [
     name: 'Mira - Conversational AI',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mira',
     specialty: 'Natural language conversation agent',
-    availability: '24/7',
+    availability: '',
     rating: 4.8,
   }
 ];
@@ -174,6 +174,7 @@ export default function ScheduleInterviewPage() {
   const [notes, setNotes] = useState('');
   const [step, setStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTimezone, setSelectedTimezone] = useState<string>('');
 
   const filteredCandidates = candidates.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -210,15 +211,19 @@ export default function ScheduleInterviewPage() {
       type: interviewType,
       agentId: selectedInterviewer,
       agentName: selectedAgentData?.name || 'Unknown',
-      date: selectedDate!,
-      time: selectedTime,
+      date: interviewType === 'realtime' ? selectedDate! : new Date(),
+      time: interviewType === 'realtime' ? selectedTime : '',
       duration: parseInt(duration),
       notes,
     });
     
+    const description = interviewType === 'ai' 
+      ? `AI interview invitation sent to ${selectedCandidate.name}. They can complete it at their convenience.`
+      : `Real-time interview scheduled for ${selectedCandidate.name} on ${selectedDate ? format(selectedDate, 'PPP') : 'the selected date'} at ${selectedTime}.`;
+    
     toast({
       title: "✅ Interview Scheduled",
-      description: `Interview for ${selectedCandidate.name} has been scheduled.`
+      description: description,
     });
   };
 
@@ -354,7 +359,10 @@ export default function ScheduleInterviewPage() {
                 <CardDescription>Select whether to schedule a real-time or AI-powered interview</CardDescription>
               </CardHeader>
               <CardContent>
-                <RadioGroup value={interviewType} onValueChange={(value) => setInterviewType(value as any)} className="grid grid-cols-2 gap-4">
+                <RadioGroup value={interviewType} onValueChange={(value) => {
+                  setInterviewType(value as any);
+                  setSelectedInterviewer('');
+                }} className="grid grid-cols-2 gap-4">
                   <Label htmlFor="realtime" className="border rounded-lg p-4 cursor-pointer hover:border-primary">
                     <RadioGroupItem value="realtime" id="realtime" className="sr-only" />
                     <div className="flex items-center gap-2">
@@ -415,36 +423,36 @@ export default function ScheduleInterviewPage() {
               </Button>
               <Button onClick={() => setStep(3)} disabled={!selectedInterviewer}>
                 Next: Schedule Details
-                <ArrowRight className="mr-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
           
           {/* Step 3: Schedule Details */}
           <TabsContent value="3" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <CalendarIcon className="mr-2 h-5 w-5 text-primary" />
-                      Date & Time
-                    </CardTitle>
-                    <CardDescription>Select interview date</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      className="rounded-md border"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="space-y-6">
-                {interviewType === 'realtime' && (
+            {interviewType === 'realtime' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <CalendarIcon className="mr-2 h-5 w-5 text-primary" />
+                        Date & Time
+                      </CardTitle>
+                      <CardDescription>Select interview date</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        className="rounded-md border"
+                        disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Available Time Slots</CardTitle>
@@ -467,27 +475,85 @@ export default function ScheduleInterviewPage() {
                       </div>
                     </CardContent>
                   </Card>
-                )}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Interview Details</CardTitle>
-                    <CardDescription>Configure interview type and format</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Additional details form */}
-                  </CardContent>
-                </Card>
+                </div>
               </div>
-            </div>
+            ) : (
+              <Alert>
+                <Bot className="h-4 w-4" />
+                <AlertDescription>
+                  AI interviews are sent to the candidate to complete at their convenience. No specific date or time is needed.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Interview Details</CardTitle>
+                <CardDescription>Configure interview type and format</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {interviewType === 'realtime' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Interview Format</Label>
+                      <Select value={interviewFormat} onValueChange={setInterviewFormat}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="in-person">In-Person</SelectItem>
+                          <SelectItem value="video">Video Call</SelectItem>
+                          <SelectItem value="phone">Phone Call</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location / Meeting Link</Label>
+                      <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Timezone</Label>
+                      <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UTC">UTC</SelectItem>
+                          <SelectItem value="America/New_York">America/New_York (EST/EDT)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+                 <div className="space-y-2">
+                    <Label>Duration (minutes)</Label>
+                    <Select value={duration} onValueChange={setDuration}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="45">45 minutes</SelectItem>
+                        <SelectItem value="60">60 minutes</SelectItem>
+                        <SelectItem value="90">90 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes for Interviewer</Label>
+                    <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+                  </div>
+              </CardContent>
+            </Card>
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep(2)}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
-              <Button onClick={() => setStep(4)} disabled={!selectedDate || (interviewType === 'realtime' && !selectedTime)}>
+              <Button onClick={() => setStep(4)} disabled={interviewType === 'realtime' && (!selectedDate || !selectedTime)}>
                 Next: Review & Confirm
-                <ArrowRight className="mr-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
@@ -502,9 +568,11 @@ export default function ScheduleInterviewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Review details here */}
                 <div className="font-semibold">Interview Type: {interviewType === 'ai' ? 'AI Interview' : 'Real-time Interview'}</div>
                 <div>Interviewer/Agent: {(interviewType === 'ai' ? mockAgents : interviewers).find(i => i.id === selectedInterviewer)?.name}</div>
+                {interviewType === 'realtime' && selectedDate && selectedTime && (
+                  <div>Date & Time: {format(selectedDate, 'PPP')} at {selectedTime}</div>
+                )}
               </CardContent>
             </Card>
 

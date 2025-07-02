@@ -23,8 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar as CalendarIcon, Clock, Video, Bot, Users, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -61,7 +60,7 @@ const mockAgents: Agent[] = [
     name: 'Alex - Technical Screener',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
     specialty: 'Deep technical and coding assessments',
-    availability: '24/7',
+    availability: '',
     rating: 4.7,
   },
   {
@@ -69,7 +68,7 @@ const mockAgents: Agent[] = [
     name: 'Jordan - Behavioral Analyst',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan',
     specialty: 'Situational and behavioral questions',
-    availability: '24/7',
+    availability: '',
     rating: 4.9,
   },
   {
@@ -77,7 +76,7 @@ const mockAgents: Agent[] = [
     name: 'Casey - General Interviewer',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey',
     specialty: 'Well-rounded initial screening',
-    availability: '24/7',
+    availability: '',
     rating: 4.6,
   },
   {
@@ -85,7 +84,7 @@ const mockAgents: Agent[] = [
     name: 'Mira - Conversational AI',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mira',
     specialty: 'Natural language conversation agent',
-    availability: '24/7',
+    availability: '',
     rating: 4.8,
   }
 ];
@@ -145,8 +144,8 @@ export function ScheduleInterviewDialog({
         type: interviewType,
         agentId: selectedAgent,
         agentName: selectedAgentData?.name || 'Unknown Agent',
-        date: selectedDate!,
-        time: selectedTime,
+        date: interviewType === 'realtime' ? selectedDate! : new Date(),
+        time: interviewType === 'realtime' ? selectedTime : '',
         timezone: selectedTimezone,
         duration: parseInt(duration),
         notes,
@@ -156,9 +155,13 @@ export function ScheduleInterviewDialog({
       
       console.log('Interview scheduled:', interviewData);
 
+      const description = interviewType === 'ai' 
+        ? `AI interview invitation sent to ${candidateName}. They can complete it at their convenience.`
+        : `Real-time interview scheduled for ${candidateName} on ${selectedDate ? format(selectedDate, 'PPP') : 'the selected date'} at ${selectedTime}.`;
+
       toast({
         title: 'Interview Scheduled Successfully',
-        description: `${interviewType === 'ai' ? 'AI' : 'Real-time'} interview scheduled for ${candidateName} on ${selectedDate ? format(selectedDate, 'PPP') : 'anytime'} at ${selectedTime}`,
+        description: description,
       });
 
       onOpenChange(false);
@@ -242,60 +245,70 @@ export function ScheduleInterviewDialog({
             </>
           )}
 
-          <div className="space-y-3">
-            <Label>Interview Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                  disabled={interviewType === 'ai'}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : (interviewType === 'ai' ? 'Candidate can take anytime' : 'Select date')}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {interviewType === 'realtime' ? (
+            <>
+              <div className="space-y-3">
+                <Label>Interview Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : 'Select date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          <div className="space-y-3">
-            <Label>Timezone</Label>
-            <Select value={selectedTimezone} onValueChange={setSelectedTimezone} disabled={interviewType === 'ai'}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select timezone" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="UTC">UTC</SelectItem>
-                <SelectItem value="America/New_York">America/New_York (EST/EDT)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-3">
+                <Label>Timezone</Label>
+                <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                    <SelectItem value="America/New_York">America/New_York (EST/EDT)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-3">
-            <Label>Interview Time</Label>
-            <Select value={selectedTime} onValueChange={setSelectedTime} disabled={interviewType === 'ai'}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select time slot" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeSlots.map((slot) => (
-                  <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
+              <div className="space-y-3">
+                <Label>Interview Time</Label>
+                <Select value={selectedTime} onValueChange={setSelectedTime}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select time slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((slot) => (
+                      <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+             <Alert>
+              <Bot className="h-4 w-4" />
+              <AlertDescription>
+                AI interviews are sent to the candidate to complete at their convenience. No specific date or time is needed.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-3">
             <Label>Duration (minutes)</Label>
             <Select value={duration} onValueChange={setDuration}>
@@ -326,7 +339,11 @@ export function ScheduleInterviewDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSchedule} disabled={isLoading}>
+          <Button onClick={handleSchedule} disabled={
+            isLoading ||
+            (interviewType === 'realtime' && (!selectedDate || !selectedTime || !selectedTimezone)) ||
+            (interviewType === 'ai' && !selectedAgent)
+          }>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Schedule Interview
           </Button>

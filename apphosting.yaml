@@ -42,7 +42,7 @@ env:
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:541879201595:web:your-app-id-here"
+    value: "1:541879201595:web:110bb13a8daec937de911e"
     availability:
       - BUILD
       - RUNTIME
@@ -58,3 +58,11 @@ env:
     value: "true"
     availability:
       - BUILD
+      - RUNTIME
+  
+  # Node memory settings for build
+  - variable: NODE_OPTIONS
+    value: "--max-old-space-size=8192"
+    availability:
+      - BUILD
+      - RUNTIME

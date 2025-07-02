@@ -44,6 +44,11 @@ import {
 import { scheduleInterview } from '@/services/mockDataService';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 // Mock data for candidates, interviewers, and jobs
 const candidates = [
@@ -119,6 +124,7 @@ const mockAgents = [
   {
     id: 'ai-agent-tech',
     name: 'Alex - Technical Screener',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
     specialty: 'Deep technical and coding assessments',
     availability: '24/7',
     rating: 4.7,
@@ -126,6 +132,7 @@ const mockAgents = [
   {
     id: 'ai-agent-behavioral',
     name: 'Jordan - Behavioral Analyst',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan',
     specialty: 'Situational and behavioral questions',
     availability: '24/7',
     rating: 4.9,
@@ -133,9 +140,18 @@ const mockAgents = [
   {
     id: 'ai-agent-general',
     name: 'Casey - General Interviewer',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey',
     specialty: 'Well-rounded initial screening',
     availability: '24/7',
     rating: 4.6,
+  },
+  {
+    id: 'ai-agent-mira',
+    name: 'Mira - Conversational AI',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mira',
+    specialty: 'Natural language conversation agent',
+    availability: '24/7',
+    rating: 4.8,
   }
 ];
 
@@ -363,8 +379,12 @@ export default function ScheduleInterviewPage() {
                       key={agent.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                         selectedInterviewer === agent.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                      } ${interviewType === 'realtime' && agent.availability === 'busy' ? 'opacity-50' : ''}`}
-                      onClick={() => interviewType === 'realtime' && agent.availability !== 'busy' && setSelectedInterviewer(agent.id)}
+                      } ${interviewType === 'realtime' && agent.availability === 'busy' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (interviewType === 'ai' || (interviewType === 'realtime' && agent.availability !== 'busy')) {
+                          setSelectedInterviewer(agent.id)
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -375,8 +395,11 @@ export default function ScheduleInterviewPage() {
                           <div>
                             <h3 className="font-semibold">{agent.name}</h3>
                             <p className="text-sm text-muted-foreground">{agent.specialty}</p>
-                            <Badge variant="outline" className="text-xs mt-1">{getAvailabilityBadge(agent.availability)}</Badge>
                           </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm font-medium">{agent.rating}</span>
                         </div>
                       </div>
                     </div>
@@ -392,7 +415,7 @@ export default function ScheduleInterviewPage() {
               </Button>
               <Button onClick={() => setStep(3)} disabled={!selectedInterviewer}>
                 Next: Schedule Details
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="mr-2 h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
@@ -418,7 +441,9 @@ export default function ScheduleInterviewPage() {
                     />
                   </CardContent>
                 </Card>
-
+              </div>
+              
+              <div className="space-y-6">
                 {interviewType === 'realtime' && (
                   <Card>
                     <CardHeader>
@@ -443,17 +468,16 @@ export default function ScheduleInterviewPage() {
                     </CardContent>
                   </Card>
                 )}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Interview Details</CardTitle>
+                    <CardDescription>Configure interview type and format</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Additional details form */}
+                  </CardContent>
+                </Card>
               </div>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Interview Details</CardTitle>
-                  <CardDescription>Configure interview type and format</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Additional details form */}
-                </CardContent>
-              </Card>
             </div>
 
             <div className="flex justify-between">
@@ -463,7 +487,7 @@ export default function ScheduleInterviewPage() {
               </Button>
               <Button onClick={() => setStep(4)} disabled={!selectedDate || (interviewType === 'realtime' && !selectedTime)}>
                 Next: Review & Confirm
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="mr-2 h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
@@ -500,4 +524,3 @@ export default function ScheduleInterviewPage() {
     </DashboardLayout>
   );
 }
-

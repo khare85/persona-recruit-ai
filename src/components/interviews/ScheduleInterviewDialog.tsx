@@ -80,6 +80,14 @@ const mockAgents: Agent[] = [
     availability: '24/7',
     rating: 4.6,
   },
+  {
+    id: 'ai-agent-mira',
+    name: 'Mira - Conversational AI',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mira',
+    specialty: 'Natural language conversation agent',
+    availability: '24/7',
+    rating: 4.8,
+  }
 ];
 
 const timeSlots = [
@@ -327,4 +335,3 @@ export function ScheduleInterviewDialog({
     </Dialog>
   );
 }
-

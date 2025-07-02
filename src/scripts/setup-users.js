@@ -25,29 +25,31 @@ try {
 
 const db = admin.firestore();
 
-const users = [
-  {
-    email: 'admin@brighttier.com',
-    password: 'admin123',
-    firstName: 'Super',
-    lastName: 'Admin',
-    role: 'super_admin'
-  },
-  {
-    email: 'recruiter@techcorp.com',
-    password: 'recruiter123',
-    firstName: 'Tech',
-    lastName: 'Recruiter',
-    role: 'recruiter'
-  },
-  {
-    email: 'candidate@example.com',
-    password: 'candidate123',
-    firstName: 'John',
-    lastName: 'Candidate',
-    role: 'candidate'
-  }
-];
+async function createCompanyIfNotExists(name, domain) {
+    const companiesRef = db.collection('companies');
+    const snapshot = await companiesRef.where('domain', '==', domain).limit(1).get();
+
+    if (!snapshot.empty) {
+        console.log(`✓ Company "${name}" already exists.`);
+        return snapshot.docs[0].id;
+    }
+
+    const companyData = {
+        name,
+        domain,
+        industry: 'Technology',
+        size: '51-200',
+        location: 'San Francisco, CA',
+        status: 'active',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        deletedAt: null,
+    };
+    const companyRef = await companiesRef.add(companyData);
+    console.log(`✅ Company "${name}" created with ID: ${companyRef.id}`);
+    return companyRef.id;
+}
+
 
 async function setupUser(userData) {
   try {
@@ -117,6 +119,33 @@ async function setupUser(userData) {
 async function setupUsers() {
   console.log('Setting up users...\n');
   
+  const techCorpId = await createCompanyIfNotExists('TechCorp Inc.', 'techcorp.com');
+
+  const users = [
+    {
+      email: 'admin@brighttier.com',
+      password: 'admin123',
+      firstName: 'Super',
+      lastName: 'Admin',
+      role: 'super_admin'
+    },
+    {
+      email: 'recruiter@techcorp.com',
+      password: 'recruiter123',
+      firstName: 'Tech',
+      lastName: 'Recruiter',
+      role: 'recruiter',
+      companyId: techCorpId
+    },
+    {
+      email: 'candidate@example.com',
+      password: 'candidate123',
+      firstName: 'John',
+      lastName: 'Candidate',
+      role: 'candidate'
+    }
+  ];
+
   for (const userData of users) {
     await setupUser(userData);
   }

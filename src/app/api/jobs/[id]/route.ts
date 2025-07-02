@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockJobs } from '@/services/mockDataService';
+import { databaseService } from '@/services/database.service';
 import { z } from 'zod';
 
 // Job update schema
@@ -24,10 +25,7 @@ export async function GET(
   try {
     const { id } = params;
     
-    // For now, find in mock data
-    // TODO: Replace with Firestore query
-    const jobs = getMockJobs();
-    const job = jobs.find(j => j.id === id);
+    const job = await databaseService.getJobById(id);
     
     if (!job) {
       return NextResponse.json(
@@ -70,25 +68,8 @@ export async function PUT(
       );
     }
     
-    // For now, find in mock data
-    // TODO: Replace with Firestore update
-    const jobs = getMockJobs();
-    const jobIndex = jobs.findIndex(j => j.id === id);
-    
-    if (jobIndex === -1) {
-      return NextResponse.json(
-        { error: 'Job not found' },
-        { status: 404 }
-      );
-    }
-    
-    const updatedJob = {
-      ...jobs[jobIndex],
-      ...validation.data,
-      updatedAt: new Date().toISOString()
-    };
-    
-    console.log('Updating job:', updatedJob);
+    await databaseService.updateJob(id, validation.data);
+    const updatedJob = await databaseService.getJobById(id);
     
     return NextResponse.json({
       success: true,
@@ -112,9 +93,7 @@ export async function DELETE(
   try {
     const { id } = params;
     
-    // For now, just log
-    // TODO: Implement Firestore deletion
-    console.log('Deleting job:', id);
+    await databaseService.deleteJob(id); // Assuming soft delete
     
     return NextResponse.json({
       success: true,
@@ -124,8 +103,4 @@ export async function DELETE(
   } catch (error) {
     console.error('DELETE /api/jobs/[id] error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete job' },
-      { status: 500 }
-    );
-  }
-}
+      

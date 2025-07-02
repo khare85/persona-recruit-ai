@@ -1,4 +1,5 @@
 
+
 import admin from 'firebase-admin';
 import { db } from './firestoreService';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
@@ -16,7 +17,8 @@ export const COLLECTIONS = {
   COMPANY_INVITATIONS: 'companyInvitations',
   JOBS: 'jobs',
   JOB_APPLICATIONS: 'jobApplications',
-  INTERVIEWS: 'interviews'
+  INTERVIEWS: 'interviews',
+  AUDIT_LOGS: 'auditLogs'
 } as const;
 
 // Database service class
@@ -59,8 +61,22 @@ class DatabaseService {
   private async get<T>(collection: string, id: string): Promise<T | null> {
     this.ensureDb();
     const doc = await this.db!.collection(collection).doc(id).get();
-    if (!doc.exists) return null;
+    if (!doc.exists || doc.data()?.deletedAt) return null;
     return { id: doc.id, ...doc.data() } as T;
+  }
+  
+  async findById(collection: string, id: string): Promise<any | null> {
+    return this.get(collection, id);
+  }
+
+  async findMany(collection: string, options: any): Promise<any[]> {
+    const { items } = await this.list(collection, options);
+    return items;
+  }
+  
+  async count(collection: string, where: any): Promise<number> {
+     const snapshot = await this.db!.collection(collection).where(where).count().get();
+     return snapshot.data().count;
   }
 
   private async delete(collection: string, id: string, hard = false): Promise<void> {
@@ -130,7 +146,7 @@ class DatabaseService {
   }
 
   // User Management
-  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'fullName'>): Promise<string> {
     try {
       const plainPassword = userData.passwordHash; // Seeding script passes plain text here
       
@@ -173,7 +189,7 @@ class DatabaseService {
       const userDocRef = this.db.collection(COLLECTIONS.USERS).doc(userId);
       const userDoc = await userDocRef.get();
       
-      if (!userDoc.exists) {
+      if (!doc.exists) {
         await userDocRef.set({
           ...userFirestoreData,
           id: userId,
@@ -586,7 +602,7 @@ class DatabaseService {
     }
   }
 
-  async getApplicationById(id: string): Promise<JobApplication | null> {
+  async getJobApplicationById(id: string): Promise<JobApplication | null> {
     return this.get<JobApplication>(COLLECTIONS.JOB_APPLICATIONS, id);
   }
 
@@ -734,7 +750,8 @@ class DatabaseService {
 
   // Interview management
   async createInterview(interviewData: any): Promise<any> {
-    return this.create(COLLECTIONS.INTERVIEWS, interviewData);
+    const id = await this.create(COLLECTIONS.INTERVIEWS, interviewData);
+    return { id, ...interviewData };
   }
 
   async getInterviewById(id: string): Promise<any> {
@@ -822,6 +839,62 @@ class DatabaseService {
       }
     };
   }
+  
+  async getCompanyAnalytics(companyId: string): Promise<any> {
+    this.ensureDb();
+    
+    const [
+      jobsSnapshot,
+      applicationsSnapshot,
+      interviewsSnapshot
+    ] = await Promise.all([
+      this.db!.collection(COLLECTIONS.JOBS).where('companyId', '==', companyId).where('deletedAt', '==', null).get(),
+      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS).where('companyId', '==', companyId).where('deletedAt', '==', null).get(),
+      this.db!.collection(COLLECTIONS.INTERVIEWS).where('companyId', '==', companyId).where('deletedAt', '==', null).get()
+    ]);
+    
+    const jobs = jobsSnapshot.docs.map(doc => doc.data());
+    const applications = applicationsSnapshot.docs.map(doc => doc.data());
+    const interviews = interviewsSnapshot.docs.map(doc => doc.data());
+
+    return {
+      overview: {
+        totalJobs: jobs.length,
+        activeJobs: jobs.filter(j => j.status === 'active').length,
+        totalApplications: applications.length,
+        pendingApplications: applications.filter(app => app.status === 'pending').length,
+        totalInterviews: interviews.length,
+        scheduledInterviews: interviews.filter(i => i.status === 'scheduled').length,
+        totalHires: applications.filter(app => app.status === 'hired').length,
+        recruiters: (await this.getCompanyRecruiters(companyId)).length
+      },
+      applicationsByStatus: applications.reduce((acc, app) => {
+        acc[app.status] = (acc[app.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      monthlyApplications: this.groupCountByMonth(applications, 'appliedAt'),
+      topJobs: jobs.map(job => ({
+        jobId: job.id,
+        title: job.title,
+        department: job.department,
+        applications: applications.filter(app => app.jobId === job.id).length
+      })).sort((a,b) => b.applications - a.applications).slice(0, 5),
+      averageMatchScore: applications.reduce((sum, app) => sum + (app.aiMatchScore?.overall || 70), 0) / (applications.length || 1)
+    };
+  }
+
+  private groupCountByMonth(items: any[], dateField: string): { month: string, count: number }[] {
+    const monthCounts: Record<string, number> = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    items.forEach(item => {
+      const date = new Date(item[dateField]);
+      const monthKey = `${months[date.getMonth()]} ${date.getFullYear()}`;
+      monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
+    });
+
+    return Object.entries(monthCounts).map(([month, count]) => ({ month, count }));
+  }
 
   async deleteJob(id: string): Promise<void> {
     return this.delete(COLLECTIONS.JOBS, id);
@@ -830,7 +903,20 @@ class DatabaseService {
   async updateApplication(id: string, data: Partial<JobApplication>): Promise<void> {
     return this.update(COLLECTIONS.JOB_APPLICATIONS, id, data);
   }
+  
+  async createAuditLog(logData: Omit<any, 'id'>): Promise<string> {
+    return this.create(COLLECTIONS.AUDIT_LOGS, logData);
+  }
 }
 
 export const databaseService = new DatabaseService();
 export default databaseService;
+
+// Function to reload the Firebase connection, used for health checks
+export function reloadFirebaseConnection() {
+  // This would re-initialize or re-check the connection.
+  // For this setup, we'll just log an attempt.
+  console.log('[FirestoreService] Attempting to reload Firebase connection...');
+  // The singleton pattern means we can't easily re-init. The health check
+  // itself will test the connection.
+}

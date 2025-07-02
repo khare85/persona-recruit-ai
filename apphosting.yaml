@@ -10,45 +10,45 @@ runConfig:
 
 # Environment variables and secrets.
 env:
-  # Firebase Configuration - Using persona-recruit-ai project
+  # Firebase Configuration - Using ai-talent-stream project
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "AIzaSyBSkLKzUQinb6BOgIYanrKvQFkqpiNihok"
+    value: "AIzaSyCfv5aVFCAO0ELdqpvWtV-lT3xRSPQvH_8"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "persona-recruit-ai.firebaseapp.com"
+    value: "ai-talent-stream.firebaseapp.com"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "persona-recruit-ai"
+    value: "ai-talent-stream"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "persona-recruit-ai.firebasestorage.app"
+    value: "ai-talent-stream.firebasestorage.app"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "272257542005"
+    value: "541879201595"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:272257542005:web:1e5f5c66bf073d52a7953c"
+    value: "1:541879201595:web:your-app-id-here"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: FIREBASE_PROJECT_ID
-    value: "persona-recruit-ai"
+    value: "ai-talent-stream"
     availability:
       - BUILD
       - RUNTIME

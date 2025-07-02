@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatDistanceToNow } from 'date-fns';
 import {
   Sparkles,
   Briefcase,
@@ -27,13 +29,48 @@ import {
   Filter,
   ArrowRight,
   Building,
-  CalendarDays
+  CalendarDays,
+  Loader2
 } from 'lucide-react';
+
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  salaryRange?: string;
+  description: string;
+  requirements: string[];
+  createdAt: string;
+}
 
 export default function CareersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchJobs() {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/jobs?status=active');
+        if (!response.ok) {
+          throw new Error('Failed to fetch jobs');
+        }
+        const data = await response.json();
+        setJobs(data.data.jobs || []);
+      } catch (error) {
+        console.error("Could not fetch jobs:", error);
+        setJobs([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchJobs();
+  }, []);
 
   const benefits = [
     {
@@ -67,76 +104,7 @@ export default function CareersPage() {
       description: "Collaborative culture with brilliant, passionate, and supportive colleagues"
     }
   ];
-
-  const openPositions = [
-    {
-      id: 1,
-      title: "Senior Frontend Engineer",
-      department: "Engineering",
-      location: "San Francisco, CA / Remote",
-      type: "Full-time",
-      salary: "$140,000 - $180,000",
-      description: "Build beautiful, responsive user interfaces for our AI-powered recruitment platform using React, TypeScript, and modern web technologies.",
-      requirements: ["5+ years React experience", "TypeScript proficiency", "UI/UX design sense"],
-      posted: "2 days ago"
-    },
-    {
-      id: 2,
-      title: "AI/ML Engineer",
-      department: "Engineering",
-      location: "San Francisco, CA / Remote",
-      type: "Full-time", 
-      salary: "$160,000 - $220,000",
-      description: "Develop and improve our AI matching algorithms, natural language processing systems, and machine learning models.",
-      requirements: ["PhD/MS in CS/ML", "Python/TensorFlow", "NLP experience"],
-      posted: "1 week ago"
-    },
-    {
-      id: 3,
-      title: "Product Manager",
-      department: "Product",
-      location: "New York, NY / Remote",
-      type: "Full-time",
-      salary: "$130,000 - $170,000", 
-      description: "Drive product strategy and roadmap for our recruitment platform, working closely with engineering and design teams.",
-      requirements: ["5+ years PM experience", "B2B SaaS background", "Data-driven approach"],
-      posted: "3 days ago"
-    },
-    {
-      id: 4,
-      title: "UX Designer",
-      department: "Design",
-      location: "Los Angeles, CA / Remote",
-      type: "Full-time",
-      salary: "$110,000 - $140,000",
-      description: "Design intuitive user experiences for recruiters and candidates, conducting user research and creating design systems.",
-      requirements: ["3+ years UX design", "Figma proficiency", "User research skills"],
-      posted: "5 days ago"
-    },
-    {
-      id: 5,
-      title: "Customer Success Manager",
-      department: "Customer Success",
-      location: "Austin, TX / Remote",
-      type: "Full-time",
-      salary: "$80,000 - $110,000",
-      description: "Help our enterprise customers succeed with onboarding, training, and ongoing relationship management.",
-      requirements: ["Customer success experience", "SaaS platform knowledge", "Excellent communication"],
-      posted: "1 week ago"
-    },
-    {
-      id: 6,
-      title: "Sales Development Representative",
-      department: "Sales",
-      location: "Chicago, IL / Remote",
-      type: "Full-time",
-      salary: "$60,000 - $80,000 + Commission",
-      description: "Generate qualified leads and build pipeline for our enterprise sales team through outbound prospecting.",
-      requirements: ["1+ years sales experience", "CRM proficiency", "Goal-oriented mindset"],
-      posted: "4 days ago"
-    }
-  ];
-
+  
   const values = [
     {
       icon: Target,
@@ -160,7 +128,7 @@ export default function CareersPage() {
     }
   ];
 
-  const filteredJobs = openPositions.filter(job => {
+  const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          job.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLocation = locationFilter === 'all' || job.location.toLowerCase().includes(locationFilter.toLowerCase());
@@ -332,65 +300,73 @@ export default function CareersPage() {
           </Card>
 
           {/* Job Listings */}
-          <div className="space-y-6">
-            {filteredJobs.map((job) => (
-              <Card key={job.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900 mr-3">{job.title}</h3>
-                        <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
-                          {job.department}
-                        </Badge>
+          {isLoading ? (
+            <div className="flex justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => (
+                  <Card key={job.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <h3 className="text-xl font-semibold text-gray-900 mr-3">{job.title}</h3>
+                            <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                              {job.department}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap items-center text-sm text-gray-500 mb-3 gap-4">
+                            <div className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {job.location}
+                            </div>
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {job.type}
+                            </div>
+                            {job.salaryRange && (
+                              <div className="flex items-center">
+                                <DollarSign className="h-4 w-4 mr-1" />
+                                {job.salaryRange}
+                              </div>
+                            )}
+                            <div className="flex items-center">
+                              <CalendarDays className="h-4 w-4 mr-1" />
+                              {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                            </div>
+                          </div>
+                          <p className="text-gray-600 mb-3">{job.description}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {job.requirements.map((req, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {req}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="mt-4 lg:mt-0 lg:ml-6">
+                          <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                            Apply Now
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center text-sm text-gray-500 mb-3 gap-4">
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {job.location}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {job.type}
-                        </div>
-                        <div className="flex items-center">
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          {job.salary}
-                        </div>
-                        <div className="flex items-center">
-                          <CalendarDays className="h-4 w-4 mr-1" />
-                          {job.posted}
-                        </div>
-                      </div>
-                      <p className="text-gray-600 mb-3">{job.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {job.requirements.map((req, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {req}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-4 lg:mt-0 lg:ml-6">
-                      <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
-                        Apply Now
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredJobs.length === 0 && (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Building className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No positions found</h3>
-                <p className="text-gray-600">Try adjusting your search criteria or check back later for new opportunities.</p>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Building className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No positions found</h3>
+                    <p className="text-gray-600">Try adjusting your search criteria or check back later for new opportunities.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </section>
 

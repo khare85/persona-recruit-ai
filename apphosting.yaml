@@ -66,3 +66,26 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  
+  # Google Cloud Project
+  - variable: GOOGLE_CLOUD_PROJECT
+    value: "ai-talent-stream"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  # Required API Keys (placeholders - should use Secret Manager in production)
+  - variable: GOOGLE_API_KEY
+    value: "placeholder"
+    availability:
+      - RUNTIME
+  
+  - variable: JWT_SECRET
+    value: "placeholder"
+    availability:
+      - RUNTIME
+  
+  - variable: ELEVENLABS_API_KEY
+    value: "placeholder"
+    availability:
+      - RUNTIME

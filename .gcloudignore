@@ -1,35 +1,48 @@
-# This file specifies files that are *not* uploaded to Google Cloud
-# using gcloud. It follows the same syntax as .gitignore, with the addition of
-# "#!include" directives (which insert the entries of the given .gitignore-style
-# file at that point).
+# Firebase App Hosting .gcloudignore
+# Minimal ignore file - ensures package-lock.json is included
 
-# Include package-lock.json explicitly
-!package-lock.json
-!.env
-
-.gcloudignore
-.git
+# Git and version control
+.git/
 .gitignore
-#!include:.gitignore
+
+# Build artifacts
 .next/
 node_modules/
-*.log
-*.md
-.env.local
-.env.development
-.env.test
-.vscode/
-.idea/
-.DS_Store
-*.pem
-coverage/
-.nyc_output/
 dist/
-tmp/
-temp/
-.firebase/
-.firebaserc
+build/
+
+# Logs
+*.log
 firebase-debug.log
 firestore-debug.log
 pglite-debug.log
 server.log
+
+# Environment files (except production)
+.env.local
+.env.development
+.env.test
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation and markdown files
+*.md
+
+# Firebase
+.firebase/
+.firebaserc
+
+# Temporary
+tmp/
+temp/
+coverage/
+.nyc_output/
+
+# Security
+*.pem

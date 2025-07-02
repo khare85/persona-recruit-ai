@@ -1,3 +1,4 @@
+
 // Mock Data Service for Demo Purposes
 // This provides realistic data when Firebase isn't connected
 
@@ -746,7 +747,6 @@ export const scheduleInterview = (interviewData: {
       const datePart = interviewData.date.toISOString().split('T')[0];
       const timePart = interviewData.time;
       
-      // Parse time (e.g., "09:30 AM" or "02:00 PM")
       const [time, period] = timePart.split(' ');
       let [hours, minutes] = time.split(':');
       let hour = parseInt(hours);
@@ -757,7 +757,6 @@ export const scheduleInterview = (interviewData: {
         hour = 0;
       }
       
-      // Create ISO string
       return new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minutes}:00Z`).toISOString();
     })(),
     status: 'Scheduled',
@@ -768,8 +767,8 @@ export const scheduleInterview = (interviewData: {
     notes: interviewData.notes
   };
   
-  // In a real app, this would save to database
   mockInterviews.push(newInterview);
   
   return newInterview;
 };
+

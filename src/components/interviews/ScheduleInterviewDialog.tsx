@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +25,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Clock, Video, Bot, Users, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Video, Bot, Users, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -56,34 +57,27 @@ interface ScheduleInterviewDialogProps {
 // Mock agents data
 const mockAgents: Agent[] = [
   {
-    id: 'agent-1',
-    name: 'Alex Chen',
+    id: 'ai-agent-tech',
+    name: 'Alex - Technical Screener',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
-    specialty: 'Technical Interviews',
-    availability: 'Mon-Fri, 9AM-5PM',
-    rating: 4.8,
-  },
-  {
-    id: 'agent-2',
-    name: 'Sarah Johnson',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-    specialty: 'Behavioral Interviews',
-    availability: 'Mon-Thu, 10AM-6PM',
-    rating: 4.9,
-  },
-  {
-    id: 'agent-3',
-    name: 'Michael Rodriguez',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Michael',
-    specialty: 'Leadership & Management',
-    availability: 'Tue-Fri, 8AM-4PM',
+    specialty: 'Deep technical and coding assessments',
+    availability: '24/7',
     rating: 4.7,
   },
   {
-    id: 'ai-agent',
-    name: 'AI Interviewer',
-    specialty: 'All Interview Types',
-    availability: '24/7 Available',
+    id: 'ai-agent-behavioral',
+    name: 'Jordan - Behavioral Analyst',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan',
+    specialty: 'Situational and behavioral questions',
+    availability: '24/7',
+    rating: 4.9,
+  },
+  {
+    id: 'ai-agent-general',
+    name: 'Casey - General Interviewer',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Casey',
+    specialty: 'Well-rounded initial screening',
+    availability: '24/7',
     rating: 4.6,
   },
 ];
@@ -121,26 +115,10 @@ export function ScheduleInterviewDialog({
   const [notes, setNotes] = useState<string>('');
 
   const handleSchedule = async () => {
-    if (!selectedDate || !selectedTime || !selectedAgent || !selectedTimezone) {
+    if ((interviewType === 'realtime' && (!selectedDate || !selectedTime || !selectedTimezone)) || (interviewType === 'ai' && !selectedAgent)) {
       toast({
         title: 'Missing Information',
-        description: 'Please fill in all required fields, including timezone',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Combine date and time with timezone
-    const [hours, minutes] = selectedTime.replace(/( AM| PM)/, '').split(':').map(Number);
-    const adjustedHours = selectedTime.includes('PM') && hours !== 12 ? hours + 12 : hours;
-    const finalHours = selectedTime.includes('AM') && hours === 12 ? 0 : adjustedHours;
-    const combinedDateTime = new Date(selectedDate);
-    combinedDateTime.setHours(finalHours, minutes, 0, 0);
-
-    if (isNaN(combinedDateTime.getTime())) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill in all required fields',
+        description: 'Please fill in all required fields.',
         variant: 'destructive',
       });
       return;
@@ -149,7 +127,6 @@ export function ScheduleInterviewDialog({
     setIsLoading(true);
 
     try {
-      // Get the selected agent details
       const selectedAgentData = mockAgents.find(agent => agent.id === selectedAgent);
       
       const interviewData = {
@@ -159,22 +136,21 @@ export function ScheduleInterviewDialog({
         jobTitle,
         type: interviewType,
         agentId: selectedAgent,
- agentName: selectedAgentData?.name || 'Unknown Agent',
-        date: combinedDateTime.toISOString(), // Send ISO string with timezone
+        agentName: selectedAgentData?.name || 'Unknown Agent',
+        date: selectedDate!,
         time: selectedTime,
-        timezone: selectedTimezone, // Include the selected timezone
+        timezone: selectedTimezone,
         duration: parseInt(duration),
         notes,
       };
 
-      // Schedule the interview
-      const scheduledInterview = scheduleInterview(interviewData);
+      scheduleInterview(interviewData);
       
-      console.log('Interview scheduled:', scheduledInterview);
+      console.log('Interview scheduled:', interviewData);
 
       toast({
         title: 'Interview Scheduled Successfully',
-        description: `${interviewType === 'ai' ? 'AI' : 'Real-time'} interview scheduled for ${candidateName} on ${format(selectedDate, 'PPP')} at ${selectedTime}`,
+        description: `${interviewType === 'ai' ? 'AI' : 'Real-time'} interview scheduled for ${candidateName} on ${selectedDate ? format(selectedDate, 'PPP') : 'anytime'} at ${selectedTime}`,
       });
 
       onOpenChange(false);
@@ -184,12 +160,10 @@ export function ScheduleInterviewDialog({
       setSelectedAgent('');
       setSelectedDate(undefined);
       setSelectedTime('');
-      setSelectedTimezone(''); // Reset timezone as well
+      setSelectedTimezone('');
       setDuration('60');
       setNotes('');
       
-      // Reload the page to show updated data
-      window.location.reload();
     } catch (error) {
       toast({
         title: 'Error',
@@ -202,8 +176,8 @@ export function ScheduleInterviewDialog({
   };
 
   const filteredAgents = interviewType === 'ai' 
-    ? mockAgents.filter(agent => agent.id === 'ai-agent')
-    : mockAgents.filter(agent => agent.id !== 'ai-agent');
+    ? mockAgents
+    : []; // Assuming human interviewers are not in mockAgents
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,87 +190,50 @@ export function ScheduleInterviewDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Interview Type Selection */}
           <div className="space-y-3">
             <Label>Interview Type</Label>
             <RadioGroup
               value={interviewType}
               onValueChange={(value) => {
                 setInterviewType(value as 'ai' | 'realtime');
-                setSelectedAgent(''); // Reset agent selection when type changes
+                setSelectedAgent('');
               }}
             >
               <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent/50">
-                <RadioGroupItem value="realtime" id="realtime" />
-                <Label htmlFor="realtime" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Video className="h-5 w-5 text-primary" />
-                    <div>
-                      <div className="font-medium">Real-time Interview</div>
-                      <div className="text-sm text-muted-foreground">
-                        Live video interview with a human interviewer
-                      </div>
-                    </div>
-                  </div>
-                </Label>
+                <RadioGroupItem value="realtime" id="dialog-realtime" />
+                <Label htmlFor="dialog-realtime" className="flex-1 cursor-pointer">Real-time Interview</Label>
               </div>
               <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent/50">
-                <RadioGroupItem value="ai" id="ai" />
-                <Label htmlFor="ai" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Bot className="h-5 w-5 text-primary" />
-                    <div>
-                      <div className="font-medium">AI Interview</div>
-                      <div className="text-sm text-muted-foreground">
-                        Automated interview with AI-powered assessment
-                      </div>
-                    </div>
-                  </div>
-                </Label>
+                <RadioGroupItem value="ai" id="dialog-ai" />
+                <Label htmlFor="dialog-ai" className="flex-1 cursor-pointer">AI Interview</Label>
               </div>
             </RadioGroup>
           </div>
 
-          {/* Agent Selection */}
-          <div className="space-y-3">
-            <Label>Select {interviewType === 'ai' ? 'AI Agent' : 'Interviewer'}</Label>
-            <div className="grid gap-3">
-              {filteredAgents.map((agent) => (
-                <div
-                  key={agent.id}
-                  className={cn(
-                    "flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors",
-                    selectedAgent === agent.id && "border-primary bg-accent/50"
-                  )}
-                  onClick={() => setSelectedAgent(agent.id)}
-                >
-                  <Avatar className="h-10 w-10">
-                    {agent.avatar ? (
-                      <AvatarImage src={agent.avatar} alt={agent.name} />
-                    ) : (
-                      <AvatarFallback>
-                        {agent.id === 'ai-agent' ? <Bot className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="font-medium">{agent.name}</div>
-                    <div className="text-sm text-muted-foreground">{agent.specialty}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {agent.availability}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        ⭐ {agent.rating}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {interviewType === 'ai' && (
+            <div className="space-y-3">
+              <Label>Select AI Agent</Label>
+              <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an AI agent..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredAgents.map(agent => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name} - {agent.specialty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
+          )}
 
-          {/* Date Selection */}
+          {interviewType === 'realtime' && (
+            <>
+              {/* Add human interviewer selection here if needed */}
+            </>
+          )}
+
           <div className="space-y-3">
             <Label>Interview Date</Label>
             <Popover>
@@ -307,9 +244,10 @@ export function ScheduleInterviewDialog({
                     "w-full justify-start text-left font-normal",
                     !selectedDate && "text-muted-foreground"
                   )}
+                  disabled={interviewType === 'ai'}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : "Select date"}
+                  {selectedDate ? format(selectedDate, "PPP") : (interviewType === 'ai' ? 'Candidate can take anytime' : 'Select date')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -318,62 +256,38 @@ export function ScheduleInterviewDialog({
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   initialFocus
-                  disabled={(date) => {
-                    // Disable past dates and weekends for real-time interviews
-                    if (interviewType === 'realtime') {
-                      return date < new Date() || date.getDay() === 0 || date.getDay() === 6;
-                    }
-                    // AI interviews can be scheduled anytime
-                    return date < new Date();
-                  }}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
-          {/* Timezone Selection */}
           <div className="space-y-3">
             <Label>Timezone</Label>
-            <Select value={selectedTimezone} onValueChange={setSelectedTimezone}>
+            <Select value={selectedTimezone} onValueChange={setSelectedTimezone} disabled={interviewType === 'ai'}>
               <SelectTrigger>
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
               <SelectContent>
-                {/* Add more timezones as needed */}
                 <SelectItem value="UTC">UTC</SelectItem>
                 <SelectItem value="America/New_York">America/New_York (EST/EDT)</SelectItem>
-                <SelectItem value="Europe/London">Europe/London (GMT/BST)</SelectItem>
-                <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
-                <SelectItem value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</SelectItem>
-                {/* You might want to use a library to get a comprehensive list of timezones */}
               </SelectContent>
             </Select>
-            {selectedTimezone && (
-              <p className="text-sm text-muted-foreground">Selected Timezone: {selectedTimezone}</p>
-            )}
           </div>
 
-          {/* Time Selection */}
           <div className="space-y-3">
             <Label>Interview Time</Label>
-            <Select value={selectedTime} onValueChange={setSelectedTime}>
+            <Select value={selectedTime} onValueChange={setSelectedTime} disabled={interviewType === 'ai'}>
               <SelectTrigger>
                 <SelectValue placeholder="Select time slot" />
               </SelectTrigger>
               <SelectContent>
                 {timeSlots.map((slot) => (
-                  <SelectItem key={slot} value={slot}>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      {slot}
-                    </div>
-                  </SelectItem>
+                  <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Duration */}
           <div className="space-y-3">
             <Label>Duration (minutes)</Label>
             <Select value={duration} onValueChange={setDuration}>
@@ -388,12 +302,11 @@ export function ScheduleInterviewDialog({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Notes */}
+          
           <div className="space-y-3">
             <Label>Additional Notes (Optional)</Label>
             <Textarea
-              placeholder="Add any special instructions or topics to cover..."
+              placeholder="Add any special instructions or topics..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -414,3 +327,4 @@ export function ScheduleInterviewDialog({
     </Dialog>
   );
 }
+

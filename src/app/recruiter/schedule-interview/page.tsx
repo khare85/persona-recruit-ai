@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -37,8 +38,12 @@ import {
   Building,
   Mail,
   FileText,
-  Zap
+  Zap,
+  Bot
 } from 'lucide-react';
+import { scheduleInterview } from '@/services/mockDataService';
+import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 // Mock data for candidates, interviewers, and jobs
 const candidates = [
@@ -110,6 +115,30 @@ const interviewers = [
   }
 ];
 
+const mockAgents = [
+  {
+    id: 'ai-agent-tech',
+    name: 'Alex - Technical Screener',
+    specialty: 'Deep technical and coding assessments',
+    availability: '24/7',
+    rating: 4.7,
+  },
+  {
+    id: 'ai-agent-behavioral',
+    name: 'Jordan - Behavioral Analyst',
+    specialty: 'Situational and behavioral questions',
+    availability: '24/7',
+    rating: 4.9,
+  },
+  {
+    id: 'ai-agent-general',
+    name: 'Casey - General Interviewer',
+    specialty: 'Well-rounded initial screening',
+    availability: '24/7',
+    rating: 4.6,
+  }
+];
+
 const jobRoles = [
   { id: '1', title: 'Senior Frontend Developer', department: 'Engineering' },
   { id: '2', title: 'DevOps Engineer', department: 'Engineering' },
@@ -122,12 +151,17 @@ export default function ScheduleInterviewPage() {
   const [selectedInterviewer, setSelectedInterviewer] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState('');
-  const [interviewType, setInterviewType] = useState('technical');
+  const [interviewType, setInterviewType] = useState<'ai' | 'realtime'>('realtime');
   const [interviewFormat, setInterviewFormat] = useState('in-person');
   const [duration, setDuration] = useState('60');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [step, setStep] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredCandidates = candidates.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const availableTimeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -140,25 +174,35 @@ export default function ScheduleInterviewPage() {
         return <Badge className="bg-green-100 text-green-800">Available</Badge>;
       case 'busy':
         return <Badge className="bg-red-100 text-red-800">Busy</Badge>;
-      case 'limited':
-        return <Badge className="bg-yellow-100 text-yellow-800">Limited</Badge>;
+      case '24/7':
+        return <Badge className="bg-blue-100 text-blue-800">24/7</Badge>;
       default:
         return <Badge variant="outline">{availability}</Badge>;
     }
   };
 
   const handleScheduleInterview = () => {
-    // Handle interview scheduling logic
-    console.log('Scheduling interview:', {
-      candidate: selectedCandidate,
-      interviewer: selectedInterviewer,
-      date: selectedDate,
-      time: selectedTime,
+    const selectedAgentData = interviewType === 'ai'
+      ? mockAgents.find(agent => agent.id === selectedInterviewer)
+      : interviewers.find(interviewer => interviewer.id === selectedInterviewer);
+      
+    scheduleInterview({
+      candidateId: selectedCandidate.id,
+      candidateName: selectedCandidate.name,
+      jobId: jobRoles.find(j => j.title === selectedCandidate.position)?.id || 'unknown-job',
+      jobTitle: selectedCandidate.position,
       type: interviewType,
-      format: interviewFormat,
-      duration,
-      location,
-      notes
+      agentId: selectedInterviewer,
+      agentName: selectedAgentData?.name || 'Unknown',
+      date: selectedDate!,
+      time: selectedTime,
+      duration: parseInt(duration),
+      notes,
+    });
+    
+    toast({
+      title: "✅ Interview Scheduled",
+      description: `Interview for ${selectedCandidate.name} has been scheduled.`
     });
   };
 
@@ -173,7 +217,7 @@ export default function ScheduleInterviewPage() {
                 Schedule Interview
               </h1>
               <p className="text-muted-foreground mt-1">
-                Assign face-to-face interviews to available interviewers
+                Assign interviews to AI agents or human interviewers
               </p>
             </div>
             <Button variant="outline" onClick={() => window.history.back()}>
@@ -225,12 +269,23 @@ export default function ScheduleInterviewPage() {
                 <CardDescription>Choose the candidate for the interview</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search candidate by name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-4">
-                  {candidates.map((candidate) => (
+                  {filteredCandidates.map((candidate) => (
                     <div
                       key={candidate.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedCandidate.id === candidate.id 
+                        selectedCandidate?.id === candidate.id 
                           ? 'border-primary bg-primary/5' 
                           : 'hover:bg-muted/50'
                       }`}
@@ -245,7 +300,6 @@ export default function ScheduleInterviewPage() {
                           <div>
                             <h3 className="font-semibold">{candidate.name}</h3>
                             <p className="text-sm text-muted-foreground">{candidate.position}</p>
-                            <p className="text-xs text-muted-foreground">{candidate.email}</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -257,18 +311,6 @@ export default function ScheduleInterviewPage() {
                               </Badge>
                             </div>
                           )}
-                          <div className="flex flex-col space-y-1">
-                            <Button variant="outline" size="sm">
-                              <Eye className="mr-1 h-3 w-3" />
-                              View Profile
-                            </Button>
-                            {candidate.aiInterviewCompleted && (
-                              <Button variant="outline" size="sm">
-                                <Video className="mr-1 h-3 w-3" />
-                                AI Interview
-                              </Button>
-                            )}
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -278,7 +320,7 @@ export default function ScheduleInterviewPage() {
             </Card>
 
             <div className="flex justify-end">
-              <Button onClick={() => setStep(2)}>
+              <Button onClick={() => setStep(2)} disabled={!selectedCandidate}>
                 Next: Choose Interviewer
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -291,53 +333,49 @@ export default function ScheduleInterviewPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <UserCheck className="mr-2 h-5 w-5 text-primary" />
-                  Choose Interviewer
+                  Choose Interviewer Type
                 </CardTitle>
-                <CardDescription>Select an available interviewer for {selectedCandidate.name}</CardDescription>
+                <CardDescription>Select whether to schedule a real-time or AI-powered interview</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {interviewers.map((interviewer) => (
+                <RadioGroup value={interviewType} onValueChange={(value) => setInterviewType(value as any)} className="grid grid-cols-2 gap-4">
+                  <Label htmlFor="realtime" className="border rounded-lg p-4 cursor-pointer hover:border-primary">
+                    <RadioGroupItem value="realtime" id="realtime" className="sr-only" />
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      <span className="font-medium">Real-time Interview</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">With a human interviewer</p>
+                  </Label>
+                  <Label htmlFor="ai" className="border rounded-lg p-4 cursor-pointer hover:border-primary">
+                    <RadioGroupItem value="ai" id="ai" className="sr-only" />
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-5 w-5" />
+                      <span className="font-medium">AI Interview</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Automated AI assessment</p>
+                  </Label>
+                </RadioGroup>
+
+                <div className="mt-6 space-y-4">
+                  {(interviewType === 'realtime' ? interviewers : mockAgents).map((agent) => (
                     <div
-                      key={interviewer.id}
+                      key={agent.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedInterviewer === interviewer.id 
-                          ? 'border-primary bg-primary/5' 
-                          : 'hover:bg-muted/50'
-                      } ${interviewer.availability === 'busy' ? 'opacity-50' : ''}`}
-                      onClick={() => interviewer.availability !== 'busy' && setSelectedInterviewer(interviewer.id)}
+                        selectedInterviewer === agent.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                      } ${interviewType === 'realtime' && agent.availability === 'busy' ? 'opacity-50' : ''}`}
+                      onClick={() => interviewType === 'realtime' && agent.availability !== 'busy' && setSelectedInterviewer(agent.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={interviewer.avatar} />
-                            <AvatarFallback>{interviewer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            <AvatarImage src={agent.avatar} />
+                            <AvatarFallback>{agent.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <h3 className="font-semibold">{interviewer.name}</h3>
-                            <p className="text-sm text-muted-foreground">{interviewer.department}</p>
-                            <p className="text-xs text-muted-foreground">{interviewer.email}</p>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <Star className="h-3 w-3 text-yellow-500" />
-                              <span className="text-xs">{interviewer.rating}/5</span>
-                              <span className="text-xs text-muted-foreground">
-                                • {interviewer.totalInterviews} interviews
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            {getAvailabilityBadge(interviewer.availability)}
-                            <div className="mt-2">
-                              <div className="flex flex-wrap gap-1">
-                                {interviewer.specializations.slice(0, 2).map((spec) => (
-                                  <Badge key={spec} variant="secondary" className="text-xs">
-                                    {spec}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
+                            <h3 className="font-semibold">{agent.name}</h3>
+                            <p className="text-sm text-muted-foreground">{agent.specialty}</p>
+                            <Badge variant="outline" className="text-xs mt-1">{getAvailabilityBadge(agent.availability)}</Badge>
                           </div>
                         </div>
                       </div>
@@ -352,151 +390,68 @@ export default function ScheduleInterviewPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
-              <Button 
-                onClick={() => setStep(3)}
-                disabled={!selectedInterviewer}
-              >
+              <Button onClick={() => setStep(3)} disabled={!selectedInterviewer}>
                 Next: Schedule Details
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
-
+          
           {/* Step 3: Schedule Details */}
           <TabsContent value="3" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CalendarIcon className="mr-2 h-5 w-5 text-primary" />
-                    Date & Time
-                  </CardTitle>
-                  <CardDescription>Select interview date and time</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Select Date</Label>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <CalendarIcon className="mr-2 h-5 w-5 text-primary" />
+                      Date & Time
+                    </CardTitle>
+                    <CardDescription>Select interview date</CardDescription>
+                  </CardHeader>
+                  <CardContent>
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
                       className="rounded-md border"
-                      disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
                     />
-                  </div>
-                  
-                  <div>
-                    <Label>Select Time</Label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {availableTimeSlots.map((time) => (
-                        <Button
-                          key={time}
-                          variant={selectedTime === time ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedTime(time)}
-                        >
-                          {time}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
+                {interviewType === 'realtime' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Available Time Slots</CardTitle>
+                      <CardDescription>
+                        Select an available time for {selectedDate ? format(selectedDate, 'PPP') : 'the selected date'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableTimeSlots.map((time) => (
+                          <Button
+                            key={time}
+                            variant={selectedTime === time ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedTime(time)}
+                          >
+                            {time}
+                          </Button>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+              
               <Card>
                 <CardHeader>
                   <CardTitle>Interview Details</CardTitle>
                   <CardDescription>Configure interview type and format</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Interview Type</Label>
-                    <RadioGroup value={interviewType} onValueChange={setInterviewType}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="technical" id="technical" />
-                        <Label htmlFor="technical">Technical Interview</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="behavioral" id="behavioral" />
-                        <Label htmlFor="behavioral">Behavioral Interview</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="final" id="final" />
-                        <Label htmlFor="final">Final Round</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="portfolio" id="portfolio" />
-                        <Label htmlFor="portfolio">Portfolio Review</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Interview Format</Label>
-                    <RadioGroup value={interviewFormat} onValueChange={setInterviewFormat}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="in-person" id="in-person" />
-                        <Label htmlFor="in-person" className="flex items-center">
-                          <MapPin className="mr-1 h-4 w-4" />
-                          In-Person
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="virtual" id="virtual" />
-                        <Label htmlFor="virtual" className="flex items-center">
-                          <Video className="mr-1 h-4 w-4" />
-                          Virtual Meeting
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="phone" id="phone" />
-                        <Label htmlFor="phone" className="flex items-center">
-                          <Phone className="mr-1 h-4 w-4" />
-                          Phone Call
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duration</Label>
-                    <Select value={duration} onValueChange={setDuration}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 minutes</SelectItem>
-                        <SelectItem value="45">45 minutes</SelectItem>
-                        <SelectItem value="60">60 minutes</SelectItem>
-                        <SelectItem value="90">90 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location/Meeting Link</Label>
-                    <Input 
-                      id="location"
-                      placeholder={
-                        interviewFormat === 'in-person' ? 'Conference Room A, Floor 3' :
-                        interviewFormat === 'virtual' ? 'Zoom/Teams meeting link' :
-                        'Phone number'
-                      }
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Interview Notes</Label>
-                    <Textarea 
-                      id="notes"
-                      placeholder="Special instructions, focus areas, or notes for the interviewer..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
+                  {/* Additional details form */}
                 </CardContent>
               </Card>
             </div>
@@ -506,10 +461,7 @@ export default function ScheduleInterviewPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
-              <Button 
-                onClick={() => setStep(4)}
-                disabled={!selectedDate || !selectedTime || !location}
-              >
+              <Button onClick={() => setStep(4)} disabled={!selectedDate || (interviewType === 'realtime' && !selectedTime)}>
                 Next: Review & Confirm
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -524,98 +476,11 @@ export default function ScheduleInterviewPage() {
                   <CheckCircle className="mr-2 h-5 w-5 text-primary" />
                   Review Interview Details
                 </CardTitle>
-                <CardDescription>Please review all details before scheduling the interview</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">Candidate</h3>
-                      <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                        <Avatar>
-                          <AvatarImage src={selectedCandidate.avatar} />
-                          <AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{selectedCandidate.name}</div>
-                          <div className="text-sm text-muted-foreground">{selectedCandidate.position}</div>
-                          <div className="text-xs text-muted-foreground">{selectedCandidate.email}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold mb-2">Interviewer</h3>
-                      {selectedInterviewer && (
-                        <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                          <Avatar>
-                            <AvatarImage src={interviewers.find(i => i.id === selectedInterviewer)?.avatar} />
-                            <AvatarFallback>
-                              {interviewers.find(i => i.id === selectedInterviewer)?.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{interviewers.find(i => i.id === selectedInterviewer)?.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {interviewers.find(i => i.id === selectedInterviewer)?.department}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {interviewers.find(i => i.id === selectedInterviewer)?.email}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">Schedule Details</h3>
-                      <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Date:</span>
-                          <span className="text-sm">{selectedDate?.toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Time:</span>
-                          <span className="text-sm">{selectedTime}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Duration:</span>
-                          <span className="text-sm">{duration} minutes</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Type:</span>
-                          <span className="text-sm capitalize">{interviewType.replace('-', ' ')}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Format:</span>
-                          <span className="text-sm capitalize">{interviewFormat.replace('-', ' ')}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Location:</span>
-                          <span className="text-sm">{location}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {notes && (
-                      <div>
-                        <h3 className="font-semibold mb-2">Notes</h3>
-                        <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-sm">{notes}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Both the candidate and interviewer will receive email notifications about this scheduled interview.
-                  </AlertDescription>
-                </Alert>
+              <CardContent>
+                {/* Review details here */}
+                <div className="font-semibold">Interview Type: {interviewType === 'ai' ? 'AI Interview' : 'Real-time Interview'}</div>
+                <div>Interviewer/Agent: {(interviewType === 'ai' ? mockAgents : interviewers).find(i => i.id === selectedInterviewer)?.name}</div>
               </CardContent>
             </Card>
 
@@ -635,3 +500,4 @@ export default function ScheduleInterviewPage() {
     </DashboardLayout>
   );
 }
+

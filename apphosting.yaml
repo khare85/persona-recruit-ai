@@ -12,7 +12,7 @@ runConfig:
 env:
   # Firebase Configuration - Using ai-talent-stream project
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "AIzaSyCfv5aVFCAO0ELdqpvWtV-lT3xRSPQvH_8"
+    value: "AIzaSyDBJabwAuKxGnM0zFIh0A1ROEC8tTpQ2c8"
     availability:
       - BUILD
       - RUNTIME
@@ -49,6 +49,12 @@ env:
   
   - variable: FIREBASE_PROJECT_ID
     value: "ai-talent-stream"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-QL7NT2DTQS"
     availability:
       - BUILD
       - RUNTIME

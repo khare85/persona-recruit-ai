@@ -328,7 +328,9 @@ export default function RecruiterJobsPage() {
                       <TableRow key={job.id}>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{job.title}</div>
+                            <Link href={`/jobs/${job.id}`} className="font-medium hover:text-primary transition-colors">
+                              {job.title}
+                            </Link>
                             <div className="text-sm text-muted-foreground">{job.employmentType}</div>
                           </div>
                         </TableCell>
@@ -355,7 +357,7 @@ export default function RecruiterJobsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {new Date(job.postedAt).toLocaleDateString()}
+                          {job.postedAt ? new Date(job.postedAt).toLocaleDateString() : 'N/A'}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">

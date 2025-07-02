@@ -7,7 +7,7 @@ export interface Job {
   department?: string;
   location: string;
   locationType: 'remote' | 'onsite' | 'hybrid';
-  type: 'full-time' | 'part-time' | 'contract' | 'internship';
+  type: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
   experience: string;
   salary?: {
     min: number;
@@ -24,6 +24,8 @@ export interface Job {
   benefits: string[];
   quickApplyEnabled: boolean;
   status: 'draft' | 'active' | 'paused' | 'closed' | 'archived';
+  isRemote?: boolean;
+  urgency?: 'low' | 'medium' | 'high';
   applicationDeadline?: Date;
   startDate?: Date;
   stats: {

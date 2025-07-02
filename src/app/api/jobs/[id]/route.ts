@@ -7,14 +7,14 @@ import { z } from 'zod';
 const jobUpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   location: z.string().min(1).max(100).optional(),
-  type: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional(),
+  type: z.enum(['full-time', 'part-time', 'contract', 'remote', 'internship']).optional(),
   department: z.string().min(1).max(50).optional(),
   experience: z.string().optional(),
   salary: z.string().optional(),
   description: z.string().min(50).max(5000).optional(),
   requirements: z.array(z.string()).optional(),
   benefits: z.array(z.string()).optional(),
-  status: z.enum(['Active', 'Closed', 'Draft']).optional()
+  status: z.enum(['active', 'closed', 'draft']).optional()
 });
 
 // GET /api/jobs/[id] - Get a specific job
@@ -103,4 +103,8 @@ export async function DELETE(
   } catch (error) {
     console.error('DELETE /api/jobs/[id] error:', error);
     return NextResponse.json(
-      
+      { error: 'Failed to delete job' },
+      { status: 500 }
+    );
+  }
+}

@@ -10,7 +10,7 @@ import { AuthenticatedRequest } from '@/middleware/auth';
 const jobSchema = z.object({
   title: z.string().min(1).max(200),
   location: z.string().min(1).max(100),
-  type: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']),
+  type: z.enum(['full-time', 'part-time', 'contract', 'remote', 'internship']),
   department: z.string().min(1).max(50),
   experience: z.string(),
   salary: z.string().optional(),
@@ -21,8 +21,8 @@ const jobSchema = z.object({
   skills: z.array(z.string()),
   responsibilities: z.array(z.string()).optional(),
   isRemote: z.boolean().optional(),
-  urgency: z.enum(['Low', 'Medium', 'High']).optional(),
-  status: z.enum(['Active', 'Closed', 'Draft']).default('Active'),
+  urgency: z.enum(['low', 'medium', 'high']).default('medium'),
+  status: z.enum(['active', 'closed', 'draft']).default('active'),
 });
 
 // GET /api/jobs - List all jobs with optional filters

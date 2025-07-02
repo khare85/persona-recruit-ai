@@ -744,20 +744,51 @@ export const scheduleInterview = (interviewData: {
     jobTitle: interviewData.jobTitle,
     companyName: job?.companyName || 'Unknown Company',
     date: (() => {
+      // For AI interviews, time is not specified. Use the current time.
+      if (interviewData.type === 'ai' || !interviewData.time) {
+        return new Date().toISOString();
+      }
+
       const datePart = interviewData.date.toISOString().split('T')[0];
-      const timePart = interviewData.time;
+      const timePart = interviewData.time; // e.g., "09:00 AM"
       
       const [time, period] = timePart.split(' ');
-      let [hours, minutes] = time.split(':');
-      let hour = parseInt(hours);
+      // Basic validation to prevent crash
+      if (!time || !period) {
+        console.warn(`Invalid time format passed to scheduleInterview: "${timePart}". Using date only.`);
+        return new Date(datePart).toISOString();
+      }
+
+      const [hoursStr, minutesStr] = time.split(':');
+      if (!hoursStr || !minutesStr) {
+        console.warn(`Invalid time format passed to scheduleInterview: "${timePart}". Using date only.`);
+        return new Date(datePart).toISOString();
+      }
       
-      if (period === 'PM' && hour !== 12) {
+      let hour = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10);
+
+      if (isNaN(hour) || isNaN(minutes)) {
+        console.warn(`Could not parse time from: "${timePart}". Using date only.`);
+        return new Date(datePart).toISOString();
+      }
+      
+      if (period.toUpperCase() === 'PM' && hour !== 12) {
         hour += 12;
-      } else if (period === 'AM' && hour === 12) {
+      } else if (period.toUpperCase() === 'AM' && hour === 12) {
         hour = 0;
       }
       
-      return new Date(`${datePart}T${hour.toString().padStart(2, '0')}:${minutes}:00Z`).toISOString();
+      const dateString = `${datePart}T${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00Z`;
+      const dateObj = new Date(dateString);
+
+      // Check if the constructed date is valid before returning
+      if (isNaN(dateObj.getTime())) {
+          console.error(`Constructed an invalid date: "${dateString}"`);
+          return new Date().toISOString(); // Fallback to now
+      }
+
+      return dateObj.toISOString();
     })(),
     status: 'Scheduled',
     type: interviewData.type,
@@ -771,4 +802,3 @@ export const scheduleInterview = (interviewData: {
   
   return newInterview;
 };
-

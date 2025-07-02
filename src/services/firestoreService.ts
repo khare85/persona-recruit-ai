@@ -21,16 +21,16 @@ if (!admin.apps.length) {
       const serviceAccountJson = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountJson),
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
+        projectId: serviceAccountJson.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai',
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'persona-recruit-ai.firebasestorage.app'
       });
     } else {
       // Fallback to Application Default Credentials for local development or GCP environments
       console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...');
       admin.initializeApp({
         credential: admin.credential.applicationDefault(),
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai',
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'persona-recruit-ai.firebasestorage.app'
       });
     }
     app = admin.app(); // Get the default app instance

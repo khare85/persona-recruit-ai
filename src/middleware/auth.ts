@@ -10,10 +10,14 @@ if (!admin.apps.length) {
     if (serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id || process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai'
       });
     } else {
-      admin.initializeApp();
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai'
+      });
     }
   } catch (error) {
     console.error('Firebase Admin initialization failed:', error);

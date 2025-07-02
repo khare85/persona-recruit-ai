@@ -15,10 +15,14 @@ if (!admin.apps.length) {
     if (serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id || process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai'
       });
     } else {
-      admin.initializeApp();
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai'
+      });
     }
   } catch (error) {
     console.error('Firebase Admin initialization failed:', error);
@@ -57,7 +61,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     apiLogger.info('Invitation acceptance requested', {
       token: token.slice(0, 10) + '...',
       userAgent: req.headers.get('user-agent'),
-      ip: req.ip
+      ip: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown'
     });
 
     // Get invitation from database
@@ -92,7 +96,6 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       firstName: invitation.firstName,
       lastName: invitation.lastName,
       role: invitation.role,
-      companyId: invitation.companyId,
       status: 'active',
       emailVerified: true,
       passwordHash: password // Will be hashed in the service
@@ -101,8 +104,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     // Mark invitation as accepted
     await databaseService.updateInvitation(invitation.id, {
       status: 'accepted',
-      acceptedAt: new Date(),
-      acceptedBy: userId
+      acceptedAt: new Date()
     });
     
     // Generate a custom token for client-side sign-in

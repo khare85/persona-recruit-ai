@@ -28,13 +28,13 @@ const missingKeys = Object.entries(requiredConfig)
   .map(([key, _]) => key);
 
 if (missingKeys.length > 0) {
-  const projectName = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream';
-  console.warn(`WARNING: ${missingKeys.map(key => `NEXT_PUBLIC_FIREBASE_${key.toUpperCase()}`).join(', ')} ${missingKeys.length === 1 ? 'is' : 'are'} missing${projectName !== 'ai-talent-stream' ? ` for '${projectName}'` : ''}. Client-side Firebase will not initialize correctly.`);
+  const projectName = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai';
+  console.warn(`WARNING: ${missingKeys.map(key => `NEXT_PUBLIC_FIREBASE_${key.toUpperCase()}`).join(', ')} ${missingKeys.length === 1 ? 'is' : 'are'} missing${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''}. Client-side Firebase will not initialize correctly.`);
   if (!firebaseConfig.apiKey) {
-    console.warn(`WARNING: Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing${projectName !== 'ai-talent-stream' ? ` for '${projectName}'` : ''}. Firebase services, especially Authentication, will not initialize correctly. Ensure this environment variable is set with a valid Web API Key from your${projectName !== 'ai-talent-stream' ? ` '${projectName}'` : ''} Firebase project settings.`);
+    console.warn(`WARNING: Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''}. Firebase services, especially Authentication, will not initialize correctly. Ensure this environment variable is set with a valid Web API Key from your${projectName !== 'persona-recruit-ai' ? ` '${projectName}'` : ''} Firebase project settings.`);
   }
   if (!firebaseConfig.projectId) {
-    console.warn(`WARNING: Firebase Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID) is missing${projectName !== 'ai-talent-stream' ? ` for '${projectName}'` : ''}. Firebase services will not initialize correctly. Ensure this environment variable is set${projectName !== 'ai-talent-stream' ? ` to '${projectName}'` : ''}.`);
+    console.warn(`WARNING: Firebase Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID) is missing${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''}. Firebase services will not initialize correctly. Ensure this environment variable is set${projectName !== 'persona-recruit-ai' ? ` to '${projectName}'` : ''}.`);
   }
 }
 
@@ -67,9 +67,9 @@ if (missingKeys.length === 0) {
     console.error('Error initializing Firebase services:', error);
   }
 } else {
-  const projectName = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream';
-  console.error(`Firebase critical configuration${projectName !== 'ai-talent-stream' ? ` (API Key or Project ID for '${projectName}')` : ' missing. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set.'} is missing. Initialization skipped.`);
-  console.error(`Firebase Auth initialization skipped: Firebase App was not properly initialized. This usually means NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID${projectName !== 'ai-talent-stream' ? ` for '${projectName}'` : ''} was missing or empty.`);
+  const projectName = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai';
+  console.error(`Firebase critical configuration${projectName !== 'persona-recruit-ai' ? ` (API Key or Project ID for '${projectName}')` : ' missing. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set.'} is missing. Initialization skipped.`);
+  console.error(`Firebase Auth initialization skipped: Firebase App was not properly initialized. This usually means NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''} was missing or empty.`);
 }
 
 // Export initialized instances

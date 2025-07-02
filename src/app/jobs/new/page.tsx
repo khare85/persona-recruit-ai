@@ -16,6 +16,9 @@ import { Separator } from '@/components/ui/separator';
 import { Container } from '@/components/shared/Container';
 import { useToast } from '@/hooks/use-toast';
 import { Wand2, Loader2, CheckCircle, X, Plus, Sparkles, Brain } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Simple initial form for AI generation
 const aiGenerationSchema = z.object({
@@ -56,12 +59,14 @@ interface GeneratedJobData {
   responsibilities: string[];
 }
 
-export default function NewJobPage() {
+function NewJobContent() {
   const [step, setStep] = useState<'ai-generation' | 'job-form'>('ai-generation');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generatedData, setGeneratedData] = useState<GeneratedJobData | null>(null);
   const { toast } = useToast();
+  const { getToken } = useAuth();
+  const router = useRouter();
 
   // AI Generation Form
   const aiForm = useForm<AIGenerationValues>({
@@ -99,9 +104,23 @@ export default function NewJobPage() {
   const handleGenerateJobDescription = async (data: AIGenerationValues) => {
     setIsGenerating(true);
     try {
+      const token = await getToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in to create job postings",
+          variant: "destructive"
+        });
+        router.push('/auth');
+        return;
+      }
+
       const response = await fetch('/api/jobs/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(data)
       });
 
@@ -147,9 +166,23 @@ export default function NewJobPage() {
   const handleSaveJob = async (data: JobFormValues) => {
     setIsSaving(true);
     try {
+      const token = await getToken();
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in to create job postings",
+          variant: "destructive"
+        });
+        router.push('/auth');
+        return;
+      }
+
       const response = await fetch('/api/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           ...data,
           isRemote: data.type === 'Remote'
@@ -157,7 +190,8 @@ export default function NewJobPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create job');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create job');
       }
 
       toast({
@@ -165,11 +199,8 @@ export default function NewJobPage() {
         description: "The job posting has been created and is now active.",
       });
 
-      // Reset forms
-      aiForm.reset();
-      jobForm.reset();
-      setGeneratedData(null);
-      setStep('ai-generation');
+      // Redirect to jobs list
+      router.push('/recruiter/jobs');
       
     } catch (error) {
       toast({
@@ -217,7 +248,7 @@ export default function NewJobPage() {
             placeholder={placeholder}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => {
+            onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 addArrayItem(fieldName, inputValue);
@@ -699,5 +730,13 @@ export default function NewJobPage() {
         </Form>
       </div>
     </Container>
+  );
+}
+
+export default function NewJobPage() {
+  return (
+    <ProtectedRoute requiredRole={['recruiter', 'company_admin']} redirectTo="/auth">
+      <NewJobContent />
+    </ProtectedRoute>
   );
 }

@@ -34,13 +34,14 @@
 ```
 
 ## Firebase Configuration
-- **Project ID**: `persona-recruit-ai`
+- **Project ID**: `ai-talent-stream`
 - **Services Used**:
   - Firestore (with rules and indexes)
   - Storage (with rules)
   - App Hosting (Next.js deployment)
   - Authentication
   - Secret Manager (for sensitive configs)
+- **App Hosting Backend**: Configured with 2 CPU, 8GB RAM, auto-scaling 0-50 instances
 
 ## Important Commands
 ```bash
@@ -147,15 +148,20 @@ ELEVENLABS_API_KEY
 - Files are stored in Firebase Storage with structured paths
 
 ## Recent Changes
+- **Updated Firebase Project**: Migrated from `persona-recruit-ai` to `ai-talent-stream`
+- **Secret Manager Configuration**: Complete Firebase config stored in Secret Manager
+- **Enhanced Resource Allocation**: Upgraded to 8GB RAM for App Hosting backend
+- **Role-Based Security**: Comprehensive Firestore and Storage rules with 5 user roles
+- **AI Vector Search**: Firestore indexes configured for embedding-based candidate matching
 - Switched from Firebase Hosting to Firebase App Hosting
 - Removed static HTML generation in favor of dynamic SSR
-- Backend ID for App Hosting: `my-web-app`
 
 ## Common Issues & Solutions
-1. **Build Memory Issues**: Use `NODE_OPTIONS='--max-old-space-size=4096'`
+1. **Build Memory Issues**: Use `NODE_OPTIONS='--max-old-space-size=8192'` (now allocated 8GB RAM)
 2. **Port Conflicts**: Dev server runs on port 9002
 3. **Authentication**: Custom auth system with Firebase integration
 4. **File Uploads**: Use structured paths in Firebase Storage
+5. **Secret Manager Access**: Ensure service account has Secret Manager Accessor role
 
 ## Security Considerations
 - Firestore rules enforce user-based access control

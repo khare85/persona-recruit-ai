@@ -8,5 +8,9 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "apphosting": {
+    "backendId": "ai-talent-stream",
+    "alwaysDeployFromSource": true
   }
 }

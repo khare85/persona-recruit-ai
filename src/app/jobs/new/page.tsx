@@ -152,10 +152,11 @@ function NewJobContent() {
         title: "✨ Job Description Generated!",
         description: "AI has created a comprehensive job description. You can now review and customize it.",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Job generation error:', error);
       toast({
         title: "Generation Failed",
-        description: "Failed to generate job description. Please try again.",
+        description: error?.message || "Failed to generate job description. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -185,13 +186,24 @@ function NewJobContent() {
         },
         body: JSON.stringify({
           ...data,
-          isRemote: data.type === 'Remote'
+          isRemote: data.type === 'Remote',
+          status: 'Active' // Add default status
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create job');
+        let errorMessage = 'Failed to create job';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          if (errorData.details) {
+            console.error('Validation errors:', errorData.details);
+          }
+        } catch (e) {
+          // If response isn't JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       toast({
@@ -202,10 +214,11 @@ function NewJobContent() {
       // Redirect to jobs list
       router.push('/recruiter/jobs');
       
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Job creation error:', error);
       toast({
         title: "Save Failed",
-        description: "Failed to save job. Please try again.",
+        description: error?.message || "Failed to save job. Please try again.",
         variant: "destructive"
       });
     } finally {

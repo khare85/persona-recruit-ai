@@ -31,6 +31,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface NotificationSettings {
   emailNotifications: boolean;
@@ -51,6 +52,7 @@ interface AISettings {
 
 export default function RecruiterSettingsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState({
     firstName: '',
     lastName: '',
@@ -83,6 +85,7 @@ export default function RecruiterSettingsPage() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const profilePicRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +129,7 @@ export default function RecruiterSettingsPage() {
   const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setProfilePicFile(file); // Store file object for upload
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePicPreview(reader.result as string);
@@ -144,11 +148,55 @@ export default function RecruiterSettingsPage() {
 
   const saveProfile = async () => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Profile saved:', profile);
-    setIsLoading(false);
-  };
+    let updatedProfileData = { ...profile };
 
+    try {
+      // Step 1: Upload profile picture if a new one is selected
+      if (profilePicFile && user) {
+        const formData = new FormData();
+        formData.append('file', profilePicFile);
+        formData.append('userId', user.id);
+
+        const uploadResponse = await fetch('/api/upload/profile-picture', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload profile picture.');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        updatedProfileData.profileImage = uploadResult.imageUrl;
+      }
+
+      // Step 2: Save the updated profile data (including the new image URL)
+      // This part is still a simulation as there's no specific API endpoint for it.
+      // The important part is that we're now handling the image upload.
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Profile saved:', updatedProfileData);
+      
+      setProfile(updatedProfileData);
+      setProfilePicFile(null);
+
+      toast({
+        title: "Profile Saved!",
+        description: "Your profile settings have been updated.",
+        action: <CheckCircle className="text-green-500" />,
+      });
+
+    } catch (error) {
+      console.error('Error saving profile:', error);
+       toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Could not save profile settings.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const saveNotifications = async () => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000));

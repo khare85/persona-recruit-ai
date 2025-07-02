@@ -160,7 +160,7 @@ export function withSecurityHeaders(
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https: blob:",
-        "connect-src 'self' https://api.elevenlabs.io https://firestore.googleapis.com wss://api.elevenlabs.io",
+        "connect-src 'self' https://api.elevenlabs.io https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://persona-recruit-ai.firebaseapp.com wss://api.elevenlabs.io",
         "media-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",

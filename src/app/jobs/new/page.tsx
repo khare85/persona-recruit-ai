@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -187,7 +188,7 @@ function NewJobContent() {
         body: JSON.stringify({
           ...data,
           isRemote: data.type === 'Remote',
-          status: 'Active' // Add default status
+          status: 'active'
         })
       });
 

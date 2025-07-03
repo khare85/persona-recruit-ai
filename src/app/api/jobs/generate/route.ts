@@ -4,12 +4,13 @@ import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { generateJobDescription } from '@/ai/flows/job-description-generator';
+import { withAuth } from '@/middleware/auth';
 
 // Validation schema for job generation request
 const jobGenerationSchema = z.object({
   jobTitle: z.string().min(2).max(200),
   yearsOfExperience: z.string().min(1).max(50),
-  company: z.string().max(200).optional(),
+  company: z.string().min(1, "Company name is required"),
   department: z.string().max(100).optional(),
   location: z.string().max(100).optional(),
   jobType: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional()
@@ -18,7 +19,7 @@ const jobGenerationSchema = z.object({
 /**
  * Generate job description using AI
  */
-export const POST = withRateLimit('ai', async (req: NextRequest): Promise<NextResponse> => {
+export const POST = withAuth(withRateLimit('ai', async (req: NextRequest): Promise<NextResponse> => {
   try {
     const body = await req.json();
     const validation = jobGenerationSchema.safeParse(body);
@@ -37,7 +38,9 @@ export const POST = withRateLimit('ai', async (req: NextRequest): Promise<NextRe
 
     apiLogger.info('Job generation requested', {
       jobTitle: input.jobTitle,
-      experience: input.yearsOfExperience
+      experience: input.yearsOfExperience,
+      company: input.company,
+      userId: (req as any).user?.id
     });
 
     // Generate job description using the corrected AI flow
@@ -52,7 +55,7 @@ export const POST = withRateLimit('ai', async (req: NextRequest): Promise<NextRe
   } catch (error) {
     return handleApiError(error);
   }
-});
+}));
 
 /**
  * Generate skills only for a job title

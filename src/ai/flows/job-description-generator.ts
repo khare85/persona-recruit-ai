@@ -15,7 +15,7 @@ import {z} from 'genkit';
 const GenerateJobDescriptionInputSchema = z.object({
   jobTitle: z.string().describe('The title of the job.'),
   yearsOfExperience: z.string().describe('The level of experience required for the job (e.g., "3-5 years", "Entry Level").'),
-  company: z.string().optional().describe('The name of the company.'),
+  company: z.string().describe('The name of the company.'),
   department: z.string().optional().describe('The department the job belongs to.'),
   location: z.string().optional().describe('The location of the job.'),
   jobType: z.string().optional().describe('The type of employment (e.g., Full-time).'),
@@ -48,7 +48,7 @@ const prompt = ai.definePrompt({
 
   Job Title: {{{jobTitle}}}
   Experience Required: {{{yearsOfExperience}}}
-  {{#if company}}Company: {{{company}}}{{/if}}
+  Company: {{{company}}}
   {{#if department}}Department: {{{department}}}{{/if}}
   {{#if location}}Location: {{{location}}}{{/if}}
   {{#if jobType}}Job Type: {{{jobType}}}{{/if}}

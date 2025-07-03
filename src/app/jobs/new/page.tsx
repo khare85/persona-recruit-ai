@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,12 +20,13 @@ import { Wand2, Loader2, CheckCircle, X, Plus, Sparkles, Brain } from 'lucide-re
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 // Simple initial form for AI generation
 const aiGenerationSchema = z.object({
   jobTitle: z.string().min(3, "Job title must be at least 3 characters"),
   yearsOfExperience: z.string().min(1, "Please specify years of experience"),
-  company: z.string().optional(),
+  companyId: z.string().min(1, "Please select a company"),
   department: z.string().optional(),
   location: z.string().optional(),
   jobType: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional()
@@ -60,6 +61,11 @@ interface GeneratedJobData {
   responsibilities: string[];
 }
 
+interface Company {
+  id: string;
+  name: string;
+}
+
 function NewJobContent() {
   const [step, setStep] = useState<'ai-generation' | 'job-form'>('ai-generation');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -68,6 +74,28 @@ function NewJobContent() {
   const { toast } = useToast();
   const { getToken } = useAuth();
   const router = useRouter();
+  const authenticatedFetch = useAuthenticatedFetch();
+
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const result = await authenticatedFetch('/api/admin/companies?limit=1000');
+        setCompanies(result.data.companies || []);
+      } catch (error) {
+        toast({
+          title: "Error fetching companies",
+          description: "Could not load company list. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingCompanies(false);
+      }
+    };
+    fetchCompanies();
+  }, [authenticatedFetch, toast]);
 
   // AI Generation Form
   const aiForm = useForm<AIGenerationValues>({
@@ -75,7 +103,7 @@ function NewJobContent() {
     defaultValues: {
       jobTitle: '',
       yearsOfExperience: '',
-      company: '',
+      companyId: '',
       department: '',
       location: '',
       jobType: undefined
@@ -115,6 +143,9 @@ function NewJobContent() {
         router.push('/auth');
         return;
       }
+      
+      const selectedCompany = companies.find(c => c.id === data.companyId);
+      const companyName = selectedCompany ? selectedCompany.name : '';
 
       const response = await fetch('/api/jobs/generate', {
         method: 'POST',
@@ -122,7 +153,10 @@ function NewJobContent() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          company: companyName
+        })
       });
 
       if (!response.ok) {
@@ -360,15 +394,27 @@ function NewJobContent() {
                   <Separator />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
+                     <FormField
                       control={aiForm.control}
-                      name="company"
+                      name="companyId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company Name (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Your Company Name" {...field} />
-                          </FormControl>
+                          <FormLabel className="text-base font-semibold">Company *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingCompanies}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={isLoadingCompanies ? "Loading companies..." : "Select a company"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {!isLoadingCompanies && companies.map((company) => (
+                                <SelectItem key={company.id} value={company.id}>
+                                  {company.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />

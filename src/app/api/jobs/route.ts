@@ -89,7 +89,7 @@ export const POST = withAuth(
         companyId: user.companyId,
         postedDate: new Date().toISOString(),
         quickApplyEnabled: true, // Default to enabled
-        locationType: validation.data.type === 'remote' ? 'remote' as const : 'onsite' as const, // Set locationType
+        locationType: (validation.data.type === 'remote' || validation.data.isRemote) ? 'remote' as const : 'onsite' as const, // Set locationType
         // Handle salary field - if it's a string, convert to object or leave undefined
         salary: validation.data.salary ? {
           min: 0,

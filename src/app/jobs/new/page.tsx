@@ -29,24 +29,26 @@ const aiGenerationSchema = z.object({
   companyId: z.string().min(1, "Please select a company"),
   department: z.string().optional(),
   location: z.string().optional(),
-  jobType: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional()
+  jobType: z.enum(['full-time', 'part-time', 'contract', 'remote']).optional()
 });
 
-// Complete job form schema
+// Complete job form schema - matches backend validation
 const jobFormSchema = z.object({
-  title: z.string().min(3, "Job title must be at least 3 characters"),
-  location: z.string().min(2, "Location must be at least 2 characters"),
-  type: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']),
-  department: z.string().min(2, "Department must be at least 2 characters"),
+  title: z.string().min(3, "Job title must be at least 3 characters").max(200),
+  location: z.string().min(2, "Location must be at least 2 characters").max(100),
+  type: z.enum(['full-time', 'part-time', 'contract', 'remote']),
+  department: z.string().min(2, "Department must be at least 2 characters").max(50),
   experience: z.string().min(1, "Experience requirement is required"),
   salary: z.string().optional(),
-  description: z.string().min(50, "Description must be at least 50 characters"),
+  description: z.string().min(50, "Description must be at least 50 characters").max(5000),
   requirements: z.array(z.string()).min(1, "At least one requirement is needed"),
   mustHaveRequirements: z.array(z.string()).min(1, "At least one must-have requirement is needed"),
   benefits: z.array(z.string()).min(1, "At least one benefit is needed"),
   skills: z.array(z.string()).min(1, "At least one skill is needed"),
   responsibilities: z.array(z.string()).optional(),
-  urgency: z.enum(['Low', 'Medium', 'High']).default('Medium')
+  isRemote: z.boolean().optional(),
+  urgency: z.enum(['low', 'medium', 'high']).default('medium'),
+  status: z.enum(['active', 'closed', 'draft']).default('active')
 });
 
 type AIGenerationValues = z.infer<typeof aiGenerationSchema>;
@@ -116,7 +118,7 @@ function NewJobContent() {
     defaultValues: {
       title: '',
       location: '',
-      type: 'Full-time',
+      type: 'full-time',
       department: '',
       experience: '',
       salary: '',
@@ -126,7 +128,9 @@ function NewJobContent() {
       benefits: [],
       skills: [],
       responsibilities: [],
-      urgency: 'Medium'
+      isRemote: false,
+      urgency: 'medium',
+      status: 'active'
     }
   });
 
@@ -173,13 +177,16 @@ function NewJobContent() {
       jobForm.setValue('experience', data.yearsOfExperience);
       jobForm.setValue('location', data.location || '');
       jobForm.setValue('department', data.department || '');
-      jobForm.setValue('type', data.jobType || 'Full-time');
+      jobForm.setValue('type', data.jobType || 'full-time');
       jobForm.setValue('description', generated.description);
       jobForm.setValue('requirements', generated.requirements);
       jobForm.setValue('mustHaveRequirements', generated.mustHaveRequirements);
       jobForm.setValue('benefits', generated.benefits);
       jobForm.setValue('skills', generated.skills);
       jobForm.setValue('responsibilities', generated.responsibilities || []);
+      jobForm.setValue('isRemote', data.jobType === 'remote');
+      jobForm.setValue('urgency', 'medium');
+      jobForm.setValue('status', 'active');
 
       setStep('job-form');
       
@@ -221,10 +228,8 @@ function NewJobContent() {
         },
         body: JSON.stringify({
           ...data,
-          type: data.type.toLowerCase().replace('-', '-'), // Convert 'Full-time' to 'full-time'
-          urgency: data.urgency.toLowerCase(), // Convert 'Medium' to 'medium'
-          isRemote: data.type === 'Remote',
-          status: 'active'
+          isRemote: data.type === 'remote' || data.isRemote, // Check for remote type or isRemote flag
+          status: data.status || 'active'
         })
       });
 
@@ -460,10 +465,10 @@ function NewJobContent() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Full-time">Full-time</SelectItem>
-                              <SelectItem value="Part-time">Part-time</SelectItem>
-                              <SelectItem value="Contract">Contract</SelectItem>
-                              <SelectItem value="Remote">Remote</SelectItem>
+                              <SelectItem value="full-time">Full-time</SelectItem>
+                              <SelectItem value="part-time">Part-time</SelectItem>
+                              <SelectItem value="contract">Contract</SelectItem>
+                              <SelectItem value="remote">Remote</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormItem>
@@ -582,10 +587,10 @@ function NewJobContent() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Full-time">Full-time</SelectItem>
-                            <SelectItem value="Part-time">Part-time</SelectItem>
-                            <SelectItem value="Contract">Contract</SelectItem>
-                            <SelectItem value="Remote">Remote</SelectItem>
+                            <SelectItem value="full-time">Full-time</SelectItem>
+                            <SelectItem value="part-time">Part-time</SelectItem>
+                            <SelectItem value="contract">Contract</SelectItem>
+                            <SelectItem value="remote">Remote</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -748,9 +753,9 @@ function NewJobContent() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Low">Low Priority</SelectItem>
-                          <SelectItem value="Medium">Medium Priority</SelectItem>
-                          <SelectItem value="High">High Priority</SelectItem>
+                          <SelectItem value="low">Low Priority</SelectItem>
+                          <SelectItem value="medium">Medium Priority</SelectItem>
+                          <SelectItem value="high">High Priority</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

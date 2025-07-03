@@ -221,6 +221,8 @@ function NewJobContent() {
         },
         body: JSON.stringify({
           ...data,
+          type: data.type.toLowerCase().replace('-', '-'), // Convert 'Full-time' to 'full-time'
+          urgency: data.urgency.toLowerCase(), // Convert 'Medium' to 'medium'
           isRemote: data.type === 'Remote',
           status: 'active'
         })

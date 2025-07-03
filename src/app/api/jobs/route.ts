@@ -83,9 +83,20 @@ export const POST = withAuth(
 
       const jobData = {
         ...validation.data,
+        qualifications: validation.data.requirements, // Map requirements to qualifications
+        responsibilities: validation.data.responsibilities || [], // Ensure array
         recruiterId: user.id,
         companyId: user.companyId,
         postedDate: new Date().toISOString(),
+        quickApplyEnabled: true, // Default to enabled
+        locationType: validation.data.type === 'remote' ? 'remote' as const : 'onsite' as const, // Set locationType
+        // Handle salary field - if it's a string, convert to object or leave undefined
+        salary: validation.data.salary ? {
+          min: 0,
+          max: 0,
+          currency: 'USD',
+          period: 'yearly' as const
+        } : undefined,
         stats: {
           views: 0,
           applications: 0,

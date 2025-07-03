@@ -217,12 +217,37 @@ export default function CompanyTeamPage() {
     }
   };
 
-  const copyInvitationLink = (link: string) => {
-    navigator.clipboard.writeText(window.location.origin + link);
-    toast({
-      title: "Link Copied",
-      description: "Invitation link copied to clipboard"
-    });
+  const copyInvitationLink = async (link: string) => {
+    const fullLink = window.location.origin + link;
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(fullLink);
+      } else {
+        // Fallback for non-secure contexts or older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = fullLink;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      toast({
+        title: "Link Copied",
+        description: "Invitation link copied to clipboard"
+      });
+    } catch (error) {
+      console.warn('Failed to copy to clipboard:', error);
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy link to clipboard. Please copy manually.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getRoleIcon = (role: string) => {

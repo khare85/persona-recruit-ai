@@ -335,7 +335,16 @@ export default function CareersPage() {
                             )}
                             <div className="flex items-center">
                               <CalendarDays className="h-4 w-4 mr-1" />
-                              {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                              {(() => {
+                                try {
+                                  const date = new Date(job.createdAt);
+                                  return isNaN(date.getTime()) 
+                                    ? 'Recently posted'
+                                    : formatDistanceToNow(date, { addSuffix: true });
+                                } catch {
+                                  return 'Recently posted';
+                                }
+                              })()}
                             </div>
                           </div>
                           <p className="text-gray-600 mb-3">{job.description}</p>

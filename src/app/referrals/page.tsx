@@ -76,7 +76,30 @@ export default function ReferralsPage() {
               </label>
               <div className="flex space-x-2">
                 <Input id="referralLink" value="https://aitalentstream.com/referral?id=YOUR_UNIQUE_ID" readOnly />
-                <Button variant="outline" onClick={() => navigator.clipboard.writeText('https://aitalentstream.com/referral?id=YOUR_UNIQUE_ID')}>
+                <Button variant="outline" onClick={() => {
+                  const referralLink = 'https://aitalentstream.com/referral?id=YOUR_UNIQUE_ID';
+                  try {
+                    // Try modern clipboard API first
+                    if (navigator.clipboard && window.isSecureContext) {
+                      navigator.clipboard.writeText(referralLink);
+                    } else {
+                      // Fallback for non-secure contexts or older browsers
+                      const textArea = document.createElement('textarea');
+                      textArea.value = referralLink;
+                      textArea.style.position = 'fixed';
+                      textArea.style.left = '-999999px';
+                      textArea.style.top = '-999999px';
+                      document.body.appendChild(textArea);
+                      textArea.focus();
+                      textArea.select();
+                      document.execCommand('copy');
+                      textArea.remove();
+                    }
+                  } catch (error) {
+                    console.warn('Failed to copy to clipboard:', error);
+                    // Could show a toast notification here
+                  }
+                }}>
                   Copy
                 </Button>
               </div>

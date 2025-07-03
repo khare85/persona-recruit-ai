@@ -4,6 +4,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +49,9 @@ interface Job {
 }
 
 export default function CareersPage() {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
@@ -136,6 +142,11 @@ export default function CareersPage() {
     
     return matchesSearch && matchesLocation && matchesDepartment;
   });
+
+  const handleViewDetails = (jobId: string) => {
+    // Navigate to job details page
+    router.push(`/jobs/${jobId}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
@@ -357,8 +368,11 @@ export default function CareersPage() {
                           </div>
                         </div>
                         <div className="mt-4 lg:mt-0 lg:ml-6">
-                          <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
-                            Apply Now
+                          <Button 
+                            onClick={() => handleViewDetails(job.id)}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                          >
+                            View Details
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         </div>

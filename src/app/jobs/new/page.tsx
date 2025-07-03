@@ -317,7 +317,7 @@ function NewJobContent() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {values.map((item, index) => (
+          {(values || []).map((item, index) => (
             <Badge key={index} variant="secondary" className="text-sm py-1 px-3">
               {item}
               <button

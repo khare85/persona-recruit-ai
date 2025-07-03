@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withAuth, withRole } from '@/middleware/auth';
+import { withAuth, withRole, AuthenticatedRequest } from '@/middleware/auth';
 import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
@@ -20,27 +20,56 @@ const createCompanySchema = z.object({
 });
 
 /**
- * GET /api/admin/companies - Get all companies
+ * GET /api/admin/companies - Get companies
+ * Super admins get all companies. Other roles get their own company.
  */
 export const GET = withRateLimit('api', 
   withAuth(
-    withRole(['super_admin'], async (req: NextRequest): Promise<NextResponse> => {
+    withRole(['super_admin', 'company_admin', 'recruiter'], async (req: AuthenticatedRequest): Promise<NextResponse> => {
       try {
         const { searchParams } = new URL(req.url);
         const page = parseInt(searchParams.get('page') || '1');
         const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 1000);
         const search = searchParams.get('search') || '';
         const status = searchParams.get('status') || '';
+        const user = req.user!;
 
-        apiLogger.info('Admin companies list requested', {
+        apiLogger.info('Companies list requested', {
           page,
           limit,
           search,
           status,
-          userId: req.user?.id
+          userId: user.id,
+          userRole: user.role
         });
 
-        // Get companies from database
+        // For non-super admins, fetch only their associated company.
+        if (user.role !== 'super_admin') {
+          if (!user.companyId) {
+            return NextResponse.json({
+              success: true,
+              data: { companies: [], pagination: { total: 0 } }
+            }, { status: 200 });
+          }
+          const company = await databaseService.getCompanyById(user.companyId);
+          const companies = company ? [company] : [];
+          return NextResponse.json({
+            success: true,
+            data: {
+              companies,
+              pagination: {
+                page: 1,
+                limit: 1,
+                total: companies.length,
+                totalPages: 1,
+                hasMore: false
+              }
+            },
+            message: 'Company retrieved successfully'
+          });
+        }
+        
+        // Super admin logic: fetch all companies with pagination.
         const companiesResult = await databaseService.listCompanies({
           limit,
           offset: (page - 1) * limit,
@@ -48,9 +77,6 @@ export const GET = withRateLimit('api',
           status: status || undefined
         });
 
-        // The company management page expects full company objects.
-        // The user management dropdown only needs id/name, but we can filter that on the client if needed.
-        // Returning the full object is safer for all use cases.
         return NextResponse.json({
           success: true,
           data: {

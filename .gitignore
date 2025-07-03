@@ -42,4 +42,4 @@ dist/
 build/
 
 # Test Output
-coverage/
+coverage/.firebase/

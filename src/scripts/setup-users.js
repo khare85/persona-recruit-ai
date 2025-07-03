@@ -96,7 +96,7 @@ async function setupUser(userData) {
       passwordHash: passwordHash,
       companyId: userData.companyId || null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      deletedAt: null // Ensure this field exists
+      deletedAt: null // FIX: Ensure deletedAt is set
     };
     
     const doc = await userDocRef.get();

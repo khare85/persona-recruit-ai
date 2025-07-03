@@ -177,19 +177,19 @@ class DatabaseService {
 
       const passwordHash = await bcrypt.hash(plainPassword, 12);
       
-      const userFirestoreData = {
+      const userFirestoreData: Partial<User> = {
         ...userData,
         passwordHash,
         emailVerified: authUser.emailVerified,
-        status: 'active' as const,
-        deletedAt: null
+        status: 'active',
+        deletedAt: null // FIX: Ensure deletedAt is set to null on creation
       };
       
       const userId = authUser.uid;
       const userDocRef = this.db.collection(COLLECTIONS.USERS).doc(userId);
       const userDoc = await userDocRef.get();
       
-      if (!doc.exists) {
+      if (!userDoc.exists) {
         await userDocRef.set({
           ...userFirestoreData,
           id: userId,
@@ -197,8 +197,9 @@ class DatabaseService {
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
       } else {
+        const { createdAt, ...updateData } = userFirestoreData;
         await userDocRef.update({
-          ...userFirestoreData,
+          ...updateData,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
       }

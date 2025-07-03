@@ -90,13 +90,6 @@ export const POST = withAuth(
         postedDate: new Date().toISOString(),
         quickApplyEnabled: true, // Default to enabled
         locationType: (validation.data.type === 'remote' || validation.data.isRemote) ? 'remote' as const : 'onsite' as const, // Set locationType
-        // Handle salary field - if it's a string, convert to object or leave undefined
-        salary: validation.data.salary ? {
-          min: 0,
-          max: 0,
-          currency: 'USD',
-          period: 'yearly' as const
-        } : undefined,
         stats: {
           views: 0,
           applications: 0,
@@ -106,8 +99,23 @@ export const POST = withAuth(
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+
+      // Only add salary if it exists to avoid undefined values in Firestore
+      if (validation.data.salary && validation.data.salary.trim()) {
+        jobData.salary = {
+          min: 0,
+          max: 0,
+          currency: 'USD',
+          period: 'yearly' as const
+        };
+      }
+
+      // Remove any undefined values to prevent Firestore errors
+      const cleanJobData = Object.fromEntries(
+        Object.entries(jobData).filter(([_, value]) => value !== undefined)
+      );
       
-      const newJobId = await databaseService.createJob(jobData);
+      const newJobId = await databaseService.createJob(cleanJobData);
       const newJob = await databaseService.getJobById(newJobId);
       
       return NextResponse.json({

@@ -8,7 +8,7 @@
 - **Storage**: Firebase Storage
 - **Authentication**: Custom auth with Firebase
 - **AI**: Google Genkit with Gemini models
-- **Deployment**: Firebase App Hosting (backend ID: `my-web-app`)
+- **Deployment**: Firebase App Hosting (backend ID: `ai-talent-stream`)
 
 ## Key Project Structure
 ```
@@ -30,11 +30,17 @@
 ├── firebase.json          # Firebase configuration
 ├── firestore.rules        # Firestore security rules
 ├── storage.rules          # Storage security rules
+├── apphosting.yaml        # Firebase App Hosting configuration
+├── .gcloudignore          # Cloud deployment ignore file
+├── .firebaseignore        # Firebase deployment ignore file
+├── package-lock.json      # Dependency lock file (required for deployment)
 └── package.json           # Dependencies and scripts
 ```
 
 ## Firebase Configuration
 - **Project ID**: `ai-talent-stream`
+- **Backend ID**: `ai-talent-stream`
+- **Live URL**: https://ai-talent-stream--ai-talent-stream.us-central1.hosted.app
 - **Services Used**:
   - Firestore (with rules and indexes)
   - Storage (with rules)
@@ -42,6 +48,7 @@
   - Authentication
   - Secret Manager (for sensitive configs)
 - **App Hosting Backend**: Configured with 2 CPU, 8GB RAM, auto-scaling 0-50 instances
+- **Region**: us-central1
 
 ## Important Commands
 ```bash
@@ -147,7 +154,11 @@ ELEVENLABS_API_KEY
 - Firestore is the primary database
 - Files are stored in Firebase Storage with structured paths
 
-## Recent Changes
+## Recent Changes (Latest)
+- **✅ Package Lock Fix**: Resolved missing dependency lock file deployment issue
+- **✅ Repository Cleanup**: Removed unnecessary Firebase cache and debug files
+- **✅ Deployment Optimization**: Simplified .dockerignore and .gcloudignore for better builds
+- **✅ Live Deployment**: Application successfully deployed and running on Firebase App Hosting
 - **Updated Firebase Project**: Migrated from `persona-recruit-ai` to `ai-talent-stream`
 - **Secret Manager Configuration**: Complete Firebase config stored in Secret Manager
 - **Enhanced Resource Allocation**: Upgraded to 8GB RAM for App Hosting backend
@@ -162,9 +173,39 @@ ELEVENLABS_API_KEY
 3. **Authentication**: Custom auth system with Firebase integration
 4. **File Uploads**: Use structured paths in Firebase Storage
 5. **Secret Manager Access**: Ensure service account has Secret Manager Accessor role
+6. **Missing package-lock.json**: Ensure file is not excluded in .gitignore and is committed to git
+7. **Deployment Failures**: Check Cloud Build logs at Firebase Console > App Hosting
+
+## Deployment Status & Monitoring
+
+### Current Deployment
+- **Status**: ✅ Live and Running
+- **URL**: https://ai-talent-stream--ai-talent-stream.us-central1.hosted.app
+- **Last Updated**: July 3, 2025
+- **Build Status**: Monitor at [Firebase Console](https://console.firebase.google.com/project/ai-talent-stream/apphosting)
+
+### Monitoring & Logs
+- **Cloud Build Logs**: Firebase Console > App Hosting > Build History
+- **Application Logs**: Firebase Console > App Hosting > Logs
+- **Performance**: Firebase Console > Performance Monitoring
+- **Firestore Usage**: Firebase Console > Firestore > Usage
+
+### Deployment Commands
+```bash
+# Deploy application
+firebase deploy --only apphosting --project=ai-talent-stream
+
+# Deploy database rules
+firebase deploy --only firestore:rules,firestore:indexes,storage:rules --project=ai-talent-stream
+
+# Check deployment status
+firebase apphosting:backends:list --project=ai-talent-stream
+```
 
 ## Security Considerations
 - Firestore rules enforce user-based access control
 - Storage rules restrict file access by user type
 - API routes validate authentication tokens
 - Sensitive data stored in Secret Manager
+- Package dependencies secured with lock files
+- Firebase cache files excluded from repository

@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { QuickApplyButton } from '@/components/jobs/QuickApplyButton';
+import { JobDetailsActions } from '@/components/jobs/JobDetailsActions';
 import { databaseService } from '@/services/database.service';
 
 async function getJobDetails(id: string) {
@@ -118,12 +119,7 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                 Save Job
               </Button>
               <Separator className="my-3" />
-              <Link href={`/jobs/${job.id}/applicants`} passHref>
-                <Button variant="ghost" className="w-full">
-                  <Users className="mr-2 h-4 w-4" />
-                  View Applicants
-                </Button>
-              </Link>
+              <JobDetailsActions jobId={job.id} />
             </CardContent>
           </Card>
 

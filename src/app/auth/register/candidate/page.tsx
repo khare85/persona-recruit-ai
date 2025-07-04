@@ -67,6 +67,8 @@ const POPULAR_SKILLS = [
 export default function CandidateRegistrationPage() {
   const { signUp } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
   const [skillInput, setSkillInput] = useState('');
@@ -119,11 +121,15 @@ export default function CandidateRegistrationPage() {
 
       toast({
         title: "🎉 Registration Successful!",
-        description: "Welcome to the platform! Redirecting you to onboarding."
+        description: redirectUrl ? "Welcome to the platform! Redirecting you to apply for the job." : "Welcome to the platform! Redirecting you to onboarding."
       });
 
-      // Redirect to video introduction page
-      router.push('/candidates/onboarding/video-intro');
+      // Redirect to provided URL or video introduction page
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push('/candidates/onboarding/video-intro');
+      }
     } catch (error) {
       toast({
         title: "Registration Failed",

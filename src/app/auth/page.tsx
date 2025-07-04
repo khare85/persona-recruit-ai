@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info, Loader2, AlertCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -23,6 +23,9 @@ export default function AuthenticationPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
+  const action = searchParams.get('action');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,17 +45,22 @@ export default function AuthenticationPage() {
       const tokenResult = await user.getIdTokenResult();
       const role = tokenResult.claims.role || 'candidate';
 
-      // Redirect based on user role
-      if (role === 'super_admin') {
-        router.push('/admin/dashboard');
-      } else if (role === 'company_admin') {
-        router.push('/company/dashboard');
-      } else if (role === 'recruiter') {
-        router.push('/recruiter/dashboard');
-      } else if (role === 'interviewer') {
-        router.push('/interviewer/dashboard');
+      // Check if there's a redirect URL
+      if (redirectUrl) {
+        router.push(redirectUrl);
       } else {
-        router.push('/candidates/dashboard');
+        // Redirect based on user role
+        if (role === 'super_admin') {
+          router.push('/admin/dashboard');
+        } else if (role === 'company_admin') {
+          router.push('/company/dashboard');
+        } else if (role === 'recruiter') {
+          router.push('/recruiter/dashboard');
+        } else if (role === 'interviewer') {
+          router.push('/interviewer/dashboard');
+        } else {
+          router.push('/candidates/dashboard');
+        }
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -97,6 +105,16 @@ export default function AuthenticationPage() {
 
           {!showPersonaSelector ? (
             <>
+              {action === 'apply' && redirectUrl && (
+                <Alert className="mb-4">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Sign in to Apply</AlertTitle>
+                  <AlertDescription>
+                    Please sign in or create an account to apply for this job.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="login">Login</TabsTrigger>
@@ -180,7 +198,7 @@ export default function AuthenticationPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 px-0">
-                      <Link href="/auth/register/candidate">
+                      <Link href={`/auth/register/candidate${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}>
                         <Button className="w-full" size="lg">
                           <UserPlus className="mr-2 h-5 w-5" />
                           Sign Up as a Candidate

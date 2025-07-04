@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,7 @@ interface QuickApplyData {
 export function QuickApplyButton({ jobId, jobTitle, companyName, className }: QuickApplyButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -63,11 +65,22 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
   });
 
   const checkEligibility = async () => {
+    // If user is not authenticated, redirect to auth page
+    if (!user) {
+      router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
+      return;
+    }
+
     try {
       setIsChecking(true);
       const response = await fetch(`/api/jobs/${jobId}/quick-apply`);
       
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired or invalid, redirect to auth
+          router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
+          return;
+        }
         throw new Error('Failed to check eligibility');
       }
 
@@ -144,6 +157,11 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired or invalid, redirect to auth
+          router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
+          return;
+        }
         const errorData = await response.json();
         throw new Error(errorData.error || 'Application failed');
       }
@@ -180,11 +198,16 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
     <>
       <Button
         onClick={checkEligibility}
-        disabled={isChecking}
+        disabled={isChecking || authLoading}
         className={className}
         variant="default"
       >
-        {isChecking ? (
+        {authLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Loading...
+          </>
+        ) : isChecking ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Checking...
@@ -192,7 +215,7 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
         ) : (
           <>
             <Zap className="h-4 w-4 mr-2" />
-            Quick Apply
+            {user ? 'Quick Apply' : 'Apply Now'}
           </>
         )}
       </Button>

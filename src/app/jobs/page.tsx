@@ -7,14 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, MapPin, Search, PlusCircle, Loader2 } from 'lucide-react';
+import { Briefcase, MapPin, Search, PlusCircle, Loader2, Zap } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import { Badge } from '@/components/ui/badge';
 import type { MockJob } from '@/services/mockDataService'; // Using type for structure
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<MockJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchJobs() {
@@ -133,11 +137,22 @@ export default function JobsPage() {
                   <span className="text-primary font-medium">{job.applicationCount} applicants</span>
                 </p>
                 <div className="flex gap-2">
-                  <Link href={`/jobs/${job.id}/applicants`} passHref>
-                    <Button variant="outline" size="sm">
-                      Applicants ({job.applicationCount})
+                  {user?.role === 'recruiter' || user?.role === 'company_admin' || user?.role === 'super_admin' ? (
+                    <Link href={`/jobs/${job.id}/applicants`} passHref>
+                      <Button variant="outline" size="sm">
+                        Applicants ({job.applicationCount})
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => router.push(user ? `/jobs/${job.id}` : `/auth?redirect=/jobs/${job.id}&action=apply`)}
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      Apply Now
                     </Button>
-                  </Link>
+                  )}
                   <Link href={`/jobs/${job.id}`} passHref>
                     <Button variant="link" className="text-primary p-0 h-auto">
                       View Details &rarr;

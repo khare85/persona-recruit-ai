@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, Bookmark, ArrowLeft } from 'lucide-react';
+import { Briefcase, MapPin, Users, DollarSign, CalendarDays, Info, CheckSquare, XSquare, Bookmark, ArrowLeft, Star } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -23,11 +23,19 @@ async function getJobDetails(id: string) {
     // Simulate fetching company details
     const company = await databaseService.getCompanyById(job.companyId);
     
+    // Format salary range
+    const salaryRange = job.salary 
+      ? `${job.salary.currency} ${job.salary.min.toLocaleString()} - ${job.salary.max.toLocaleString()} ${job.salary.period}`
+      : undefined;
+    
     return { 
       ...job, 
       companyName: company?.name || 'A Company',
       companyLogo: company?.logo || 'https://placehold.co/100x100.png',
       companyDescription: company?.description || 'A leading company in its industry.',
+      salaryRange,
+      postedDate: job.publishedAt || job.createdAt,
+      requirements: job.qualifications || [],
     };
   } catch (error) {
     console.error(`Error fetching job ${id}:`, error);
@@ -72,6 +80,27 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               </div>
             </CardHeader>
             <CardContent className="pt-6">
+              {/* Skills Section */}
+              {job.skills && job.skills.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 text-foreground flex items-center gap-2">
+                    <Star className="h-5 w-5 text-primary" />
+                    Required Skills
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {job.skills.map((skill, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary" 
+                        className="text-sm py-1 px-3"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div className="prose prose-sm max-w-none text-foreground/90">
                 <h2 className="text-xl font-semibold mb-3 text-foreground">About {job.companyName}</h2>
                 <p className="mb-6">{job.companyDescription}</p>
@@ -84,10 +113,43 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
                   {job.responsibilities.map((item, index) => <li key={index}>{item}</li>)}
                 </ul>
 
-                <h3 className="text-lg font-semibold mt-6 mb-2 text-foreground">Qualifications:</h3>
-                <ul className="list-disc pl-5 space-y-1 mb-6">
-                  {job.requirements.map((item, index) => <li key={index}>{item}</li>)}
-                </ul>
+                {/* Must Have Requirements */}
+                {job.mustHaveRequirements && job.mustHaveRequirements.length > 0 && (
+                  <>
+                    <h3 className="text-lg font-semibold mt-6 mb-2 text-foreground flex items-center gap-2">
+                      <CheckSquare className="h-5 w-5 text-primary" />
+                      Must Have Requirements:
+                    </h3>
+                    <ul className="list-disc pl-5 space-y-1 mb-6">
+                      {job.mustHaveRequirements.map((item, index) => <li key={index}>{item}</li>)}
+                    </ul>
+                  </>
+                )}
+
+                {/* Nice to Have Requirements */}
+                {job.niceToHaveRequirements && job.niceToHaveRequirements.length > 0 && (
+                  <>
+                    <h3 className="text-lg font-semibold mt-6 mb-2 text-foreground flex items-center gap-2">
+                      <Info className="h-5 w-5 text-muted-foreground" />
+                      Nice to Have:
+                    </h3>
+                    <ul className="list-disc pl-5 space-y-1 mb-6">
+                      {job.niceToHaveRequirements.map((item, index) => <li key={index}>{item}</li>)}
+                    </ul>
+                  </>
+                )}
+
+                {/* Fallback to requirements if neither mustHave nor niceToHave exist */}
+                {(!job.mustHaveRequirements || job.mustHaveRequirements.length === 0) && 
+                 (!job.niceToHaveRequirements || job.niceToHaveRequirements.length === 0) && 
+                 job.requirements && job.requirements.length > 0 && (
+                  <>
+                    <h3 className="text-lg font-semibold mt-6 mb-2 text-foreground">Qualifications:</h3>
+                    <ul className="list-disc pl-5 space-y-1 mb-6">
+                      {job.requirements.map((item: string, index: number) => <li key={index}>{item}</li>)}
+                    </ul>
+                  </>
+                )}
 
                 <h3 className="text-lg font-semibold mt-6 mb-2 text-foreground">Benefits:</h3>
                 <ul className="list-disc pl-5 space-y-1">
@@ -122,6 +184,36 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               <JobDetailsActions jobId={job.id} />
             </CardContent>
           </Card>
+
+          {/* Skills Summary Card */}
+          {job.skills && job.skills.length > 0 && (
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Star className="h-5 w-5 text-primary" />
+                  Key Skills
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {job.skills.slice(0, 6).map((skill, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="outline" 
+                      className="text-xs"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                  {job.skills.length > 6 && (
+                    <Badge variant="secondary" className="text-xs">
+                      +{job.skills.length - 6} more
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="shadow-lg">
             <CardHeader>

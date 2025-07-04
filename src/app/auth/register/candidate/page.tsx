@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,23 +30,28 @@ import {
   Plus,
   FileText,
   Video,
-  CheckCircle
+  CheckCircle,
+  Upload,
+  Play,
+  Square,
+  RotateCcw
 } from 'lucide-react';
 
 const candidateRegistrationSchema = z.object({
+  // Step 1: Basic Information
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(8, 'Please confirm your password'),
   phone: z.string().optional(),
-  currentTitle: z.string().min(2, 'Current title is required'),
-  experience: z.enum(['Entry Level', '1-2 years', '3-5 years', '5-10 years', '10+ years']),
   location: z.string().min(2, 'Location is required'),
-  skills: z.array(z.string()).min(1, 'Please add at least one skill').max(20),
-  summary: z.string().min(50, 'Summary must be at least 50 characters').max(2000),
-  linkedinUrl: z.string().url().optional().or(z.literal("")),
-  portfolioUrl: z.string().url().optional().or(z.literal("")),
+  
+  // Step 2: Resume Upload (optional initially, will be required)
+  resumeFile: z.instanceof(File).optional(),
+  
+  // Step 3: Video Recording & Terms
+  videoRecording: z.instanceof(Blob).optional(),
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions"
   })
@@ -57,12 +62,6 @@ const candidateRegistrationSchema = z.object({
 
 type CandidateRegistrationData = z.infer<typeof candidateRegistrationSchema>;
 
-const POPULAR_SKILLS = [
-  'JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'Java', 'SQL', 'AWS',
-  'Docker', 'Kubernetes', 'Git', 'HTML/CSS', 'Vue.js', 'Angular', 'MongoDB',
-  'PostgreSQL', 'Redis', 'GraphQL', 'REST APIs', 'Machine Learning', 'Data Analysis',
-  'Project Management', 'Agile', 'Scrum', 'Leadership', 'Communication'
-];
 
 export default function CandidateRegistrationPage() {
   const { signUp } = useAuth();
@@ -71,8 +70,13 @@ export default function CandidateRegistrationPage() {
   const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [skillInput, setSkillInput] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const form = useForm<CandidateRegistrationData>({
     resolver: zodResolver(candidateRegistrationSchema),
@@ -83,52 +87,141 @@ export default function CandidateRegistrationPage() {
       password: '',
       confirmPassword: '',
       phone: '',
-      currentTitle: '',
-      experience: 'Entry Level',
       location: '',
-      skills: [],
-      summary: '',
-      linkedinUrl: '',
-      portfolioUrl: '',
       termsAccepted: false
     }
   });
 
-  const watchedSkills = form.watch('skills');
-
-  const addSkill = (skill: string) => {
-    const currentSkills = form.getValues('skills');
-    if (!currentSkills.includes(skill) && currentSkills.length < 20) {
-      form.setValue('skills', [...currentSkills, skill]);
+  // File upload handler
+  const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type === 'application/pdf' || file.type.includes('word')) {
+        setResumeFile(file);
+        toast({
+          title: "Resume uploaded!",
+          description: "Your resume will be processed to extract your profile information."
+        });
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF or Word document.",
+          variant: "destructive"
+        });
+      }
     }
-    setSkillInput('');
   };
 
-  const removeSkill = (skillToRemove: string) => {
-    const currentSkills = form.getValues('skills');
-    form.setValue('skills', currentSkills.filter(skill => skill !== skillToRemove));
+  // Video recording functions
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  const startRecording = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: true 
+      });
+      setStream(mediaStream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      
+      const recorder = new MediaRecorder(mediaStream);
+      const chunks: Blob[] = [];
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        setVideoBlob(blob);
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Auto-stop after 10 seconds
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          stopRecording();
+        }
+      }, 10000);
+      
+    } catch (error) {
+      toast({
+        title: "Camera access denied",
+        description: "Please allow camera access to record your video introduction.",
+        variant: "destructive"
+      });
+    }
   };
+  
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+  
+  const resetRecording = () => {
+    setVideoBlob(null);
+    setRecordingTime(0);
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+  
+  // Timer for recording
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   const handleRegistration = async (data: CandidateRegistrationData) => {
     try {
       setIsRegistering(true);
+      
+      // Create user account
       await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      // Note: After user is created in Firebase Auth, a Cloud Function should trigger
-      // to create the corresponding Firestore document with all profile details.
-      // This is more secure and reliable than making another API call from the client.
-      // For this example, we proceed as if this is handled.
-
+      // TODO: Upload resume and video to Firebase Storage
+      // TODO: Process resume with Document AI
+      // TODO: Create candidate profile with extracted data
+      
       toast({
         title: "🎉 Registration Successful!",
-        description: redirectUrl ? "Welcome to the platform! Redirecting you to apply for the job." : "Welcome to the platform! Redirecting you to onboarding."
+        description: redirectUrl ? "Welcome to the platform! Redirecting you to apply for the job." : "Welcome to the platform! Your profile will be created from your resume."
       });
 
-      // Redirect to provided URL or video introduction page
+      // Redirect to provided URL or dashboard
       if (redirectUrl) {
         router.push(redirectUrl);
       } else {
-        router.push('/candidates/onboarding/video-intro');
+        router.push('/candidates/dashboard');
       }
     } catch (error) {
       toast({
@@ -142,6 +235,35 @@ export default function CandidateRegistrationPage() {
   };
 
   const nextStep = () => {
+    // Validate current step before proceeding
+    if (currentStep === 1) {
+      // Validate basic info
+      const basicFields = ['firstName', 'lastName', 'email', 'password', 'confirmPassword', 'location'];
+      const hasErrors = basicFields.some(field => {
+        const error = form.formState.errors[field as keyof CandidateRegistrationData];
+        return error !== undefined;
+      });
+      
+      if (hasErrors) {
+        toast({
+          title: "Please fix the errors",
+          description: "Complete all required fields before proceeding.",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else if (currentStep === 2) {
+      // Check if resume is uploaded
+      if (!resumeFile) {
+        toast({
+          title: "Resume required",
+          description: "Please upload your resume to continue.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
@@ -151,6 +273,10 @@ export default function CandidateRegistrationPage() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+  };
+  
+  const canProceedToFinal = () => {
+    return videoBlob !== null && form.getValues('termsAccepted');
   };
 
   return (
@@ -194,8 +320,8 @@ export default function CandidateRegistrationPage() {
           <div className="text-sm text-muted-foreground mt-2">
             Step {currentStep} of 3: {
               currentStep === 1 ? 'Basic Information' :
-              currentStep === 2 ? 'Professional Details' :
-              'Summary & Links'
+              currentStep === 2 ? 'Resume Upload' :
+              'Video Introduction & Terms'
             }
           </div>
         </CardHeader>
@@ -307,204 +433,175 @@ export default function CandidateRegistrationPage() {
                 </div>
               )}
 
-              {/* Step 2: Professional Details */}
+              {/* Step 2: Resume Upload */}
               {currentStep === 2 && (
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="currentTitle"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Job Title</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="e.g., Software Engineer" className="pl-10" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="experience"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Experience Level</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select experience" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Entry Level">Entry Level</SelectItem>
-                              <SelectItem value="1-2 years">1-2 years</SelectItem>
-                              <SelectItem value="3-5 years">3-5 years</SelectItem>
-                              <SelectItem value="5-10 years">5-10 years</SelectItem>
-                              <SelectItem value="10+ years">10+ years</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="e.g., San Francisco, CA" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold mb-2">Upload Your Resume</h3>
+                    <p className="text-muted-foreground">
+                      Upload your resume and we'll use AI to extract your professional information
+                    </p>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="skills"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Skills ({watchedSkills.length}/20)</FormLabel>
-                        <FormControl>
-                          <div className="space-y-3">
-                            {/* Skills input */}
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Add a skill..."
-                                value={skillInput}
-                                onChange={(e) => setSkillInput(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    if (skillInput.trim()) {
-                                      addSkill(skillInput.trim());
-                                    }
-                                  }
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  if (skillInput.trim()) {
-                                    addSkill(skillInput.trim());
-                                  }
-                                }}
-                                disabled={watchedSkills.length >= 20}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            
-                            {/* Popular skills */}
-                            <div className="flex flex-wrap gap-2">
-                              {POPULAR_SKILLS.filter(skill => !watchedSkills.includes(skill)).slice(0, 12).map((skill) => (
-                                <Button
-                                  key={skill}
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => addSkill(skill)}
-                                  disabled={watchedSkills.length >= 20}
-                                  className="text-xs"
-                                >
-                                  <Plus className="h-3 w-3 mr-1" />
-                                  {skill}
-                                </Button>
-                              ))}
-                            </div>
-
-                            {/* Selected skills */}
-                            {watchedSkills.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {watchedSkills.map((skill) => (
-                                  <Badge key={skill} variant="secondary" className="gap-1">
-                                    {skill}
-                                    <X
-                                      className="h-3 w-3 cursor-pointer"
-                                      onClick={() => removeSkill(skill)}
-                                    />
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8">
+                    <div className="text-center">
+                      {resumeFile ? (
+                        <div className="space-y-4">
+                          <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+                          <div>
+                            <p className="font-medium">{resumeFile.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
                           </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setResumeFile(null)}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
+                          <div>
+                            <p className="font-medium">Drop your resume here or click to upload</p>
+                            <p className="text-sm text-muted-foreground">
+                              PDF or Word documents only, up to 10MB
+                            </p>
+                          </div>
+                          <div>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              onChange={handleResumeUpload}
+                              className="hidden"
+                              id="resume-upload"
+                            />
+                            <Button type="button" asChild>
+                              <label htmlFor="resume-upload" className="cursor-pointer">
+                                <Upload className="h-4 w-4 mr-2" />
+                                Choose File
+                              </label>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {resumeFile && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900">Resume uploaded successfully!</p>
+                          <p className="text-blue-700">
+                            Our AI will process your resume to automatically fill your profile with your experience, skills, and education.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
 
-              {/* Step 3: Summary & Links */}
+              {/* Step 3: Video Introduction & Terms */}
               {currentStep === 3 && (
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="summary"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Professional Summary</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Tell us about yourself, your experience, and what you're looking for in your next role..."
-                            rows={6}
-                            {...field}
-                          />
-                        </FormControl>
-                        <div className="text-xs text-muted-foreground">
-                          {field.value.length}/2000 characters (minimum 50)
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold mb-2">Record Your Video Introduction</h3>
+                    <p className="text-muted-foreground">
+                      Record a 10-second video introduction to help employers get to know you
+                    </p>
+                  </div>
+
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                    <div className="text-center space-y-4">
+                      {!videoBlob ? (
+                        <div className="space-y-4">
+                          {stream ? (
+                            <div className="relative">
+                              <video
+                                ref={videoRef}
+                                autoPlay
+                                muted
+                                className="w-full max-w-md mx-auto rounded-lg bg-black"
+                              />
+                              {isRecording && (
+                                <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
+                                  REC {recordingTime}s
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <Video className="h-16 w-16 text-muted-foreground mx-auto" />
+                          )}
+                          
+                          <div>
+                            <p className="font-medium mb-2">
+                              {stream ? (
+                                isRecording ? 'Recording...' : 'Camera is ready'
+                              ) : (
+                                'Click to start recording'
+                              )}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Introduce yourself briefly in 10 seconds
+                            </p>
+                          </div>
+
+                          <div className="flex gap-2 justify-center">
+                            {!stream ? (
+                              <Button type="button" onClick={startRecording}>
+                                <Video className="h-4 w-4 mr-2" />
+                                Start Recording
+                              </Button>
+                            ) : isRecording ? (
+                              <Button type="button" variant="destructive" onClick={stopRecording}>
+                                <Square className="h-4 w-4 mr-2" />
+                                Stop Recording
+                              </Button>
+                            ) : (
+                              <div className="flex gap-2">
+                                <Button type="button" onClick={() => {
+                                  mediaRecorder?.start();
+                                  setIsRecording(true);
+                                  setRecordingTime(0);
+                                }}>
+                                  <Play className="h-4 w-4 mr-2" />
+                                  Start
+                                </Button>
+                                <Button type="button" variant="outline" onClick={resetRecording}>
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Reset
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="linkedinUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>LinkedIn Profile (Optional)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Link className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="https://linkedin.com/in/yourprofile" className="pl-10" {...field} />
+                      ) : (
+                        <div className="space-y-4">
+                          <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                          <div>
+                            <p className="font-medium">Video recorded successfully!</p>
+                            <p className="text-sm text-muted-foreground">
+                              You can re-record if you'd like to make changes
+                            </p>
                           </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="portfolioUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Portfolio/Website (Optional)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Link className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="https://yourportfolio.com" className="pl-10" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <Button type="button" variant="outline" onClick={resetRecording}>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Record Again
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                   <FormField
                     control={form.control}
@@ -548,7 +645,7 @@ export default function CandidateRegistrationPage() {
                     Next
                   </Button>
                 ) : (
-                  <Button type="submit" disabled={isRegistering}>
+                  <Button type="submit" disabled={isRegistering || !canProceedToFinal()}>
                     {isRegistering ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />

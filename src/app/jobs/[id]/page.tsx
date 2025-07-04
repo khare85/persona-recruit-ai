@@ -80,27 +80,6 @@ export default async function JobDetailsPage({ params }: { params: { id: string 
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              {/* Skills Section */}
-              {job.skills && job.skills.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-foreground flex items-center gap-2">
-                    <Star className="h-5 w-5 text-primary" />
-                    Required Skills
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {job.skills.map((skill, index) => (
-                      <Badge 
-                        key={index} 
-                        variant="secondary" 
-                        className="text-sm py-1 px-3"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
               <div className="prose prose-sm max-w-none text-foreground/90">
                 <h2 className="text-xl font-semibold mb-3 text-foreground">About {job.companyName}</h2>
                 <p className="mb-6">{job.companyDescription}</p>

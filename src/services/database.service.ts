@@ -135,10 +135,16 @@ class DatabaseService {
     }
 
     const snapshot = await query.get();
-    let items = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data()
-    } as T));
+    const items = snapshot.docs.map((doc: any) => {
+      const data = doc.data();
+      // Convert Timestamps to ISO strings to prevent serialization errors
+      for (const key in data) {
+        if (data[key] instanceof admin.firestore.Timestamp) {
+          data[key] = data[key].toDate().toISOString();
+        }
+      }
+      return { id: doc.id, ...data } as T;
+    });
 
     const hasMore = options?.limit ? items.length === options.limit : false;
 
@@ -531,6 +537,7 @@ class DatabaseService {
   async getRecentJobs(limit: number): Promise<Job[]> {
     const { items } = await this.list<Job>(COLLECTIONS.JOBS, { 
       limit, 
+      where: [{ field: 'status', operator: '==', value: 'active' }],
       orderBy: { field: 'publishedAt', direction: 'desc' },
       useCollectionGroup: false
     });

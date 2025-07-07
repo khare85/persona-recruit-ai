@@ -290,37 +290,13 @@ export default function CandidateRegistrationPage() {
     try {
       setIsRegistering(true);
       
-      // Create user account via API endpoint which handles both Auth and Firestore
-      const response = await fetch('/api/auth/register/candidate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          password: data.password,
-          confirmPassword: data.confirmPassword,
-          phone: data.phone || '',
-          location: data.location,
-          termsAccepted: data.termsAccepted,
-          // Set default values for required fields that will be updated after resume processing
-          currentTitle: 'Job Seeker',
-          experience: 0,
-          skills: [],
-          summary: 'Professional actively seeking new opportunities'
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Registration failed');
-      }
+      // Create user with Firebase Auth
+      await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      // Firebase Auth handles authentication - no need to store tokens manually
+      // Firebase Auth handles authentication automatically
+      console.log('User registered successfully with Firebase Auth');
       
+      // TODO: Create candidate profile in Firestore (should be handled by Cloud Function on user creation)
       // TODO: Upload resume and video to Firebase Storage
       // TODO: Process resume with Document AI to update profile
       

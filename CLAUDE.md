@@ -165,6 +165,7 @@ ELEVENLABS_API_KEY
 - Files are stored in Firebase Storage with structured paths
 
 ## Recent Changes (Latest)
+- **✅ Candidate Dashboard Fix**: Fixed 404 error by creating /candidate/dashboard redirect and correcting route to /candidates/dashboard
 - **✅ Complete Firebase Auth Migration**: Removed all JWT dependencies and code, using Firebase Auth exclusively
 - **✅ Authentication Cleanup**: Updated all auth utilities, API routes, and client hooks to use Firebase Auth
 - **✅ Package Dependencies**: Removed jsonwebtoken and @types/jsonwebtoken packages

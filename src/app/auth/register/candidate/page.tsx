@@ -309,7 +309,7 @@ export default function CandidateRegistrationPage() {
       if (redirectUrl) {
         router.push(redirectUrl);
       } else {
-        router.push('/candidate/dashboard');
+        router.push('/candidates/dashboard');
       }
     } catch (error) {
       toast({

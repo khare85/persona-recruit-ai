@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { databaseService } from '@/services/database.service';
 import { apiLogger } from '@/lib/logger';
-import * as jwt from 'jsonwebtoken';
+// import * as jwt from 'jsonwebtoken'; // Not needed - using Firebase Auth
 
+// Login is handled by Firebase Auth on the client side
+// This API route may not be needed if using Firebase Auth exclusively
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required')

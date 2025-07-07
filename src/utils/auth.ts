@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import * as jwt from 'jsonwebtoken';
+import admin from 'firebase-admin';
 
 export interface UserInfo {
   id: string;
@@ -18,58 +18,50 @@ export interface AuthResult {
 }
 
 /**
- * Verify user authentication and role permissions
+ * Verify user authentication and role permissions using Firebase Auth
  */
 export async function verifyUserRole(
   request: NextRequest,
   allowedRoles: string[]
 ): Promise<AuthResult> {
   try {
-    // Get token from cookies or Authorization header
+    // Get Firebase ID token from cookies or Authorization header
     const cookieStore = await cookies();
-    let token = cookieStore.get('auth-token')?.value;
+    let idToken = cookieStore.get('firebase-auth-token')?.value;
     
-    if (!token) {
+    if (!idToken) {
       const authHeader = request.headers.get('authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
+        idToken = authHeader.substring(7);
       }
     }
 
-    if (!token) {
+    if (!idToken) {
       return {
         success: false,
         error: 'No authentication token provided'
       };
     }
 
-    // Verify JWT token
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      return {
-        success: false,
-        error: 'JWT secret not configured'
-      };
-    }
-
-    let decoded: any;
+    // Verify Firebase ID token
+    let decodedToken: admin.auth.DecodedIdToken;
     try {
-      decoded = jwt.verify(token, jwtSecret);
-    } catch (jwtError) {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (firebaseError) {
       return {
         success: false,
-        error: 'Invalid or expired token'
+        error: 'Invalid or expired Firebase token'
       };
     }
 
-    // Extract user info from token
+    // Extract user info from Firebase token and custom claims
     const user: UserInfo = {
-      id: decoded.id || decoded.uid,
-      email: decoded.email,
-      role: decoded.role,
-      companyId: decoded.companyId,
-      firstName: decoded.firstName,
-      lastName: decoded.lastName
+      id: decodedToken.uid,
+      email: decodedToken.email || '',
+      role: (decodedToken.role as any) || 'candidate', // From custom claims
+      companyId: decodedToken.companyId as string,
+      firstName: decodedToken.firstName as string,
+      lastName: decodedToken.lastName as string
     };
 
     // Check if user role is allowed
@@ -154,27 +146,7 @@ export async function getCurrentUser(request: NextRequest): Promise<UserInfo | n
 }
 
 /**
- * Create JWT token for user (for testing/development)
- */
-export function createAuthToken(user: UserInfo): string {
-  const jwtSecret = process.env.JWT_SECRET || 'dev-secret-key';
-  
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: user.companyId,
-      firstName: user.firstName,
-      lastName: user.lastName
-    },
-    jwtSecret,
-    { expiresIn: '24h' }
-  );
-}
-
-/**
- * Middleware helper to check authentication
+ * Middleware helper to check authentication using Firebase Auth
  */
 export async function requireAuth(
   request: NextRequest,

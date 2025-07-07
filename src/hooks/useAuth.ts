@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth as useFirebaseAuth } from '@/contexts/AuthContext';
 
 interface User {
   id: string;
@@ -11,48 +12,40 @@ interface User {
 }
 
 export function useAuth() {
+  const { user: firebaseUser, loading: firebaseLoading } = useFirebaseAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth-token');
-    
-    if (!token) {
+    if (firebaseLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (!firebaseUser) {
+      setUser(null);
       setLoading(false);
       return;
     }
 
-    // Decode JWT token to get user info
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      
-      // Check if token is expired
-      if (payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem('auth-token');
-        setLoading(false);
-        return;
-      }
+    // Convert Firebase user to our User interface
+    // Note: Additional user data (role, status, etc.) should be fetched from Firestore
+    const convertedUser: User = {
+      id: firebaseUser.uid,
+      email: firebaseUser.email || '',
+      firstName: firebaseUser.displayName?.split(' ')[0] || '',
+      lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+      role: firebaseUser.role || 'candidate', // From custom claims
+      status: 'active',
+      emailVerified: firebaseUser.emailVerified
+    };
 
-      // Set user from token payload
-      setUser({
-        id: payload.userId,
-        email: payload.email,
-        firstName: payload.firstName || '',
-        lastName: payload.lastName || '',
-        role: payload.role,
-        status: payload.status || 'active',
-        emailVerified: payload.emailVerified || false
-      });
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      localStorage.removeItem('auth-token');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    setUser(convertedUser);
+    setLoading(false);
+  }, [firebaseUser, firebaseLoading]);
 
   const logout = () => {
-    localStorage.removeItem('auth-token');
+    // Firebase Auth logout is handled by AuthContext
     setUser(null);
   };
 

@@ -7,7 +7,7 @@ import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
 import { databaseService } from '@/services/database.service';
 // import { emailService } from '@/services/email.service'; // Temporarily disabled for launch
-import jwt from 'jsonwebtoken';
+// import jwt from 'jsonwebtoken'; // Not needed - using Firebase Auth
 
 const candidateRegistrationSchema = z.object({
   firstName: z.string().min(2).max(50).transform(sanitizeString),
@@ -99,26 +99,12 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       willingToRelocate: false
     });
 
-    // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      apiLogger.error('JWT_SECRET is not set in environment variables');
-      throw new Error('Server configuration error: JWT_SECRET is not configured. Please add JWT_SECRET to your environment variables.');
-    }
-    
-    const authToken = jwt.sign(
-      { 
-        userId, 
-        email: candidateData.email, 
-        role: 'candidate' 
-      },
-      jwtSecret,
-      { expiresIn: '7d' }
-    );
+    // Firebase Auth handles token generation on the client side
+    // The user should sign in with Firebase Auth after registration
 
     // Send email verification - Temporarily disabled for launch
     try {
-      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${authToken}`;
+      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?uid=${userId}`;
       // await emailService.sendVerificationEmail(
       //   candidateData.email,
       //   candidateData.firstName,
@@ -157,7 +143,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
           role: 'candidate',
           profileComplete: false
         },
-        token: authToken,
+        // Client will use Firebase Auth to get ID token
         nextStep: 'video_introduction'
       },
       message: 'Registration successful! Please complete your video introduction to finish setting up your profile.'

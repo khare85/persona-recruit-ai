@@ -6,7 +6,7 @@
 - **Styling**: Tailwind CSS
 - **Database**: Firebase Firestore
 - **Storage**: Firebase Storage
-- **Authentication**: Custom auth with Firebase
+- **Authentication**: Firebase Authentication (no JWT)
 - **AI**: Google Genkit with Gemini models
 - **Deployment**: Firebase App Hosting (backend ID: `ai-talent-stream`)
 
@@ -80,6 +80,14 @@ npm run check:storage         # Check Storage configuration
 4. **Interviewer**: Conduct interviews, provide feedback
 5. **Company**: Company profile management, billing
 
+## Authentication Architecture
+- **Frontend**: Firebase Auth SDK for user authentication
+- **Backend**: Firebase Admin SDK for token verification
+- **Token Management**: Firebase ID tokens (no custom JWT)
+- **User Roles**: Set via Firebase Auth custom claims
+- **Session Management**: Handled entirely by Firebase Auth
+- **API Security**: All API routes verify Firebase ID tokens
+
 ## Key Features
 - AI-powered candidate screening using Gemini
 - Video interview recording and analysis
@@ -108,6 +116,8 @@ Secrets are stored with the following pattern:
 - `OPENAI_API_KEY` - OpenAI API key
 - `ELEVENLABS_*` - ElevenLabs API configuration
 - Other service-specific secrets
+
+**Note**: JWT_SECRET is NOT used - authentication is handled entirely by Firebase Auth
 
 ### Accessing Secrets
 The app uses Google Cloud Secret Manager client to fetch secrets:
@@ -155,6 +165,11 @@ ELEVENLABS_API_KEY
 - Files are stored in Firebase Storage with structured paths
 
 ## Recent Changes (Latest)
+- **✅ Complete Firebase Auth Migration**: Removed all JWT dependencies and code, using Firebase Auth exclusively
+- **✅ Authentication Cleanup**: Updated all auth utilities, API routes, and client hooks to use Firebase Auth
+- **✅ Package Dependencies**: Removed jsonwebtoken and @types/jsonwebtoken packages
+- **✅ Candidate Registration Fix**: Fixed missing location field and updated registration flow
+- **✅ Video Recorder Fix**: Resolved black screen issue with proper video element configuration
 - **✅ Package Lock Fix**: Resolved missing dependency lock file deployment issue
 - **✅ Repository Cleanup**: Removed unnecessary Firebase cache and debug files
 - **✅ Deployment Optimization**: Simplified .dockerignore and .gcloudignore for better builds
@@ -170,7 +185,7 @@ ELEVENLABS_API_KEY
 ## Common Issues & Solutions
 1. **Build Memory Issues**: Use `NODE_OPTIONS='--max-old-space-size=8192'` (now allocated 8GB RAM)
 2. **Port Conflicts**: Dev server runs on port 9002
-3. **Authentication**: Custom auth system with Firebase integration
+3. **Authentication**: Firebase Authentication only (no custom JWT tokens)
 4. **File Uploads**: Use structured paths in Firebase Storage
 5. **Secret Manager Access**: Ensure service account has Secret Manager Accessor role
 6. **Missing package-lock.json**: Ensure file is not excluded in .gitignore and is committed to git

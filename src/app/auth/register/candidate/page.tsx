@@ -118,13 +118,19 @@ export default function CandidateRegistrationPage() {
   const startRecording = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: true, 
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        }, 
         audio: true 
       });
       setStream(mediaStream);
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Ensure video plays
+        videoRef.current.play().catch(e => console.log('Video play error:', e));
       }
       
       const recorder = new MediaRecorder(mediaStream);
@@ -154,9 +160,22 @@ export default function CandidateRegistrationPage() {
       }, 10000);
       
     } catch (error) {
+      console.error('Recording error:', error);
+      let errorMessage = "Please allow camera access to record your video introduction.";
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = "Camera access was denied. Please check your browser permissions.";
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = "No camera found. Please ensure your device has a camera.";
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = "Camera is being used by another application.";
+        }
+      }
+      
       toast({
-        title: "Camera access denied",
-        description: "Please allow camera access to record your video introduction.",
+        title: "Camera Error",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -205,12 +224,39 @@ export default function CandidateRegistrationPage() {
     try {
       setIsRegistering(true);
       
-      // Create user account
-      await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
+      // Create user account via API endpoint which handles both Auth and Firestore
+      const response = await fetch('/api/auth/register/candidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+          phone: data.phone || '',
+          location: data.location,
+          termsAccepted: data.termsAccepted,
+          // Set default values for required fields that will be updated after resume processing
+          currentTitle: 'Job Seeker',
+          experience: 0,
+          skills: [],
+          summary: 'Professional actively seeking new opportunities'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Registration failed');
+      }
+      
+      // Firebase Auth handles authentication - no need to store tokens manually
       
       // TODO: Upload resume and video to Firebase Storage
-      // TODO: Process resume with Document AI
-      // TODO: Create candidate profile with extracted data
+      // TODO: Process resume with Document AI to update profile
       
       toast({
         title: "🎉 Registration Successful!",
@@ -221,7 +267,7 @@ export default function CandidateRegistrationPage() {
       if (redirectUrl) {
         router.push(redirectUrl);
       } else {
-        router.push('/candidates/dashboard');
+        router.push('/candidate/dashboard');
       }
     } catch (error) {
       toast({
@@ -430,6 +476,23 @@ export default function CandidateRegistrationPage() {
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="San Francisco, CA" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               )}
 
@@ -531,7 +594,9 @@ export default function CandidateRegistrationPage() {
                                 ref={videoRef}
                                 autoPlay
                                 muted
+                                playsInline
                                 className="w-full max-w-md mx-auto rounded-lg bg-black"
+                                style={{ height: '300px', objectFit: 'cover' }}
                               />
                               {isRecording && (
                                 <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">

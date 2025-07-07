@@ -61,16 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const token = jwt.sign(
-      { 
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId
-      },
-      jwtSecret,
-      { expiresIn: '7d' }
-    );
+    // Firebase Auth handles authentication - no JWT needed
 
     // Update last login timestamp
     await databaseService.updateUserLastLogin(user.id);

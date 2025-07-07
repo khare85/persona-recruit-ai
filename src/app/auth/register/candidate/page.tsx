@@ -117,6 +117,7 @@ export default function CandidateRegistrationPage() {
   
   const startRecording = async () => {
     try {
+      console.log('Starting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: {
           width: { ideal: 1280 },
@@ -125,15 +126,66 @@ export default function CandidateRegistrationPage() {
         }, 
         audio: true 
       });
+      console.log('Camera stream obtained:', mediaStream);
+      console.log('Video tracks:', mediaStream.getVideoTracks());
+      
       setStream(mediaStream);
       
       if (videoRef.current) {
+        console.log('Setting video element srcObject');
         videoRef.current.srcObject = mediaStream;
-        // Ensure video plays
-        videoRef.current.play().catch(e => console.log('Video play error:', e));
+        
+        // Wait for video to load metadata before playing
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded, attempting to play');
+          videoRef.current?.play().catch(e => {
+            console.error('Video play error:', e);
+          });
+        };
+        
+        // Force play attempt after a short delay
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(e => {
+              console.error('Delayed video play error:', e);
+            });
+          }
+        }, 100);
       }
       
-      const recorder = new MediaRecorder(mediaStream);
+      // Don't start recording immediately, just show the camera feed
+      console.log('Camera stream is ready, not starting recording yet');
+      
+    } catch (error) {
+      console.error('Recording error:', error);
+      let errorMessage = "Please allow camera access to record your video introduction.";
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = "Camera access was denied. Please check your browser permissions.";
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = "No camera found. Please ensure your device has a camera.";
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = "Camera is being used by another application.";
+        }
+      }
+      
+      toast({
+        title: "Camera Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const actuallyStartRecording = () => {
+    if (!stream) {
+      console.error('No stream available for recording');
+      return;
+    }
+    
+    try {
+      const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
       
       recorder.ondataavailable = (event) => {
@@ -159,25 +211,9 @@ export default function CandidateRegistrationPage() {
         }
       }, 10000);
       
+      console.log('Recording started');
     } catch (error) {
-      console.error('Recording error:', error);
-      let errorMessage = "Please allow camera access to record your video introduction.";
-      
-      if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          errorMessage = "Camera access was denied. Please check your browser permissions.";
-        } else if (error.name === 'NotFoundError') {
-          errorMessage = "No camera found. Please ensure your device has a camera.";
-        } else if (error.name === 'NotReadableError') {
-          errorMessage = "Camera is being used by another application.";
-        }
-      }
-      
-      toast({
-        title: "Camera Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      console.error('Failed to start recording:', error);
     }
   };
   
@@ -185,9 +221,15 @@ export default function CandidateRegistrationPage() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
       setIsRecording(false);
+      console.log('Recording stopped');
     }
+  };
+  
+  const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+      console.log('Camera stopped');
     }
   };
   
@@ -211,11 +253,35 @@ export default function CandidateRegistrationPage() {
     return () => clearInterval(interval);
   }, [isRecording]);
 
+  // Handle video element setup when stream changes
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      console.log('Setting up video element with stream');
+      videoRef.current.srcObject = stream;
+      
+      // Force play
+      const playVideo = async () => {
+        try {
+          await videoRef.current?.play();
+          console.log('Video playing successfully');
+        } catch (error) {
+          console.error('Failed to play video:', error);
+        }
+      };
+      
+      playVideo();
+    }
+  }, [stream]);
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        console.log('Cleaning up video stream');
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('Stopped track:', track.kind);
+        });
       }
     };
   }, [stream]);
@@ -595,8 +661,19 @@ export default function CandidateRegistrationPage() {
                                 autoPlay
                                 muted
                                 playsInline
-                                className="w-full max-w-md mx-auto rounded-lg bg-black"
-                                style={{ height: '300px', objectFit: 'cover' }}
+                                controls={false}
+                                className="w-full max-w-md mx-auto rounded-lg"
+                                style={{ 
+                                  height: '300px', 
+                                  width: '400px',
+                                  objectFit: 'cover',
+                                  backgroundColor: '#000',
+                                  border: '2px solid #ccc'
+                                }}
+                                onLoadedMetadata={() => console.log('Video element metadata loaded')}
+                                onCanPlay={() => console.log('Video can play')}
+                                onPlay={() => console.log('Video started playing')}
+                                onError={(e) => console.error('Video element error:', e)}
                               />
                               {isRecording && (
                                 <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
@@ -611,22 +688,48 @@ export default function CandidateRegistrationPage() {
                           <div>
                             <p className="font-medium mb-2">
                               {stream ? (
-                                isRecording ? 'Recording...' : 'Camera is ready'
+                                isRecording ? `Recording... ${recordingTime}s` : 'Camera is ready - Click "Start Recording" below'
                               ) : (
-                                'Click to start recording'
+                                'Click "Start Recording" to access your camera'
                               )}
                             </p>
+                            {stream && (
+                              <p className="text-xs text-green-600 mb-2">
+                                ✓ Camera access granted. You should see your video above.
+                              </p>
+                            )}
                             <p className="text-sm text-muted-foreground">
                               Introduce yourself briefly in 10 seconds
                             </p>
                           </div>
 
-                          <div className="flex gap-2 justify-center">
+                          <div className="flex gap-2 justify-center flex-wrap">
                             {!stream ? (
-                              <Button type="button" onClick={startRecording}>
-                                <Video className="h-4 w-4 mr-2" />
-                                Start Recording
-                              </Button>
+                              <>
+                                <Button type="button" onClick={startRecording}>
+                                  <Video className="h-4 w-4 mr-2" />
+                                  Start Recording
+                                </Button>
+                                <Button type="button" variant="outline" onClick={async () => {
+                                  try {
+                                    console.log('Testing camera access...');
+                                    const testStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                                    console.log('Camera test successful:', testStream);
+                                    if (videoRef.current) {
+                                      videoRef.current.srcObject = testStream;
+                                      await videoRef.current.play();
+                                    }
+                                    setTimeout(() => {
+                                      testStream.getTracks().forEach(track => track.stop());
+                                    }, 3000);
+                                  } catch (e) {
+                                    console.error('Camera test failed:', e);
+                                    alert('Camera test failed: ' + (e as Error).message);
+                                  }
+                                }}>
+                                  Test Camera
+                                </Button>
+                              </>
                             ) : isRecording ? (
                               <Button type="button" variant="destructive" onClick={stopRecording}>
                                 <Square className="h-4 w-4 mr-2" />
@@ -634,17 +737,16 @@ export default function CandidateRegistrationPage() {
                               </Button>
                             ) : (
                               <div className="flex gap-2">
-                                <Button type="button" onClick={() => {
-                                  mediaRecorder?.start();
-                                  setIsRecording(true);
-                                  setRecordingTime(0);
-                                }}>
+                                <Button type="button" onClick={actuallyStartRecording}>
                                   <Play className="h-4 w-4 mr-2" />
-                                  Start
+                                  Start Recording
                                 </Button>
-                                <Button type="button" variant="outline" onClick={resetRecording}>
+                                <Button type="button" variant="outline" onClick={() => {
+                                  stopCamera();
+                                  setVideoBlob(null);
+                                }}>
                                   <RotateCcw className="h-4 w-4 mr-2" />
-                                  Reset
+                                  Reset Camera
                                 </Button>
                               </div>
                             )}

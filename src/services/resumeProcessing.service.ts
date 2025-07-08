@@ -9,6 +9,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { fileUploadService } from '@/lib/storage';
 import { processResumeWithDocAI } from '@/ai/flows/process-resume-document-ai-flow';
+import { generateResumeSummary } from '@/ai/flows/generate-resume-summary-flow';
 import { textEmbeddingService } from './textEmbedding.service';
 import { embeddingDatabaseService } from './embeddingDatabase.service';
 import { databaseService } from './database.service';
@@ -104,7 +105,29 @@ class ResumeProcessingService {
         warnings.push('Text extraction failed - resume uploaded but AI features may be limited');
       }
 
-      // Step 3: Generate embeddings
+      // Step 3: Generate AI summary
+      let aiGeneratedSummary: string | undefined;
+      try {
+        if (!skipEmbeddings && extractedText && extractedText.length > 100) {
+          const summaryResult = await generateResumeSummary({
+            resumeText: extractedText
+          });
+          aiGeneratedSummary = summaryResult.summary;
+          
+          apiLogger.info('AI summary generated successfully', {
+            userId,
+            summaryLength: aiGeneratedSummary.length
+          });
+        }
+      } catch (error) {
+        apiLogger.warn('Summary generation failed, continuing without AI summary', {
+          userId,
+          error: String(error)
+        });
+        warnings.push('AI summary generation failed - profile summary may need manual update');
+      }
+
+      // Step 4: Generate embeddings
       let resumeEmbedding: number[] = [];
       try {
         if (!skipEmbeddings && extractedText && extractedText.length > 50) {
@@ -124,17 +147,18 @@ class ResumeProcessingService {
         warnings.push('Embedding generation failed - vector search features may be limited');
       }
 
-      // Step 4: Update candidate profile
-      await this.updateCandidateProfile(userId, uploadResult.url);
+      // Step 5: Update candidate profile
+      await this.updateCandidateProfile(userId, uploadResult.url, aiGeneratedSummary);
       processingSteps.databaseSave = true;
 
-      // Step 5: Save to vector database (if we have embeddings)
+      // Step 6: Save to vector database (if we have embeddings)
       if (resumeEmbedding.length > 0) {
         try {
           await this.saveToVectorDatabase(userId, {
             extractedText,
             resumeEmbedding,
-            resumeUrl: uploadResult.url
+            resumeUrl: uploadResult.url,
+            aiSummary: aiGeneratedSummary
           });
           processingSteps.vectorSearchSave = true;
           
@@ -272,14 +296,21 @@ class ResumeProcessingService {
   }
 
   /**
-   * Update candidate profile with resume URL
+   * Update candidate profile with resume URL and AI summary
    */
-  private async updateCandidateProfile(userId: string, resumeUrl: string): Promise<void> {
-    await databaseService.updateCandidateProfile(userId, {
+  private async updateCandidateProfile(userId: string, resumeUrl: string, aiSummary?: string): Promise<void> {
+    const updates: any = {
       resumeUrl: resumeUrl,
       profileComplete: true,
       updatedAt: new Date().toISOString()
-    });
+    };
+
+    if (aiSummary) {
+      updates.summary = aiSummary;
+      updates.aiGeneratedSummary = aiSummary;
+    }
+
+    await databaseService.updateCandidateProfile(userId, updates);
   }
 
   /**
@@ -290,7 +321,8 @@ class ResumeProcessingService {
     data: { 
       extractedText: string; 
       resumeEmbedding: number[]; 
-      resumeUrl: string; 
+      resumeUrl: string;
+      aiSummary?: string;
     }
   ): Promise<void> {
     // Get candidate profile and user data
@@ -314,9 +346,9 @@ class ResumeProcessingService {
       linkedinProfile: candidateProfile.linkedinUrl,
       portfolioUrl: candidateProfile.portfolioUrl,
       experienceSummary: candidateProfile.summary,
+      aiGeneratedSummary: data.aiSummary,
       resumeFileUrl: data.resumeUrl,
-      videoIntroductionUrl: candidateProfile.videoIntroUrl,
-      availability: candidateProfile.availability
+      videoIntroductionUrl: candidateProfile.videoIntroUrl
     });
   }
 

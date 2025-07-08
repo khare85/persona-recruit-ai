@@ -8,6 +8,8 @@ import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
 import { databaseService } from '@/services/database.service';
 import { notificationService } from '@/services/notification.service';
+import { embeddingDatabaseService } from '@/services/embeddingDatabase.service';
+import { textEmbeddingService } from '@/services/textEmbedding.service';
 
 const quickApplySchema = z.object({
   coverNote: z.string().min(50).max(500).transform(sanitizeString).optional(),
@@ -23,12 +25,12 @@ const quickApplySchema = z.object({
 /**
  * POST /api/jobs/[id]/quick-apply - Quick apply to a job
  */
-export const POST = withRateLimit('apply',
+export const POST = withRateLimit('api' as any,
   withAuth(
     withRole(['candidate'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
       try {
         const jobId = params.id;
-        const candidateId = req.user?.id;
+        const candidateId = (req as any).user?.id;
         const body = await req.json();
         
         const validation = quickApplySchema.safeParse(body);
@@ -104,21 +106,116 @@ export const POST = withRateLimit('apply',
           );
         }
 
+        // Get candidate details for various uses
+        const candidate = await databaseService.getUserById(candidateId);
+        const company = await databaseService.getCompanyById(job.companyId);
+
+        // Calculate AI match score using vector embeddings
+        let aiMatchScore = 0;
+        try {
+          // Get embeddings for both candidate and job
+          const [candidateWithEmbedding, jobWithEmbedding] = await Promise.all([
+            embeddingDatabaseService.getCandidateWithEmbedding(candidateId),
+            embeddingDatabaseService.getJobWithEmbedding(jobId)
+          ]);
+
+          if (candidateWithEmbedding?.resumeEmbedding && jobWithEmbedding?.jobEmbedding) {
+            // Calculate semantic similarity using embeddings
+            const similarity = textEmbeddingService.calculateSimilarity(
+              candidateWithEmbedding.resumeEmbedding,
+              jobWithEmbedding.jobEmbedding
+            );
+            aiMatchScore = Math.round((similarity + 1) * 50); // Convert from [-1,1] to [0,100]
+          } else {
+            // Generate embeddings if they don't exist
+            apiLogger.info('Generating missing embeddings for match score calculation');
+            
+            let candidateEmbedding: number[] = [];
+            let jobEmbedding: number[] = [];
+            
+            if (!candidateWithEmbedding?.resumeEmbedding) {
+              const candidateText = [
+                candidateProfile?.currentTitle || '',
+                candidateProfile?.summary || '',
+                candidateProfile?.skills?.join(' ') || ''
+              ].filter(Boolean).join(' ');
+              
+              candidateEmbedding = await textEmbeddingService.generateDocumentEmbedding(candidateText);
+              // Save embedding for future use
+              await embeddingDatabaseService.saveCandidateWithEmbedding(candidateId, {
+                fullName: candidate ? `${candidate.firstName || ''} ${candidate.lastName || ''}`.trim() : '',
+                email: candidate?.email || '',
+                currentTitle: candidateProfile?.currentTitle || '',
+                extractedResumeText: candidateText,
+                resumeEmbedding: candidateEmbedding,
+                skills: candidateProfile?.skills || []
+              });
+            } else {
+              candidateEmbedding = candidateWithEmbedding.resumeEmbedding;
+            }
+            
+            if (!jobWithEmbedding?.jobEmbedding) {
+              const jobText = [job.title, job.description || ''].filter(Boolean).join(' ');
+              jobEmbedding = await textEmbeddingService.generateDocumentEmbedding(jobText);
+              // Save embedding for future use
+              await embeddingDatabaseService.saveJobWithEmbedding(jobId, {
+                title: job.title,
+                companyName: company?.name || '',
+                fullJobDescriptionText: jobText,
+                jobEmbedding: jobEmbedding,
+                location: job.location || '',
+                jobLevel: job.experience || '',
+                department: job.department || ''
+              });
+            } else {
+              jobEmbedding = jobWithEmbedding.jobEmbedding;
+            }
+            
+            const similarity = textEmbeddingService.calculateSimilarity(candidateEmbedding, jobEmbedding);
+            aiMatchScore = Math.round((similarity + 1) * 50);
+          }
+
+          apiLogger.info('AI match score calculated', {
+            candidateId,
+            jobId,
+            matchScore: aiMatchScore,
+            hasEmbeddings: !!(candidateWithEmbedding?.resumeEmbedding && jobWithEmbedding?.jobEmbedding)
+          });
+        } catch (error) {
+          apiLogger.warn('Failed to calculate AI match score', { error: String(error) });
+          // Fallback to basic skills matching if AI fails
+          const jobSkills = job.skills || [];
+          const candidateSkills = candidateProfile.skills || [];
+          const matchedSkills = candidateSkills.filter((skill: string) => 
+            jobSkills.some((jobSkill: string) => jobSkill.toLowerCase() === skill.toLowerCase())
+          );
+          aiMatchScore = jobSkills.length > 0 
+            ? Math.round((matchedSkills.length / jobSkills.length) * 100) 
+            : 50;
+        }
+
         // Create application
-        const applicationId = await databaseService.createJobApplication({
+        const applicationData = {
           jobId,
           candidateId,
           companyId: job.companyId,
-          status: 'pending',
+          status: 'submitted' as const,
           coverNote: validation.data.coverNote,
-          applicationMethod: 'quick_apply',
+          applicationMethod: 'quick_apply' as const,
           videoIntroUrl: candidateProfile.videoIntroUrl,
-          videoIntroIncluded: !!candidateProfile.videoIntroUrl
-        });
-
-        // Get candidate details for notifications
-        const candidate = await databaseService.getUserById(candidateId);
-        const company = await databaseService.getCompanyById(job.companyId);
+          videoIntroIncluded: !!candidateProfile.videoIntroUrl,
+          matchScore: {
+            overall: aiMatchScore,
+            mustHaveScore: aiMatchScore,
+            skillsScore: aiMatchScore,
+            experienceScore: aiMatchScore
+          },
+          expectedSalary: validation.data.expectedSalary,
+          availableFrom: validation.data.availableFrom ? new Date(validation.data.availableFrom) : undefined,
+          willingToRelocate: validation.data.willingToRelocate
+        };
+        
+        const applicationId = await databaseService.createJobApplication(applicationData);
 
         // Send notification to recruiters
         if (candidate && company) {
@@ -166,63 +263,90 @@ export const POST = withRateLimit('apply',
 /**
  * GET /api/jobs/[id]/quick-apply - Check quick apply eligibility
  */
-export const GET = withRateLimit('standard',
+export const GET = withRateLimit('api' as any,
   withAuth(
     withRole(['candidate'], async (req: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> => {
       try {
         const jobId = params.id;
-        const candidateId = req.user?.id;
+        const candidateId = (req as any).user?.id;
 
         apiLogger.info('Quick apply eligibility check', {
           jobId,
           candidateId
         });
 
-        // TODO: Get candidate profile status
-        const candidateProfile = {
-          hasVideoIntro: true,
-          profileComplete: true,
-          videoIntroUrl: 'https://example.com/video.mp4',
-          skills: ['JavaScript', 'React', 'Node.js'],
-          experience: '3-5 years'
-        };
+        // Get candidate profile
+        const candidateProfile = await databaseService.getCandidateProfile(candidateId);
+        if (!candidateProfile) {
+          return NextResponse.json(
+            { error: 'Candidate profile not found' },
+            { status: 404 }
+          );
+        }
 
-        // TODO: Check if already applied
-        const hasApplied = false;
+        // Check if already applied
+        const existingApplication = await databaseService.getJobApplicationByCandidate(jobId, candidateId);
+        const hasApplied = !!existingApplication;
 
-        // TODO: Get job requirements for match calculation
-        const job = {
-          id: jobId,
-          title: 'Software Engineer',
-          company: 'TechCorp Inc.',
-          status: 'active',
-          quickApplyEnabled: true,
-          mustHaveRequirements: ['JavaScript', 'React'],
-          skills: ['JavaScript', 'React', 'Node.js', 'TypeScript']
-        };
+        // Get job details
+        const job = await databaseService.getJobById(jobId);
+        if (!job) {
+          return NextResponse.json(
+            { error: 'Job not found' },
+            { status: 404 }
+          );
+        }
 
-        // Calculate basic match score
-        const matchedSkills = candidateProfile.skills.filter(skill => 
-          job.skills.includes(skill)
-        );
-        const matchScore = Math.round((matchedSkills.length / job.skills.length) * 100);
+        // Calculate AI match score using vector embeddings
+        let matchScore = 0;
+        try {
+          const [candidateWithEmbedding, jobWithEmbedding] = await Promise.all([
+            embeddingDatabaseService.getCandidateWithEmbedding(candidateId),
+            embeddingDatabaseService.getJobWithEmbedding(jobId)
+          ]);
+
+          if (candidateWithEmbedding?.resumeEmbedding && jobWithEmbedding?.jobEmbedding) {
+            const similarity = textEmbeddingService.calculateSimilarity(
+              candidateWithEmbedding.resumeEmbedding,
+              jobWithEmbedding.jobEmbedding
+            );
+            matchScore = Math.round((similarity + 1) * 50);
+          } else {
+            // Fallback to basic skills matching for preview
+            const jobSkills = job.skills || [];
+            const candidateSkills = candidateProfile.skills || [];
+            const matchedSkills = candidateSkills.filter((skill: string) => 
+              jobSkills.some((jobSkill: string) => jobSkill.toLowerCase() === skill.toLowerCase())
+            );
+            matchScore = jobSkills.length > 0 
+              ? Math.round((matchedSkills.length / jobSkills.length) * 100) 
+              : 50;
+          }
+        } catch (error) {
+          apiLogger.warn('Failed to calculate match score for preview', { error: String(error) });
+          matchScore = 50; // Default score
+        }
+
+        // Format experience
+        const experience = candidateProfile.experience || 'Not specified';
+        const candidateSkills = candidateProfile.skills || [];
 
         return NextResponse.json({
           success: true,
           data: {
-            eligible: candidateProfile.hasVideoIntro && candidateProfile.profileComplete && !hasApplied && job.quickApplyEnabled,
+            eligible: !!candidateProfile.videoIntroUrl && candidateProfile.profileComplete && !hasApplied && job.status === 'active',
             reasons: {
-              hasVideoIntro: candidateProfile.hasVideoIntro,
+              hasVideoIntro: !!candidateProfile.videoIntroUrl,
               profileComplete: candidateProfile.profileComplete,
               alreadyApplied: hasApplied,
               jobAcceptingApplications: job.status === 'active',
-              quickApplyEnabled: job.quickApplyEnabled
+              quickApplyEnabled: true
             },
             matchScore,
             candidateInfo: {
               videoIntroUrl: candidateProfile.videoIntroUrl,
-              skills: candidateProfile.skills,
-              experience: candidateProfile.experience
+              skills: candidateSkills,
+              experience: experience
             }
           }
         });

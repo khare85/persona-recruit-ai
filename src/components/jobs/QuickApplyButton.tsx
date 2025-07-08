@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,7 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const authenticatedFetch = useAuthenticatedFetch();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -73,18 +75,7 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
 
     try {
       setIsChecking(true);
-      const response = await fetch(`/api/jobs/${jobId}/quick-apply`);
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Token expired or invalid, redirect to auth
-          router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
-          return;
-        }
-        throw new Error('Failed to check eligibility');
-      }
-
-      const result = await response.json();
+      const result = await authenticatedFetch(`/api/jobs/${jobId}/quick-apply`);
       setEligibility(result.data);
 
       if (result.data.eligible) {
@@ -134,11 +125,16 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to check eligibility. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Check eligibility error:', error);
+      if (error instanceof Error && error.message.includes('not authenticated')) {
+        router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to check eligibility. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsChecking(false);
     }
@@ -148,25 +144,10 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
     try {
       setIsApplying(true);
 
-      const response = await fetch(`/api/jobs/${jobId}/quick-apply`, {
+      const result = await authenticatedFetch(`/api/jobs/${jobId}/quick-apply`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData)
       });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Token expired or invalid, redirect to auth
-          router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Application failed');
-      }
-
-      const result = await response.json();
       
       setIsDialogOpen(false);
       toast({
@@ -184,11 +165,16 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
       });
 
     } catch (error) {
-      toast({
-        title: "Application Failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive"
-      });
+      console.error('Quick apply error:', error);
+      if (error instanceof Error && error.message.includes('not authenticated')) {
+        router.push(`/auth?redirect=/jobs/${jobId}&action=apply`);
+      } else {
+        toast({
+          title: "Application Failed",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsApplying(false);
     }

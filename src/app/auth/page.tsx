@@ -78,10 +78,10 @@ export default function AuthenticationPage() {
       <div className="w-full max-w-4xl lg:grid lg:grid-cols-2 rounded-xl shadow-2xl overflow-hidden border border-border bg-card">
         <div className="hidden lg:flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary to-accent text-primary-foreground">
           <Image
-            src="https://placehold.co/600x400.png"
+            src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&h=400&q=80"
             alt="Recruitment illustration for AI Talent Stream"
-            width={400}
-            height={300}
+            width={600}
+            height={400}
             className="rounded-lg shadow-xl mb-8"
             data-ai-hint="teamwork meeting recruitment"
           />

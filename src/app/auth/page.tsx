@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDemo } from '@/contexts/DemoContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AuthenticationPage() {
   const { signIn } = useAuth();
+  const { setDemoMode } = useDemo();
   const [activeTab, setActiveTab] = useState("login");
   const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +71,8 @@ export default function AuthenticationPage() {
     }
   };
 
-  const handlePersonaSelection = (personaPath: string) => {
+  const handlePersonaSelection = (personaPath: string, demoRole: string) => {
+    setDemoMode(demoRole);
     router.push(personaPath);
   };
 
@@ -249,14 +252,17 @@ export default function AuthenticationPage() {
                 <Button onClick={() => router.push('/auth/register/candidate')} className="w-full justify-start" variant="outline" size="lg">
                   <Users className="mr-3 h-5 w-5 text-primary" /> Sign up as Candidate
                 </Button>
-                <Button onClick={() => handlePersonaSelection('/recruiter/dashboard')} className="w-full justify-start" variant="outline" size="lg">
+                <Button onClick={() => handlePersonaSelection('/recruiter/dashboard', 'recruiter')} className="w-full justify-start" variant="outline" size="lg">
                   <LayoutDashboard className="mr-3 h-5 w-5 text-primary" /> View as Recruiter
                 </Button>
-                <Button onClick={() => handlePersonaSelection('/company/dashboard')} className="w-full justify-start" variant="outline" size="lg">
+                <Button onClick={() => handlePersonaSelection('/company/dashboard', 'company_admin')} className="w-full justify-start" variant="outline" size="lg">
                   <Building className="mr-3 h-5 w-5 text-primary" /> View as Company Admin
                 </Button>
-                <Button onClick={() => handlePersonaSelection('/admin/dashboard')} className="w-full justify-start" variant="outline" size="lg">
+                <Button onClick={() => handlePersonaSelection('/admin/dashboard', 'super_admin')} className="w-full justify-start" variant="outline" size="lg">
                   <ShieldCheck className="mr-3 h-5 w-5 text-primary" /> View as Super Admin
+                </Button>
+                <Button onClick={() => handlePersonaSelection('/candidates/dashboard', 'candidate')} className="w-full justify-start" variant="outline" size="lg">
+                  <Users className="mr-3 h-5 w-5 text-primary" /> View as Candidate (Demo)
                 </Button>
               </CardContent>
               <CardFooter className="flex-col items-center px-0">

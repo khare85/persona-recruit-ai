@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
@@ -24,37 +25,25 @@ interface CandidateDashboardData {
 }
 
 export default function CandidateDashboardPage() {
-  const { getToken, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const demoOrAuthFetch = useDemoOrAuthFetch();
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const token = await getToken();
-      if (!token) {
-        throw new Error('User not authenticated. Please log in.');
-      }
-
-      const response = await fetch('/api/candidates/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
-      }
-      const result = await response.json();
+      const result = await demoOrAuthFetch('/api/candidates/dashboard');
       setDashboardData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, authLoading]);
+  }, [demoOrAuthFetch, authLoading]);
   
   useEffect(() => {
     fetchData();

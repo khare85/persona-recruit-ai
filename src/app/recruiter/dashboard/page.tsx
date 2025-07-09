@@ -9,7 +9,7 @@ import { Briefcase, Users, CalendarDays, Award, Search, PlusCircle, Eye, LayoutD
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -41,21 +41,21 @@ export default function RecruiterDashboardPage() {
   const [data, setData] = useState<RecruiterDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const authenticatedFetch = useAuthenticatedFetch();
+  const demoOrAuthFetch = useDemoOrAuthFetch();
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const result = await authenticatedFetch('/api/recruiter/dashboard');
+      const result = await demoOrAuthFetch('/api/recruiter/dashboard');
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, authLoading]);
+  }, [demoOrAuthFetch, authLoading]);
   
   useEffect(() => {
     fetchData();

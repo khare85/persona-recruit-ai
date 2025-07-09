@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 
 interface InterviewerDashboardData {
   totalInterviews: number;
@@ -70,21 +70,21 @@ export default function InterviewerDashboardPage() {
   const [data, setData] = useState<InterviewerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const authenticatedFetch = useAuthenticatedFetch();
+  const demoOrAuthFetch = useDemoOrAuthFetch();
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const result = await authenticatedFetch('/api/interviewer/dashboard');
+      const result = await demoOrAuthFetch('/api/interviewer/dashboard');
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, authLoading]);
+  }, [demoOrAuthFetch, authLoading]);
   
   useEffect(() => {
     fetchData();

@@ -85,26 +85,31 @@ const DEMO_DATA = {
       totalUsers: 1234,
       totalCompanies: 56,
       activeJobs: 234,
-      systemHealth: 'healthy',
-      recentSignups: [
+      systemHealth: 100,
+      monthlyRevenue: 125000,
+      supportTickets: 12,
+      recentActivity: [
         {
-          id: 'signup-1',
-          name: 'TechCorp Inc.',
-          type: 'company',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+          type: 'user',
+          message: 'New user registered: Sarah Chen',
+          time: new Date(Date.now() - 30 * 60 * 1000).toISOString()
         },
         {
-          id: 'signup-2',
-          name: 'Sarah Chen',
-          type: 'candidate',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+          type: 'company',
+          message: 'TechCorp Inc. upgraded to Premium plan',
+          time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          type: 'system',
+          message: 'Database backup completed successfully',
+          time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          type: 'job',
+          message: 'New job posting: Senior DevOps Engineer at StartupXYZ',
+          time: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
         }
-      ],
-      systemMetrics: {
-        apiCalls: 45678,
-        storageUsed: '234 GB',
-        activeUsers: 892
-      }
+      ]
     }
   },
   '/api/interviewer/dashboard': {
@@ -198,17 +203,163 @@ const DEMO_DATA = {
   }
 };
 
+// Additional demo data for endpoints that match with query params
+const DEMO_DATA_WITH_PARAMS: Record<string, any> = {
+  '/api/ai-analytics/dashboard': {
+    success: true,
+    data: {
+      performance: {
+        totalOperations: 15234,
+        successRate: 98.5,
+        averageLatency: 245,
+        errorRate: 1.5,
+        trendsData: []
+      },
+      biasMetrics: {
+        genderBias: 0.02,
+        ageBias: 0.03,
+        ethnicityBias: 0.01,
+        overallFairness: 96.5
+      },
+      fairnessAnalysis: {
+        demographicParity: 0.95,
+        equalOpportunity: 0.94,
+        equalizedOdds: 0.93,
+        disparateImpact: 0.96
+      },
+      activeAlerts: [
+        {
+          id: 'alert-1',
+          type: 'bias_detected',
+          severity: 'warning',
+          message: 'Slight gender bias detected in resume screening',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    }
+  },
+  '/api/admin/analytics': {
+    success: true,
+    data: {
+      platformMetrics: {
+        totalInterviews: 456,
+        averageMatchScore: 87,
+        hiringRate: 23,
+        candidateSatisfaction: 4.6
+      }
+    }
+  },
+  '/api/admin/billing': {
+    success: true,
+    data: {
+      monthlyRevenue: 125000,
+      totalCustomers: 56,
+      mrr: 85000,
+      churnRate: 2.3
+    }
+  },
+  '/api/admin/support': {
+    success: true,
+    data: {
+      openTickets: 12,
+      resolvedToday: 8,
+      averageResponseTime: '2 hours',
+      satisfactionScore: 4.7
+    }
+  },
+  '/api/admin/users': {
+    success: true,
+    data: {
+      users: [
+        {
+          id: 'user-1',
+          email: 'john.doe@example.com',
+          displayName: 'John Doe',
+          role: 'recruiter',
+          companyId: 'comp-1',
+          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'user-2',
+          email: 'jane.smith@example.com',
+          displayName: 'Jane Smith',
+          role: 'candidate',
+          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+          lastLogin: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+        }
+      ],
+      total: 1234
+    }
+  },
+  '/api/admin/company-management': {
+    success: true,
+    data: {
+      companies: [
+        {
+          id: 'comp-1',
+          name: 'TechCorp Inc.',
+          plan: 'premium',
+          status: 'active',
+          employeeCount: 150,
+          jobPostings: 12,
+          createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'comp-2',
+          name: 'StartupXYZ',
+          plan: 'standard',
+          status: 'active',
+          employeeCount: 25,
+          jobPostings: 5,
+          createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ],
+      total: 56
+    }
+  },
+  '/api/admin/system': {
+    success: true,
+    data: {
+      health: {
+        database: 'healthy',
+        storage: 'healthy',
+        api: 'healthy',
+        aiServices: 'healthy'
+      },
+      metrics: {
+        cpuUsage: 45,
+        memoryUsage: 68,
+        diskUsage: 52,
+        activeConnections: 234
+      },
+      uptime: 2592000 // 30 days in seconds
+    }
+  }
+};
+
 export function useDemoOrAuthFetch() {
   const { getToken } = useAuth();
   const { isDemoMode } = useDemo();
 
   const demoOrAuthFetch = useCallback(async (url: string, options: FetchOptions = {}) => {
-    // If in demo mode, return mock data
-    if (isDemoMode) {
+    // Check if we're in a real demo environment (separate Firebase backend)
+    const isRealDemoEnvironment = process.env.NEXT_PUBLIC_ENVIRONMENT === 'demo';
+    
+    // If in UI demo mode but NOT in real demo environment, return mock data
+    if (isDemoMode && !isRealDemoEnvironment) {
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const demoData = DEMO_DATA[url as keyof typeof DEMO_DATA];
+      // First check exact match
+      let demoData = DEMO_DATA[url as keyof typeof DEMO_DATA];
+      if (demoData) {
+        return demoData;
+      }
+      
+      // Check URL without query params for endpoints with params
+      const urlWithoutParams = url.split('?')[0];
+      demoData = DEMO_DATA_WITH_PARAMS[urlWithoutParams];
       if (demoData) {
         return demoData;
       }
@@ -217,7 +368,7 @@ export function useDemoOrAuthFetch() {
       return { success: true, data: {} };
     }
 
-    // Otherwise, use authenticated fetch
+    // For both real demo environment and production, use authenticated fetch
     const token = await getToken();
     if (!token) {
       throw new Error('User not authenticated. Please log in.');

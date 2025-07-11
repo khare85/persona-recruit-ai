@@ -3,6 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDemo } from '@/contexts/DemoContext';
+import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -14,7 +16,9 @@ interface UseAdminDataOptions {
 }
 
 export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOptions) {
-  const { getToken, user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isDemoMode } = useDemo();
+  const demoOrAuthFetch = useDemoOrAuthFetch();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,39 +30,22 @@ export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOpt
     setIsLoading(true);
     setError(null);
     
-    // If not authenticated after loading, set error and stop
-    if (!user) {
+    // If not authenticated and not in demo mode, set error and stop
+    if (!user && !isDemoMode) {
       setError('User not authenticated. Please log in.');
       setIsLoading(false);
       return;
     }
 
     try {
-      const token = await getToken();
-      if (!token) {
-        throw new Error('Could not retrieve authentication token.');
-      }
-
-      const response = await fetch(endpoint, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const result = await demoOrAuthFetch(endpoint);
       setData(result.data || result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setIsLoading(false);
     }
-  }, [endpoint, getToken, authLoading, user, ...(dependencies || [])]);
+  }, [endpoint, demoOrAuthFetch, authLoading, user, isDemoMode, ...(dependencies || [])]);
 
   useEffect(() => {
     fetchData();

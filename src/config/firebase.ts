@@ -6,6 +6,10 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, Analytics } from 'firebase/analytics';
 
+// Get current environment
+const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'production';
+const isDemoEnvironment = environment === 'demo';
+
 // Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,6 +20,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
+
+// Log environment info (only in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log(`🔥 Firebase Environment: ${environment}`);
+  console.log(`📦 Project ID: ${firebaseConfig.projectId}`);
+  if (isDemoEnvironment) {
+    console.log('🎭 Running in DEMO mode with separate database');
+  }
+}
 
 // Validate essential configuration
 const requiredConfig = {
@@ -74,6 +87,9 @@ if (missingKeys.length === 0) {
 
 // Export initialized instances
 export { auth, db, storage, analytics };
+
+// Export environment info
+export { environment, isDemoEnvironment };
 
 // Also export the app for any custom initialization needs
 export default app;

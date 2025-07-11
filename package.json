@@ -21,7 +21,11 @@
     "setup:storage:secretmanager": "node scripts/setup-firebase-storage-secretmanager.js",
     "check:storage:secretmanager": "node scripts/check-firebase-storage-secretmanager.js",
     "setup:storage:flexible": "FIREBASE_SERVICE_ACCOUNT_SECRET=GOOGLE_APPLICATION_CREDENTIALS_JSON node scripts/setup-firebase-storage-secretmanager-flexible.js",
-    "check:firestore": "node scripts/check-firestore-secretmanager.js"
+    "check:firestore": "node scripts/check-firestore-secretmanager.js",
+    "setup:demo": "node scripts/setup-demo-environment.js",
+    "deploy:demo": "bash ./scripts/deploy-demo.sh",
+    "deploy:production": "firebase use production && npm run deploy:apphosting",
+    "deploy:apphosting": "firebase deploy --only apphosting --project=ai-talent-stream"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",

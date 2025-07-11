@@ -1,5 +1,24 @@
 {
   "projects": {
-    "default": "ai-talent-stream"
+    "default": "ai-talent-stream-demo",
+    "production": "ai-talent-stream",
+    "demo": "ai-talent-stream-demo",
+    "dev": "ai-talent-stream-dev"
+  },
+  "targets": {
+    "ai-talent-stream": {
+      "hosting": {
+        "production": [
+          "ai-talent-stream"
+        ]
+      }
+    },
+    "ai-talent-stream-demo": {
+      "hosting": {
+        "demo": [
+          "ai-talent-stream-demo"
+        ]
+      }
+    }
   }
 }

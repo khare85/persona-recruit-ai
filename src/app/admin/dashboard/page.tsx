@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
     fetchData();
   }, [fetchData]);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <AdminLayout>
         <Container className="flex items-center justify-center h-full">
@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <AdminLayout>
         <Container>
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
               <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.totalUsers.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{(data.totalUsers || 0).toLocaleString()}</div>
               <span className="text-xs text-muted-foreground">+47 this week</span>
             </CardContent>
           </Card>
@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
               <Building className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.totalCompanies}</div>
+              <div className="text-2xl font-bold">{data.totalCompanies || 0}</div>
               <span className="text-xs text-muted-foreground">+3 this month</span>
             </CardContent>
           </Card>
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
               <Server className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.systemHealth}%</div>
+              <div className="text-2xl font-bold">{data.systemHealth || 100}%</div>
               <Badge variant="default" className="text-xs bg-green-100 text-green-800">
                 <CheckCircle className="mr-1 h-3 w-3" />
                 Healthy
@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
               <DollarSign className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${data.monthlyRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">${(data.monthlyRevenue || 0).toLocaleString()}</div>
               <span className="text-xs text-muted-foreground">+12% vs last month</span>
             </CardContent>
           </Card>

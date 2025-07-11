@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
     fetchData();
   }, [fetchData]);
 
-  if (isLoading) {
+  if (isLoading || !data) {
     return (
       <AdminLayout>
         <Container className="flex items-center justify-center h-full">
@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <AdminLayout>
         <Container>

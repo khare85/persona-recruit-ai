@@ -26,14 +26,14 @@ export const GET = withAuth(
       const recentActivity = await getRecentActivity();
 
       // Calculate estimated monthly revenue based on company count and plans
-      const estimatedRevenue = calculateEstimatedRevenue(systemAnalytics.overview.totalCompanies);
+      const estimatedRevenue = calculateEstimatedRevenue(systemAnalytics?.overview.totalCompanies || 0);
 
       const data = {
-        totalUsers: systemAnalytics.overview.totalUsers,
-        totalCompanies: systemAnalytics.overview.totalCompanies,
+        totalUsers: systemAnalytics?.overview.totalUsers || 0,
+        totalCompanies: systemAnalytics?.overview.totalCompanies || 0,
         systemHealth: healthPercentage,
         monthlyRevenue: estimatedRevenue,
-        activeJobs: systemAnalytics.overview.activeJobs,
+        activeJobs: systemAnalytics?.overview.activeJobs || 0,
         supportTickets: await getSupportTicketCount(),
         recentActivity,
       };
@@ -113,7 +113,7 @@ async function getSupportTicketCount() {
     // This would require a support tickets collection in the future
     // For now, return a realistic estimate based on user count
     const analytics = await databaseService.getSystemAnalytics();
-    const estimatedTickets = Math.floor(analytics.overview.totalUsers * 0.02); // 2% of users have tickets
+    const estimatedTickets = Math.floor((analytics?.overview.totalUsers || 0) * 0.02); // 2% of users have tickets
     return Math.max(estimatedTickets, 0);
   } catch (error) {
     return 0;

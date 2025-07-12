@@ -23,6 +23,8 @@
     "setup:storage:flexible": "FIREBASE_SERVICE_ACCOUNT_SECRET=GOOGLE_APPLICATION_CREDENTIALS_JSON node scripts/setup-firebase-storage-secretmanager-flexible.js",
     "check:firestore": "node scripts/check-firestore-secretmanager.js",
     "setup:demo": "node scripts/setup-demo-environment.js",
+    "setup:auth": "node scripts/setup-firebase-auth.js",
+    "setup:admin": "node scripts/setup-firebase-admin.js",
     "deploy:demo": "bash ./scripts/deploy-demo.sh",
     "deploy:production": "firebase use production && npm run deploy:apphosting",
     "deploy:apphosting": "firebase deploy --only apphosting --project=ai-talent-stream"

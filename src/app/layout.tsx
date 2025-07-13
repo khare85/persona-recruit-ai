@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
+import ClientLayoutWrapper from '@/components/layout/ClientLayoutWrapper';
 
 export const metadata: Metadata = {
   title: 'AI Talent Stream',
@@ -24,12 +25,14 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <AuthProvider>
+          <ClientLayoutWrapper>
             <Navbar />
             <main className="flex-grow">
               {children}
             </main>
             <Footer />
             <Toaster />
+          </ClientLayoutWrapper>
         </AuthProvider>
       </body>
     </html>

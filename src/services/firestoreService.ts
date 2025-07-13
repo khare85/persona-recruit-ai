@@ -58,7 +58,8 @@ if (app) {
   }
 
   try {
-    storageBucket = admin.storage(app).bucket(); // Pass app instance and get default bucket
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app';
+    storageBucket = admin.storage(app).bucket(bucketName); // Pass app instance and specify bucket name
     console.log(`[FirestoreService] Firebase Storage bucket '${storageBucket.name}' instance acquired.`);
   } catch (error) {
     console.error('[FirestoreService] Failed to acquire Firebase Storage bucket instance after SDK init. Details:', error);

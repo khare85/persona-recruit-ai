@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import DashboardGuard from '@/components/layout/DashboardGuard';
 
 interface AdminDashboardData {
   totalUsers: number;
@@ -87,7 +88,8 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <AdminLayout>
+    <DashboardGuard requiredRole="super_admin">
+      <AdminLayout>
       <Container>
         <div className="mb-8">
           <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
@@ -263,5 +265,6 @@ export default function AdminDashboardPage() {
         </div>
       </Container>
     </AdminLayout>
+    </DashboardGuard>
   );
 }

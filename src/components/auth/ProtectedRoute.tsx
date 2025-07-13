@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { roleNavigation } from '@/utils/roleRedirection';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -30,24 +31,7 @@ export default function ProtectedRoute({
         const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
         if (user.role && !allowedRoles.includes(user.role)) {
           // Redirect user to their own dashboard if they access a forbidden page
-          let redirectPath = '/login'; // Default redirect
-          switch (user.role) {
-            case 'super_admin':
-              redirectPath = '/admin/dashboard';
-              break;
-            case 'company_admin':
-              redirectPath = '/company/dashboard';
-              break;
-            case 'recruiter':
-              redirectPath = '/recruiter/dashboard';
-              break;
-            case 'candidate':
-              redirectPath = '/candidates/dashboard';
-              break;
-            case 'interviewer':
-              redirectPath = '/interviewer/dashboard';
-              break;
-          }
+          const redirectPath = roleNavigation.getUnauthorizedRedirect(user.role);
           router.push(redirectPath);
           return;
         }

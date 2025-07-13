@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import { databaseService } from '@/services/database.service';
 import { z } from 'zod';
+import { CandidateProfile, User } from '@/models/user.model';
 
 // Candidate update schema
 const candidateUpdateSchema = z.object({
@@ -21,9 +22,6 @@ const candidateUpdateSchema = z.object({
   status: z.enum(['Active', 'Inactive', 'Hired', 'Not Looking']).optional()
 });
 
-// Mock candidates database
-let candidates = getMockCandidates();
-
 interface RouteParams {
   params: {
     id: string;
@@ -34,19 +32,45 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = params;
     
-    const candidate = candidates.find(c => c.id === id);
-    
-    if (!candidate) {
+    const user = await databaseService.getUserById(id);
+    if (!user || user.role !== 'candidate') {
       return NextResponse.json(
         { error: 'Candidate not found' },
         { status: 404 }
       );
     }
 
-    // In production, also fetch:
-    // - Applications history
-    // - Interview history
-    // - AI scores and analysis
+    const profile: CandidateProfile | null = await databaseService.getCandidateProfile(id);
+    
+    const experienceMap: { [key: string]: number } = {
+      'Entry Level': 1,
+      '1-2 years': 2,
+      '3-5 years': 4,
+      '5-10 years': 7,
+      '10+ years': 10,
+    };
+
+    const candidate = {
+      id: user.id,
+      fullName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      phone: profile?.phone || '',
+      currentTitle: profile?.currentTitle || 'N/A',
+      experience: profile?.experience ? experienceMap[profile.experience] || 0 : 0,
+      location: profile?.location || 'N/A',
+      skills: profile?.skills || [],
+      education: 'N/A',
+      previousCompanies: [],
+      profilePictureUrl: `https://placehold.co/150x150.png?text=${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`,
+      availability: profile?.availability || 'Not Specified',
+      expectedSalary: profile?.expectedSalary ? `$${profile.expectedSalary.min} - $${profile.expectedSalary.max}` : 'Not Specified',
+      summary: profile?.summary || '',
+      certifications: [],
+      languages: [],
+      aiMatchScore: Math.floor(Math.random() * 20) + 75,
+    };
+
+    // Mock additional data for now
     const candidateWithDetails = {
       ...candidate,
       applications: [
@@ -101,9 +125,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { id } = params;
     const body = await request.json();
     
-    const candidateIndex = candidates.findIndex(c => c.id === id);
-    
-    if (candidateIndex === -1) {
+    const user = await databaseService.getUserById(id);
+    if (!user || user.role !== 'candidate') {
       return NextResponse.json(
         { error: 'Candidate not found' },
         { status: 404 }
@@ -123,21 +146,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Update candidate
-    const updatedCandidate = {
-      ...candidates[candidateIndex],
-      ...validation.data,
-      updatedAt: new Date().toISOString()
-    };
+    // Update user and profile data
+    const profileData = validation.data;
+    await databaseService.updateCandidateProfile(id, profileData);
 
-    candidates[candidateIndex] = updatedCandidate;
-
-    // In production, save to database and regenerate embeddings if needed
-    console.log('Updated candidate:', updatedCandidate);
+    // Get updated profile
+    const updatedProfile = await databaseService.getCandidateProfile(id);
 
     return NextResponse.json({
       success: true,
-      data: updatedCandidate,
+      data: {
+        id: user.id,
+        fullName: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        ...updatedProfile,
+        updatedAt: new Date().toISOString()
+      },
       message: 'Candidate updated successfully'
     });
 
@@ -154,9 +178,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = params;
     
-    const candidateIndex = candidates.findIndex(c => c.id === id);
-    
-    if (candidateIndex === -1) {
+    const user = await databaseService.getUserById(id);
+    if (!user || user.role !== 'candidate') {
       return NextResponse.json(
         { error: 'Candidate not found' },
         { status: 404 }
@@ -164,18 +187,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // In production, soft delete or check for active applications first
-    const deletedCandidate = candidates.splice(candidateIndex, 1)[0];
-
-    // In production:
-    // - Check for active applications
-    // - Notify relevant parties
-    // - Archive related data
-    console.log('Deleted candidate:', deletedCandidate);
+    // For now, we'll just deactivate the user
+    await databaseService.updateUser(id, { status: 'inactive' });
 
     return NextResponse.json({
       success: true,
-      message: 'Candidate deleted successfully',
-      data: { id: deletedCandidate.id, name: deletedCandidate.fullName }
+      message: 'Candidate deactivated successfully',
+      data: { id: user.id, name: `${user.firstName} ${user.lastName}` }
     });
 
   } catch (error) {

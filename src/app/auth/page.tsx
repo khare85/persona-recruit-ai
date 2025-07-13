@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowRight, LogIn, UserPlus, Loader2, AlertCircle, Info } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { roleNavigation } from '@/utils/roleRedirection';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AuthenticationPage() {
@@ -41,24 +42,15 @@ export default function AuthenticationPage() {
       
       const user = userCredential; // The user object from firebase
       const tokenResult = await user.getIdTokenResult();
-      const role = tokenResult.claims.role || 'candidate';
+      const role = (tokenResult.claims.role as string) || 'candidate';
 
       // Check if there's a redirect URL
       if (redirectUrl) {
         router.push(redirectUrl);
       } else {
-        // Redirect based on user role
-        if (role === 'super_admin') {
-          router.push('/admin/dashboard');
-        } else if (role === 'company_admin') {
-          router.push('/company/dashboard');
-        } else if (role === 'recruiter') {
-          router.push('/recruiter/dashboard');
-        } else if (role === 'interviewer') {
-          router.push('/interviewer/dashboard');
-        } else {
-          router.push('/candidates/dashboard');
-        }
+        // Redirect based on user role using centralized utility
+        const dashboardPath = roleNavigation.getDashboardPath(role as any);
+        router.push(dashboardPath);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');

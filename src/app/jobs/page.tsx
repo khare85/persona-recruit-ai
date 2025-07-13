@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Briefcase, MapPin, Search, PlusCircle, Loader2, Zap } from 'lucide-react';
 import { Container } from '@/components/shared/Container';
 import { Badge } from '@/components/ui/badge';
-import type { MockJob } from '@/services/mockDataService'; // Using type for structure
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 

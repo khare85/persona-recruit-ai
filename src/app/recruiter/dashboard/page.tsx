@@ -9,7 +9,7 @@ import { Briefcase, Users, CalendarDays, Award, Search, PlusCircle, Eye, LayoutD
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
+
 import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -37,25 +37,41 @@ interface RecruiterDashboardData {
 }
 
 export default function RecruiterDashboardPage() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<RecruiterDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const demoOrAuthFetch = useDemoOrAuthFetch();
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const result = await demoOrAuthFetch('/api/recruiter/dashboard');
+      if (!user) {
+        setError('User not authenticated');
+        return;
+      }
+      
+      const token = await user.getIdToken();
+      const response = await fetch('/api/recruiter/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [demoOrAuthFetch, authLoading]);
+  }, [user, authLoading]);
   
   useEffect(() => {
     fetchData();

@@ -15,7 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { DemoModeBanner } from "./DemoModeBanner";
 
 const defaultNavItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -265,7 +264,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
 
         <main className="flex-1 overflow-y-auto">
-          <DemoModeBanner />
           {children}
         </main>
       </div>

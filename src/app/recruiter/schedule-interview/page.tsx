@@ -41,7 +41,7 @@ import {
   Zap,
   Bot
 } from 'lucide-react';
-import { scheduleInterview } from '@/services/mockDataService';
+
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {

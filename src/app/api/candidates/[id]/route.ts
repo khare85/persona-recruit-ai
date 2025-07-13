@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMockCandidates } from '@/services/mockDataService';
+
 import { z } from 'zod';
 
 // Candidate update schema

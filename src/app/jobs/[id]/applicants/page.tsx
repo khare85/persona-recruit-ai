@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Container } from '@/components/shared/Container';
 import { ArrowLeft, Star, Mail, Phone, MapPin, Briefcase, ExternalLink, CalendarDays, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getMockJob, getMockApplicantsForJob, type MockCandidate, type MockJob } from '@/services/mockDataService';
+
 import { candidateJobMatcher } from '@/ai/flows/candidate-job-matcher';
 import { ScheduleInterviewDialog } from '@/components/interviews/ScheduleInterviewDialog';
 
@@ -43,7 +43,7 @@ export default function JobApplicantsPage() {
     async function loadJobAndApplicants() {
       setIsLoading(true);
       
-      const jobData = getMockJob(jobId);
+      const jobData = [];
       if (!jobData) {
         setJob(null);
         setApplicants([]);
@@ -52,7 +52,7 @@ export default function JobApplicantsPage() {
       }
 
       setJob(jobData);
-      const candidates = getMockApplicantsForJob(jobId);
+      const candidates = [];
       
       const jobDescription = `
         Title: ${jobData.title}

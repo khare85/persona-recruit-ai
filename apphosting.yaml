@@ -1,99 +1,74 @@
-# Settings for Backend (on Cloud Run) - Demo Environment
+# Settings for Backend (on Cloud Run) - Production Environment
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
   minInstances: 0
-  maxInstances: 10
+  maxInstances: 50
   concurrency: 80
-  cpu: 1
-  memoryMiB: 4096
+  cpu: 2
+  memoryMiB: 8192
   timeoutSeconds: 3600
 
-# Environment variables and secrets for Demo Environment
+# Environment variables and secrets for Production Environment
 env:
   # Environment identifier
   - variable: NEXT_PUBLIC_ENVIRONMENT
-    value: "demo"
+    value: "production"
     availability:
       - BUILD
       - RUNTIME
   
-  # Firebase Configuration - Using ai-talent-stream-demo project
+  # Firebase Configuration - Using ai-talent-stream project
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "AIzaSyCCYi7cPMfy6GMG0YyehNxZSA3xj03h8kw"
+    value: "AIzaSyDBJabwAuKxGnM0zFIh0A1ROEC8tTpQ2c8"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "ai-talent-stream-demo.firebaseapp.com"
+    value: "ai-talent-stream.firebaseapp.com"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "ai-talent-stream-demo"
+    value: "ai-talent-stream"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "ai-talent-stream-demo.firebasestorage.app"
+    value: "ai-talent-stream.firebasestorage.app"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "828945455612"
+    value: "541879201595"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:828945455612:web:3148643d1cef1635e2ba79"
+    value: "1:541879201595:web:110bb13a8daec937de911e"
     availability:
       - BUILD
       - RUNTIME
   
   - variable: FIREBASE_PROJECT_ID
-    value: "ai-talent-stream-demo"
+    value: "ai-talent-stream"
     availability:
       - BUILD
       - RUNTIME
   
-  # Demo feature flags
-  - variable: NEXT_PUBLIC_DEMO_MODE_ENABLED
-    value: "true"
-    availability:
-      - BUILD
-      - RUNTIME
-  
-  - variable: NEXT_PUBLIC_SHOW_DEMO_BANNER
-    value: "true"
-    availability:
-      - BUILD
-      - RUNTIME
-  
-  - variable: NEXT_PUBLIC_ENABLE_SAMPLE_DATA
-    value: "true"
-    availability:
-      - BUILD
-      - RUNTIME
-  
-  - variable: NEXT_PUBLIC_MAX_DEMO_USERS
-    value: "100"
-    availability:
-      - BUILD
-      - RUNTIME
-  
-  - variable: NEXT_PUBLIC_DEMO_DATA_RESET_HOURS
-    value: "24"
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-QL7NT2DTQS"
     availability:
       - BUILD
       - RUNTIME
   
   # App URL
   - variable: NEXT_PUBLIC_APP_URL
-    value: "https://ai-talent-stream-demo--ai-talent-stream-demo.us-central1.hosted.app"
+    value: "https://ai-talent-stream--ai-talent-stream.us-central1.hosted.app"
     availability:
       - BUILD
       - RUNTIME
@@ -107,14 +82,14 @@ env:
   
   # Node memory settings for build
   - variable: NODE_OPTIONS
-    value: "--max-old-space-size=4096"
+    value: "--max-old-space-size=8192"
     availability:
       - BUILD
       - RUNTIME
   
   # Google Cloud Project
   - variable: GOOGLE_CLOUD_PROJECT
-    value: "ai-talent-stream-demo"
+    value: "ai-talent-stream"
     availability:
       - BUILD
       - RUNTIME

@@ -24,13 +24,13 @@ import {
   Share2,
   Video
 } from 'lucide-react';
-import { getMockInterviewAnalysis } from '@/services/mockDataService';
+// Mock data removed - implement real interview analysis service
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 export default function InterviewAnalysisPage() {
   const params = useParams();
   const id = params.id as string;
-  const analysis = getMockInterviewAnalysis(id);
+  const analysis = null; // TODO: Implement real interview analysis fetching
 
   if (!analysis) {
     return (

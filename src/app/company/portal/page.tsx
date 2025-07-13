@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Search, MapPin, Clock, DollarSign, Building, Filter, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { getMockJobs } from '@/services/mockDataService';
+// Mock data removed - implement real portal service
 import { useState } from 'react';
 
 export default function CompanyPortalPage() {
@@ -17,7 +17,7 @@ export default function CompanyPortalPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
   
-  const companyJobs = getMockJobs().filter(job => job.company === 'TechCorp Inc.');
+  const companyJobs: any[] = []; // TODO: Implement real job fetching
   
   const filteredJobs = companyJobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

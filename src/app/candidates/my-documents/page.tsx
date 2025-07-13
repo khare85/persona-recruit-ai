@@ -23,15 +23,14 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
-import { getMockDocumentsForCandidate } from '@/services/mockDataService';
+// Mock data removed - implement real document fetching
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
-// For demo, assume we're viewing candidate ID 1 (Sarah Johnson)
-const DEMO_CANDIDATE_ID = '1';
+// TODO: Implement real document management
 
 export default function MyDocumentsPage() {
-  const documents = getMockDocumentsForCandidate(DEMO_CANDIDATE_ID);
+  const documents: any[] = []; // TODO: Implement real document fetching
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 

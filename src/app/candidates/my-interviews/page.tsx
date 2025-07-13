@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CalendarDays, Clock, MapPin, Building2, Video, CheckCircle, XCircle, AlertCircle, ExternalLink, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getMockInterviewsForCandidate, getMockInterviewAnalysis } from '@/services/mockDataService';
+// Mock data removed - implement real interview fetching
 import { format } from 'date-fns';
 
 export default function MyInterviewsPage() {
@@ -260,7 +260,7 @@ export default function MyInterviewsPage() {
               </TableHeader>
               <TableBody>
                 {completedInterviews.map((interview) => {
-                  const analysis = interview.analysisId ? getMockInterviewAnalysis(interview.analysisId) : undefined;
+                  const analysis = undefined; // TODO: Implement real interview analysis fetching
                   return (
                     <TableRow key={interview.id}>
                       <TableCell>

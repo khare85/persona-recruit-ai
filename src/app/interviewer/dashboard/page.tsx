@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 
 interface InterviewerDashboardData {
   totalInterviews: number;
@@ -66,25 +65,41 @@ interface InterviewerDashboardData {
 }
 
 export default function InterviewerDashboardPage() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<InterviewerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const demoOrAuthFetch = useDemoOrAuthFetch();
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const result = await demoOrAuthFetch('/api/interviewer/dashboard');
+      if (!user) {
+        setError('User not authenticated');
+        return;
+      }
+      
+      const token = await user.getIdToken();
+      const response = await fetch('/api/interviewer/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [demoOrAuthFetch, authLoading]);
+  }, [user, authLoading]);
   
   useEffect(() => {
     fetchData();

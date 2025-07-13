@@ -9,7 +9,6 @@ import { Building, Users, Briefcase, DollarSign, Search, Settings, PlusCircle, E
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 
 interface CompanyDashboardData {
   companyName: string;
@@ -23,25 +22,41 @@ interface CompanyDashboardData {
 }
 
 export default function CompanyDashboardPage() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<CompanyDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const demoOrAuthFetch = useDemoOrAuthFetch();
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;
     setIsLoading(true);
     setError(null);
     try {
-      const result = await demoOrAuthFetch('/api/company/dashboard');
+      if (!user) {
+        setError('User not authenticated');
+        return;
+      }
+      
+      const token = await user.getIdToken();
+      const response = await fetch('/api/company/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [demoOrAuthFetch, authLoading]);
+  }, [user, authLoading]);
   
   useEffect(() => {
     fetchData();

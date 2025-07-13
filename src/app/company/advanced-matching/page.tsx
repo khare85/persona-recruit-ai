@@ -45,7 +45,9 @@ import { Container } from '@/components/shared/Container';
 import Link from 'next/link';
 import { advancedCandidateJobMatching } from '@/ai/flows/advanced-candidate-job-matching-flow';
 import { screenCandidateSkills } from '@/ai/flows/candidate-screener-flow';
-import { getMockJobs, getMockCandidates, type MockJob, type MockCandidate } from '@/services/mockDataService';
+// Mock data removed - implement real matching service
+type MockJob = any;
+type MockCandidate = any;
 import { toast } from '@/hooks/use-toast';
 
 interface AdvancedMatchResult {
@@ -89,8 +91,8 @@ export default function AdvancedMatchingPage() {
 
   useEffect(() => {
     // Load mock data
-    setJobs(getMockJobs());
-    setCandidates(getMockCandidates());
+    setJobs([]); // TODO: Implement real job fetching
+    setCandidates([]); // TODO: Implement real candidate fetching
   }, []);
 
   const handleAdvancedMatching = async () => {

@@ -68,7 +68,7 @@ env:
   
   # App URL
   - variable: NEXT_PUBLIC_APP_URL
-    value: "https://ai-talent-stream--ai-talent-stream.us-central1.hosted.app"
+    value: "https://studio--ai-talent-stream.us-central1.hosted.app"
     availability:
       - BUILD
       - RUNTIME

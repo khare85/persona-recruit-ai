@@ -5,22 +5,18 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDemo } from '@/contexts/DemoContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, LogIn, UserPlus, PlayCircle, Users, Building, LayoutDashboard, ShieldCheck, Info, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowRight, LogIn, UserPlus, Loader2, AlertCircle, Info } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AuthenticationPage() {
   const { signIn } = useAuth();
-  const { setDemoMode } = useDemo();
   const [activeTab, setActiveTab] = useState("login");
-  const [showPersonaSelector, setShowPersonaSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -71,10 +67,6 @@ export default function AuthenticationPage() {
     }
   };
 
-  const handlePersonaSelection = (personaPath: string, demoRole: string) => {
-    setDemoMode(demoRole);
-    router.push(personaPath);
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 md:p-8">
@@ -103,11 +95,9 @@ export default function AuthenticationPage() {
                 <span>AI Talent Stream</span>
             </Link>
             <h2 className="text-2xl font-semibold text-foreground">Welcome!</h2>
-            <p className="text-muted-foreground">Sign in, create an account, or explore our demo.</p>
+            <p className="text-muted-foreground">Sign in or create an account to get started.</p>
           </div>
 
-          {!showPersonaSelector ? (
-            <>
               {action === 'apply' && redirectUrl && (
                 <Alert className="mb-4">
                   <Info className="h-4 w-4" />
@@ -224,54 +214,6 @@ export default function AuthenticationPage() {
                 </TabsContent>
               </Tabs>
 
-              <Separator className="my-6" />
-
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-3">Or explore the platform with sample data:</p>
-                <Button variant="secondary" className="w-full" onClick={() => setShowPersonaSelector(true)}>
-                    <PlayCircle className="mr-2 h-5 w-5" /> Explore Demo Personas
-                </Button>
-              </div>
-            </>
-          ) : (
-            <Card className="border-0 shadow-none">
-              <CardHeader className="text-center px-0">
-                <CardTitle className="text-2xl">Explore AI Talent Stream</CardTitle>
-                <CardDescription>
-                  Select a persona to see how our platform accelerates recruitment for different roles.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 px-0">
-                 <Alert variant="default" className="mb-4">
-                  <Info className="h-4 w-4" />
-                  <AlertTitle>Choose Your Role</AlertTitle>
-                  <AlertDescription>
-                    Candidates must create an account with a video introduction. Other roles enter demo mode.
-                  </AlertDescription>
-                </Alert>
-                <Button onClick={() => router.push('/auth/register/candidate')} className="w-full justify-start" variant="outline" size="lg">
-                  <Users className="mr-3 h-5 w-5 text-primary" /> Sign up as Candidate
-                </Button>
-                <Button onClick={() => handlePersonaSelection('/recruiter/dashboard', 'recruiter')} className="w-full justify-start" variant="outline" size="lg">
-                  <LayoutDashboard className="mr-3 h-5 w-5 text-primary" /> View as Recruiter
-                </Button>
-                <Button onClick={() => handlePersonaSelection('/company/dashboard', 'company_admin')} className="w-full justify-start" variant="outline" size="lg">
-                  <Building className="mr-3 h-5 w-5 text-primary" /> View as Company Admin
-                </Button>
-                <Button onClick={() => handlePersonaSelection('/admin/dashboard', 'super_admin')} className="w-full justify-start" variant="outline" size="lg">
-                  <ShieldCheck className="mr-3 h-5 w-5 text-primary" /> View as Super Admin
-                </Button>
-                <Button onClick={() => handlePersonaSelection('/candidates/dashboard', 'candidate')} className="w-full justify-start" variant="outline" size="lg">
-                  <Users className="mr-3 h-5 w-5 text-primary" /> View as Candidate (Demo)
-                </Button>
-              </CardContent>
-              <CardFooter className="flex-col items-center px-0">
-                 <Button variant="link" onClick={() => setShowPersonaSelector(false)} className="mt-4">
-                    Back to Login/Sign Up
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
 
            <p className="mt-8 text-center text-xs text-muted-foreground">
             By continuing, you agree to our <Link href="#" className="underline hover:text-primary">Terms of Service</Link> and <Link href="#" className="underline hover:text-primary">Privacy Policy</Link>.

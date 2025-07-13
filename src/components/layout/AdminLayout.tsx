@@ -23,7 +23,6 @@ import {
   Server,
   Settings,
   CreditCard,
-  MessageSquare,
   AlertTriangle,
   Database,
   Activity,
@@ -82,13 +81,6 @@ const adminSidebarItems: AdminSidebarItem[] = [
     href: '/admin/jobs',
     icon: FileText,
     description: 'Oversee all job postings'
-  },
-  {
-    title: 'Support Tickets',
-    href: '/admin/support',
-    icon: MessageSquare,
-    description: 'Customer support management',
-    badge: '5'
   },
   {
     title: 'Billing & Payments',

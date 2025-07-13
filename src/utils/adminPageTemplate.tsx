@@ -3,8 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDemo } from '@/contexts/DemoContext';
-import { useDemoOrAuthFetch } from '@/hooks/useDemoOrAuthFetch';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -17,8 +15,6 @@ interface UseAdminDataOptions {
 
 export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOptions) {
   const { user, loading: authLoading } = useAuth();
-  const { isDemoMode } = useDemo();
-  const demoOrAuthFetch = useDemoOrAuthFetch();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,22 +26,34 @@ export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOpt
     setIsLoading(true);
     setError(null);
     
-    // If not authenticated and not in demo mode, set error and stop
-    if (!user && !isDemoMode) {
+    // If not authenticated, set error and stop
+    if (!user) {
       setError('User not authenticated. Please log in.');
       setIsLoading(false);
       return;
     }
 
     try {
-      const result = await demoOrAuthFetch(endpoint);
+      const token = await user.getIdToken();
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
       setData(result.data || result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setIsLoading(false);
     }
-  }, [endpoint, demoOrAuthFetch, authLoading, user, isDemoMode, ...(dependencies || [])]);
+  }, [endpoint, authLoading, user, ...(dependencies || [])]);
 
   useEffect(() => {
     fetchData();

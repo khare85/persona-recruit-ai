@@ -10,7 +10,7 @@
     "rules": "storage.rules"
   },
   "apphosting": {
-    "backendId": "ai-talent-stream",
+    "backendId": "studio",
     "alwaysDeployFromSource": true
   }
 }

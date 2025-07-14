@@ -8,63 +8,27 @@ import admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app'; // Import App type
 import type { Timestamp, FieldValue, Firestore } from 'firebase-admin/firestore';
 import type { Bucket } from '@google-cloud/storage'; // Bucket type for Firebase Storage
+import { getFirebaseAdmin } from '@/lib/firebase/server';
 
-// --- Firebase Admin SDK Setup ---
 let app: App | undefined;
-
-// Prevent multiple initializations during development hot reloads
-if (!admin.apps.length) {
-  try {
-    const serviceAccountJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-    if (serviceAccountJson) {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
-      });
-    } else {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
-      });
-    }
-    app = admin.app();
-    console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
-  } catch (error) {
-    console.error('[FirestoreService] Error initializing Firebase Admin SDK. Error details:', error);
-    console.error('[FirestoreService] Firebase Admin SDK initialization failed. Ensure credentials are correctly configured.');
-  }
-} else {
-  app = admin.app();
-}
-
 let db: Firestore | undefined;
 let storageBucket: Bucket | undefined;
 
-if (app) {
-  try {
-    db = admin.firestore(app);
-    console.log('[FirestoreService] Firestore DB instance acquired.');
-  } catch (error) {
-    console.error('[FirestoreService] Failed to acquire Firestore DB instance after SDK init. Details:', error);
-    db = undefined;
-  }
-
-  try {
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app';
-    storageBucket = admin.storage(app).bucket(bucketName);
-    console.log(`[FirestoreService] Firebase Storage bucket '${storageBucket.name}' instance acquired.`);
-  } catch (error) {
-    console.error('[FirestoreService] Failed to acquire Firebase Storage bucket instance after SDK init. Details:', error);
-    storageBucket = undefined;
-  }
-} else {
-  console.warn('[FirestoreService] Firebase Admin SDK app instance is not available. Firestore and Storage operations will be disabled.');
-}
-// --- End Firebase Admin SDK Setup ---
-
+(async () => {
+    try {
+        app = await getFirebaseAdmin();
+        if (app) {
+            db = admin.firestore(app);
+            const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app';
+            storageBucket = admin.storage(app).bucket(bucketName);
+            console.log('[FirestoreService] Firestore and Storage instances acquired.');
+        } else {
+            console.warn('[FirestoreService] Firebase Admin SDK app instance is not available. Firestore and Storage operations will be disabled.');
+        }
+    } catch (error) {
+        console.error('[FirestoreService] Error getting Firebase Admin instance. Details:', error);
+    }
+})();
 
 const CANDIDATES_COLLECTION = 'candidates_with_embeddings';
 const JOBS_COLLECTION = 'jobs_with_embeddings';

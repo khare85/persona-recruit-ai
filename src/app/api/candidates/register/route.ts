@@ -5,8 +5,9 @@ import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
-import admin from 'firebase-admin';
 import { databaseService } from '@/services/database.service';
+import { getFirebaseAdmin } from '@/lib/firebase/server';
+
 
 const candidateOnboardingSchema = z.object({
   firstName: z.string().min(2, 'First name is required').transform(sanitizeString),
@@ -22,6 +23,7 @@ const candidateOnboardingSchema = z.object({
  */
 export const POST = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
   try {
+    const adminAuth = (await getFirebaseAdmin()).auth();
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     
@@ -29,7 +31,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    const decodedToken = await adminAuth.verifyIdToken(token);
     const userId = decodedToken.uid;
     const userEmail = decodedToken.email;
 
@@ -48,7 +50,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     apiLogger.info('Candidate profile creation started', { userId, email: userEmail });
 
     // Set custom claims for the user (role)
-    await admin.auth().setCustomUserClaims(userId, { role: 'candidate' });
+    await adminAuth.setCustomUserClaims(userId, { role: 'candidate' });
 
     // Create user document in Firestore
     const userDoc = {

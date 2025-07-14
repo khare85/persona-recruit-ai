@@ -1,28 +1,6 @@
 
-
 import { NextRequest, NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-  try {
-    const serviceAccountJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-    if (serviceAccountJson) {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id || process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream'
-      });
-    } else {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream'
-      });
-    }
-  } catch (error) {
-    console.error('Firebase Admin initialization failed:', error);
-  }
-}
+import { getFirebaseAdmin } from '@/lib/firebase/server';
 
 export type UserRole = 'super_admin' | 'company_admin' | 'recruiter' | 'interviewer' | 'candidate';
 
@@ -42,6 +20,7 @@ export interface AuthenticatedRequest extends NextRequest {
  */
 export async function verifyFirebaseToken(token: string): Promise<AuthenticatedUser | null> {
   try {
+    const admin = await getFirebaseAdmin();
     const decodedToken = await admin.auth().verifyIdToken(token);
     
     const role = (decodedToken.role as UserRole) || 'candidate';

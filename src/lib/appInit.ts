@@ -1,3 +1,4 @@
+
 /**
  * Application initialization and startup tasks
  */
@@ -5,6 +6,7 @@
 import { healthMonitor } from '@/lib/serverHealth';
 import { startCacheCleanup } from '@/lib/cache';
 import { dbLogger } from '@/lib/logger';
+import { getFirebaseAdmin } from './firebase/server';
 
 let initialized = false;
 
@@ -16,6 +18,10 @@ export async function initializeApp() {
   try {
     const isDev = process.env.NODE_ENV === 'development';
     dbLogger.info('Initializing application...', { isDev });
+    
+    // Initialize Firebase Admin SDK
+    await getFirebaseAdmin();
+    dbLogger.info('Firebase Admin SDK initialized.');
 
     // Only start monitoring in production to prevent memory issues in dev
     if (!isDev) {

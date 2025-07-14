@@ -28,12 +28,12 @@ export const GET = withAuth(
       };
 
       // In a real app, this would come from an AI recommendation engine
-      const recommendedJobs = await databaseService.getRecentJobs(3);
+      const recentJobs = await databaseService.getRecentJobs(3);
       
       const dashboardData = {
         ...metrics,
-        aiRecommendedJobs: recommendedJobs.length,
-        recentJobs: recommendedJobs.map(job => ({
+        aiRecommendedJobs: recentJobs.length,
+        recentJobs: recentJobs.map(job => ({
           id: job.id,
           title: job.title,
           company: job.companyName || 'A Company',

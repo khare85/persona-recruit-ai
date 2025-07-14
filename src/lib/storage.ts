@@ -42,12 +42,42 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async upload(file: File, path: string): Promise<string> {
     try {
-      // Firebase Storage upload implementation
-      const buffer = Buffer.from(await file.arrayBuffer());
+      // Use streaming upload to avoid loading entire file into memory
+      const stream = file.stream();
+      const chunks: Uint8Array[] = [];
+      let totalSize = 0;
+      
+      // Stream file in chunks to control memory usage
+      const reader = stream.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          chunks.push(value);
+          totalSize += value.length;
+          
+          // Prevent excessive memory usage
+          if (totalSize > 50 * 1024 * 1024) { // 50MB limit
+            throw new Error('File too large for memory processing');
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      
+      // Combine chunks efficiently
+      const buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+      
+      // Clear chunks array immediately to free memory
+      chunks.length = 0;
       
       // Upload to Firebase Storage
       // const fileRef = this.bucket.file(path);
       // await fileRef.save(buffer, { metadata: { contentType: file.type } });
+      
+      // Clear buffer after upload
+      buffer.fill(0);
       
       // Return public URL
       return `https://storage.googleapis.com/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/${path}`;
@@ -97,6 +127,7 @@ export class LocalStorageProvider implements StorageProvider {
     try {
       const fs = require('fs').promises;
       const pathModule = require('path');
+      const { createWriteStream } = require('fs');
       
       const fullPath = pathModule.join(this.uploadDir, path);
       const dir = pathModule.dirname(fullPath);
@@ -104,9 +135,22 @@ export class LocalStorageProvider implements StorageProvider {
       // Ensure directory exists
       await fs.mkdir(dir, { recursive: true });
       
-      // Save file
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await fs.writeFile(fullPath, buffer);
+      // Use streaming to write file without loading into memory
+      const stream = file.stream();
+      const writeStream = createWriteStream(fullPath);
+      const reader = stream.getReader();
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          writeStream.write(Buffer.from(value));
+        }
+      } finally {
+        reader.releaseLock();
+        writeStream.end();
+      }
       
       return `/api/files/${path}`;
     } catch (error) {

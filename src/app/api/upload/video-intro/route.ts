@@ -3,9 +3,7 @@ import { withAuth, withRole } from '@/middleware/auth';
 import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
-import { databaseService } from '@/services/database.service';
-import { fileUploadService } from '@/lib/storage';
-import { embeddingDatabaseService } from '@/services/embeddingDatabase.service';
+import { BackgroundJobService } from '@/lib/backgroundJobs';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -30,64 +28,52 @@ export const POST = withRateLimit('upload',
         apiLogger.info('Video introduction upload started', { userId });
 
         try {
-          // Convert base64 to buffer and create file
-          const videoBuffer = Buffer.from(videoBlob, 'base64');
+          // Queue video processing in background instead of processing immediately
           const fileName = `${uuidv4()}.webm`;
-          const videoFile = new File([videoBuffer], fileName, { type: 'video/webm' });
+          const originalSize = Buffer.byteLength(videoBlob, 'base64');
           
-          // Upload to Firebase Storage
-          const uploadResult = await fileUploadService.uploadFile(videoFile, 'video', {
-            path: `candidates/${userId}/video-intro/${fileName}`,
-            maxSize: 10 * 1024 * 1024 // 10MB max
-          });
-
-          // Update candidate profile with video URL
-          await databaseService.updateCandidateProfile(userId, {
-            videoIntroUrl: uploadResult.url,
-            profileComplete: true // Mark profile as complete after video upload
-          });
-
-          // Update vector database if candidate has embeddings
-          try {
-            const candidateWithEmbedding = await embeddingDatabaseService.getCandidateWithEmbedding(userId);
-            if (candidateWithEmbedding) {
-              await embeddingDatabaseService.saveCandidateWithEmbedding(userId, {
-                ...candidateWithEmbedding,
-                videoIntroductionUrl: uploadResult.url
-              });
-              apiLogger.info('Video URL updated in vector database', { userId });
-            }
-          } catch (error) {
-            // Don't fail the upload if vector database update fails
-            apiLogger.warn('Failed to update video URL in vector database', { 
-              userId, 
-              error: String(error) 
-            });
+          // Validate video size before queuing
+          if (originalSize > 10 * 1024 * 1024) { // 10MB max
+            return NextResponse.json(
+              { error: 'Video file too large. Maximum size is 10MB.' },
+              { status: 400 }
+            );
           }
 
-          apiLogger.info('Video introduction uploaded successfully', { 
-            userId, 
-            videoUrl: uploadResult.url 
+          // Queue the video processing job
+          const jobResult = await BackgroundJobService.addVideoProcessingJob({
+            userId,
+            videoBlob,
+            fileName,
+            originalSize
+          });
+
+          apiLogger.info('Video processing job queued', { 
+            userId,
+            jobId: jobResult.jobId,
+            estimatedWait: jobResult.estimatedWait
           });
 
           return NextResponse.json({
             success: true,
             data: {
-              videoUrl: uploadResult.url,
-              profileComplete: true
+              jobId: jobResult.jobId,
+              status: jobResult.status,
+              estimatedWait: jobResult.estimatedWait,
+              fileName: fileName
             },
-            message: 'Video introduction uploaded successfully! Your profile is now complete.'
+            message: 'Video upload queued for processing. You will be notified when complete.'
           });
 
         } catch (uploadError) {
-          apiLogger.error('Video upload failed', { 
+          apiLogger.error('Video upload queueing failed', { 
             userId, 
             error: String(uploadError) 
           });
           
           return NextResponse.json(
             { 
-              error: 'Failed to upload video. Please try again.',
+              error: 'Failed to queue video processing. Please try again.',
               details: uploadError instanceof Error ? uploadError.message : String(uploadError)
             },
             { status: 500 }

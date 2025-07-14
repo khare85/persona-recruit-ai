@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { apiLogger } from '@/lib/logger';
 import { memoryCache, userCache, searchCache, aiCache } from '@/lib/cache';
 import { healthMonitor } from '@/lib/serverHealth';
+import { BackgroundJobService } from '@/lib/backgroundJobs';
 import { db } from '@/services/firestoreService';
 
 interface HealthCheck {
@@ -59,6 +60,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Check cache systems
     const cacheCheck = checkCacheSystems();
     checks.push(cacheCheck);
+
+    // Check background job system
+    const jobSystemCheck = await checkJobSystem();
+    checks.push(jobSystemCheck);
 
     // Determine overall status
     const overallStatus = determineOverallStatus(checks);
@@ -233,29 +238,43 @@ async function checkElevenLabs(): Promise<HealthCheck> {
 }
 
 /**
- * Check memory usage
+ * Enhanced memory usage check with pressure monitoring
  */
 function checkMemoryUsage(): HealthCheck {
   try {
     const memUsage = process.memoryUsage();
-    const totalMemory = memUsage.heapTotal;
-    const usedMemory = memUsage.heapUsed;
-    const memoryPercentage = (usedMemory / totalMemory) * 100;
-
-    // Consider memory unhealthy if over 90% usage
-    const status = memoryPercentage > 90 ? 'unhealthy' : 
-                   memoryPercentage > 75 ? 'degraded' : 'healthy';
+    const availableMemory = parseInt(process.env.MEMORY_LIMIT || '2147483648'); // 2GB default
+    
+    // Calculate both heap percentage and RSS percentage
+    const heapPercentage = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const rssPercentage = (memUsage.rss / availableMemory) * 100;
+    
+    // Use the higher of the two percentages for status determination
+    const criticalPercentage = Math.max(heapPercentage, rssPercentage);
+    
+    let status: 'healthy' | 'degraded' | 'unhealthy';
+    if (criticalPercentage > 85) {
+      status = 'unhealthy';
+    } else if (criticalPercentage > 75) {
+      status = 'degraded';
+    } else {
+      status = 'healthy';
+    }
 
     return {
       service: 'memory',
       status,
       details: {
-        used: usedMemory,
-        total: totalMemory,
-        percentage: Math.round(memoryPercentage * 100) / 100,
+        used: memUsage.heapUsed,
+        total: memUsage.heapTotal,
+        percentage: Math.round(criticalPercentage * 100) / 100,
         rss: memUsage.rss,
         external: memUsage.external,
-        arrayBuffers: memUsage.arrayBuffers
+        arrayBuffers: memUsage.arrayBuffers,
+        heapPercentage: Math.round(heapPercentage * 100) / 100,
+        rssPercentage: Math.round(rssPercentage * 100) / 100,
+        availableMemory,
+        memoryPressure: criticalPercentage > 75 ? 'high' : criticalPercentage > 60 ? 'medium' : 'low'
       }
     };
   } catch (error) {
@@ -294,6 +313,51 @@ function checkCacheSystems(): HealthCheck {
   } catch (error) {
     return {
       service: 'cache',
+      status: 'unhealthy',
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+/**
+ * Check background job system
+ */
+async function checkJobSystem(): Promise<HealthCheck> {
+  try {
+    const healthCheck = await BackgroundJobService.healthCheck();
+    
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    
+    // Determine status based on job system health
+    if (healthCheck.status === 'unhealthy' || !healthCheck.redis) {
+      status = 'unhealthy';
+    } else if (healthCheck.status === 'degraded') {
+      status = 'degraded';
+    } else if (healthCheck.details) {
+      // Check if there are too many failed jobs
+      const failedJobsPercent = healthCheck.details.failedJobs / (healthCheck.details.totalJobs || 1);
+      if (failedJobsPercent > 0.1) { // More than 10% failed
+        status = 'degraded';
+      }
+      
+      // Check if queues are backing up
+      if (healthCheck.details.activeJobs > 50) {
+        status = 'degraded';
+      }
+    }
+
+    return {
+      service: 'background-jobs',
+      status,
+      details: {
+        redis: healthCheck.redis,
+        queues: healthCheck.queues,
+        summary: healthCheck.details
+      }
+    };
+  } catch (error) {
+    return {
+      service: 'background-jobs',
       status: 'unhealthy',
       error: error instanceof Error ? error.message : String(error)
     };

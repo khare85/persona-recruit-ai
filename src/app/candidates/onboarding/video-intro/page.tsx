@@ -80,7 +80,7 @@ function VideoIntroContent() {
   }, [requestCameraPermission]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
     
     if (countdown > 0) {
       interval = setInterval(() => {
@@ -98,15 +98,38 @@ function VideoIntroContent() {
       }, 100);
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
   }, [countdown, isRecording, recordingTime]);
 
-  const stopStream = () => {
+  const stopStream = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        track.removeEventListener('ended', track.onended);
+      });
       streamRef.current = null;
     }
-  };
+    
+    // Clean up media recorder
+    if (mediaRecorderRef.current) {
+      if (mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      mediaRecorderRef.current = null;
+    }
+    
+    // Clean up video object URLs to prevent memory leaks
+    if (videoRef.current && videoRef.current.src && videoRef.current.src.startsWith('blob:')) {
+      URL.revokeObjectURL(videoRef.current.src);
+      videoRef.current.src = '';
+      videoRef.current.srcObject = null;
+    }
+  }, []);
 
   const startRecording = async () => {
     if (!streamRef.current) return;
@@ -166,21 +189,35 @@ function VideoIntroContent() {
   };
   
   const resetRecording = () => {
+    // Clean up existing blob URL
+    if (videoRef.current && videoRef.current.src && videoRef.current.src.startsWith('blob:')) {
+      URL.revokeObjectURL(videoRef.current.src);
+    }
+    
     setRecordedBlob(null);
     setRecordingTime(0);
     setIsPreviewing(false);
     setCountdown(0);
+    chunksRef.current = [];
+    
     requestCameraPermission(); // Re-request to show live feed
   };
 
   const uploadVideo = async () => {
     if (!recordedBlob) return;
 
+    let arrayBuffer: ArrayBuffer | null = null;
+    let base64Content: string | null = null;
+
     try {
       setIsUploading(true);
       
-      const arrayBuffer = await recordedBlob.arrayBuffer();
-      const base64Content = Buffer.from(arrayBuffer).toString('base64');
+      arrayBuffer = await recordedBlob.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      base64Content = buffer.toString('base64');
+      
+      // Clear buffer immediately after conversion
+      buffer.fill(0);
       
       const token = await user?.getIdToken();
       if (!token) throw new Error("Authentication failed");
@@ -200,6 +237,10 @@ function VideoIntroContent() {
         throw new Error(result.error || 'Upload failed');
       }
 
+      // Clean up blob and memory after successful upload
+      setRecordedBlob(null);
+      chunksRef.current = [];
+      
       toast({
         title: "🎉 Profile Complete!",
         description: "Your video introduction has been uploaded successfully."
@@ -212,6 +253,15 @@ function VideoIntroContent() {
         variant: "destructive"
       });
       setIsUploading(false);
+    } finally {
+      // Explicit cleanup
+      arrayBuffer = null;
+      base64Content = null;
+      
+      // Force garbage collection if available
+      if (global.gc) {
+        global.gc();
+      }
     }
   };
 

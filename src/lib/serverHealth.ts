@@ -57,36 +57,71 @@ class ServerHealthMonitor {
       }
     });
 
-    // Memory usage check (relaxed thresholds for development)
+    // Enhanced memory usage check with cache pressure monitoring
     this.addHealthCheck({
       name: 'memory',
       critical: false,
       check: async () => {
         const usage = process.memoryUsage();
-        const heapUsedPercent = (usage.heapUsed / usage.heapTotal) * 100;
         const isDev = process.env.NODE_ENV === 'development';
-        const threshold = isDev ? 98 : 85; // More lenient in development
         
-        if (heapUsedPercent > threshold) {
-          dbLogger.warn('High memory usage detected', { 
-            heapUsedPercent,
+        // Calculate memory usage percentage more accurately
+        const availableMemory = parseInt(process.env.MEMORY_LIMIT || '2147483648'); // 2GB default
+        const memoryPercent = (usage.rss / availableMemory) * 100;
+        const heapUsedPercent = (usage.heapUsed / usage.heapTotal) * 100;
+        
+        // Determine thresholds
+        const warningThreshold = isDev ? 85 : 75;
+        const criticalThreshold = isDev ? 95 : 85;
+        
+        if (memoryPercent > criticalThreshold) {
+          dbLogger.error('CRITICAL memory usage detected', { 
+            memoryPercent: memoryPercent.toFixed(1),
+            heapUsedPercent: heapUsedPercent.toFixed(1),
+            rss: Math.round(usage.rss / 1024 / 1024),
             heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
             heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
-            rss: Math.round(usage.rss / 1024 / 1024),
             external: Math.round(usage.external / 1024 / 1024),
+            arrayBuffers: Math.round(usage.arrayBuffers / 1024 / 1024),
             isDev
           });
           
-          // Only trigger GC in production or critical situations
-          if (!isDev && global.gc) {
+          // Trigger aggressive cleanup
+          try {
+            const { performMemoryPressureCleanup } = await import('@/lib/cache');
+            performMemoryPressureCleanup();
+            dbLogger.info('Triggered memory pressure cleanup');
+          } catch (error) {
+            dbLogger.error('Failed to trigger memory cleanup', { error });
+          }
+          
+          // Trigger garbage collection
+          if (global.gc) {
             global.gc();
             dbLogger.info('Triggered garbage collection');
           }
           
-          // Only fail in production with extreme usage
-          return isDev ? true : heapUsedPercent < 95;
+          // Fail the health check if memory is still critically high
+          return memoryPercent < 90;
+        } else if (memoryPercent > warningThreshold) {
+          dbLogger.warn('High memory usage detected', { 
+            memoryPercent: memoryPercent.toFixed(1),
+            heapUsedPercent: heapUsedPercent.toFixed(1),
+            rss: Math.round(usage.rss / 1024 / 1024),
+            heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
+            isDev
+          });
+          
+          // Trigger moderate cleanup
+          try {
+            const { performMemoryPressureCleanup } = await import('@/lib/cache');
+            performMemoryPressureCleanup();
+          } catch (error) {
+            dbLogger.error('Failed to trigger memory cleanup', { error });
+          }
         }
-        return true;
+        
+        return true; // Memory warning is non-critical
       }
     });
 

@@ -3,11 +3,7 @@ import { withAuth, withRole } from '@/middleware/auth';
 import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
-import { databaseService } from '@/services/database.service';
-import { fileUploadService } from '@/lib/storage';
-import { processResumeWithDocAI } from '@/ai/flows/process-resume-document-ai-flow';
-import { textEmbeddingService } from '@/services/textEmbedding.service';
-import { embeddingDatabaseService } from '@/services/embeddingDatabase.service';
+import { BackgroundJobService } from '@/lib/backgroundJobs';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -62,137 +58,43 @@ export const POST = withRateLimit('upload',
         const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'pdf';
         const uniqueFileName = `${uuidv4()}.${fileExtension}`;
 
-        // Step 1: Upload raw file to Firebase Storage with UUID
-        const uploadResult = await fileUploadService.uploadFile(file, 'document', {
-          path: `candidates/${userId}/resume/${uniqueFileName}`,
-          maxSize: maxSize
-        });
+        // Convert file to buffer for background processing
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-        apiLogger.info('Resume file uploaded to storage', { 
-          userId,
-          fileUrl: uploadResult.url,
-          fileName: uniqueFileName
-        });
-
-        // Step 2: Process resume with Document AI
-        let extractedText = '';
         try {
-          // Convert file to base64 for Document AI
-          const arrayBuffer = await file.arrayBuffer();
-          const base64Content = Buffer.from(arrayBuffer).toString('base64');
-
-          const docAIResult = await processResumeWithDocAI({
-            resumeFileBase64: base64Content,
-            mimeType: file.type
-          });
-
-          extractedText = docAIResult.extractedText;
-
-          apiLogger.info('Document AI processing completed', { 
+          // Queue document processing in background instead of processing immediately
+          const jobResult = await BackgroundJobService.addDocumentProcessingJob({
             userId,
-            extractedTextLength: extractedText.length
-          });
-        } catch (error) {
-          apiLogger.error('Document AI processing failed', { 
-            userId,
-            error: String(error)
-          });
-          
-          // Continue without text extraction - user can still use the uploaded file
-          extractedText = 'Text extraction failed. Resume file uploaded successfully.';
-        }
-
-        // Step 3: Generate embeddings from extracted text
-        let resumeEmbedding: number[] = [];
-        try {
-          if (extractedText && extractedText.length > 50) {
-            resumeEmbedding = await textEmbeddingService.generateDocumentEmbedding(extractedText);
-            
-            apiLogger.info('Resume embedding generated', { 
-              userId,
-              embeddingDimension: resumeEmbedding.length
-            });
-          }
-        } catch (error) {
-          apiLogger.error('Embedding generation failed', { 
-            userId,
-            error: String(error)
-          });
-          
-          // Continue without embeddings - basic functionality still works
-          resumeEmbedding = [];
-        }
-
-        // Step 4: Get candidate profile and user data
-        const [candidateProfile, user] = await Promise.all([
-          databaseService.getCandidateProfile(userId),
-          databaseService.getUserById(userId)
-        ]);
-
-        if (!candidateProfile || !user) {
-          return NextResponse.json(
-            { error: 'Candidate profile not found' },
-            { status: 404 }
-          );
-        }
-
-        // Step 5: Update candidate profile with resume URL
-        await databaseService.updateCandidateProfile(userId, {
-          resumeUrl: uploadResult.url,
-          profileComplete: true
-        });
-
-        // Step 6: Save to embedding database for vector search (if we have embeddings)
-        if (resumeEmbedding.length > 0) {
-          try {
-            await embeddingDatabaseService.saveCandidateWithEmbedding(userId, {
-              fullName: `${user.firstName} ${user.lastName}`,
-              email: user.email,
-              currentTitle: candidateProfile.currentTitle,
-              extractedResumeText: extractedText,
-              resumeEmbedding: resumeEmbedding,
-              skills: candidateProfile.skills,
-              phone: candidateProfile.phone,
-              linkedinProfile: candidateProfile.linkedinUrl,
-              portfolioUrl: candidateProfile.portfolioUrl,
-              experienceSummary: candidateProfile.summary,
-              resumeFileUrl: uploadResult.url,
-              videoIntroductionUrl: candidateProfile.videoIntroUrl,
-              availability: candidateProfile.availability
-            });
-
-            apiLogger.info('Candidate saved with embeddings for vector search', { 
-              userId,
-              hasEmbedding: true
-            });
-          } catch (error) {
-            apiLogger.error('Failed to save candidate embeddings', { 
-              userId,
-              error: String(error)
-            });
-            // Continue - basic resume upload still succeeded
-          }
-        }
-
-        apiLogger.info('Resume processing completed successfully', { 
-          userId,
-          fileName: uniqueFileName,
-          hasTextExtraction: extractedText.length > 50,
-          hasEmbeddings: resumeEmbedding.length > 0,
-          resumeUrl: uploadResult.url
-        });
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            resumeUrl: uploadResult.url,
+            fileBuffer,
             fileName: uniqueFileName,
-            extractedText: extractedText.length > 50 ? 'Text extracted successfully' : 'Text extraction failed',
-            hasEmbeddings: resumeEmbedding.length > 0,
-            processingComplete: true
-          },
-          message: 'Resume uploaded and processed successfully'
-        });
+            fileType: file.type,
+            originalSize: file.size
+          });
+
+          apiLogger.info('Document processing job queued', { 
+            userId,
+            jobId: jobResult.jobId,
+            fileName: uniqueFileName,
+            estimatedWait: jobResult.estimatedWait
+          });
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              jobId: jobResult.jobId,
+              status: jobResult.status,
+              estimatedWait: jobResult.estimatedWait,
+              fileName: uniqueFileName,
+              processingQueued: true
+            },
+            message: 'Resume upload queued for processing. You will be notified when complete.'
+          });
+
+        } catch (error) {
+          // Clear the buffer on error
+          fileBuffer.fill(0);
+          throw error;
+        }
 
       } catch (error) {
         apiLogger.error('Resume processing failed', { 

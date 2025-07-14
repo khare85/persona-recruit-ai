@@ -357,7 +357,61 @@ export class CacheWarmer {
 }
 
 /**
- * Automatic cache cleanup with proper cleanup on shutdown
+ * Memory pressure monitoring and aggressive cache cleanup
+ */
+const MEMORY_WARNING_THRESHOLD = 0.8; // 80% memory usage
+const MEMORY_CRITICAL_THRESHOLD = 0.9; // 90% memory usage
+
+function getMemoryUsagePercent(): number {
+  const used = process.memoryUsage();
+  // Calculate percentage of RSS (Resident Set Size) vs available system memory
+  // Use a conservative estimate of 2GB for available memory in containerized environments
+  const availableMemory = parseInt(process.env.MEMORY_LIMIT || '2147483648'); // 2GB default
+  return used.rss / availableMemory;
+}
+
+function performMemoryPressureCleanup(): void {
+  const memoryPercent = getMemoryUsagePercent();
+  
+  if (memoryPercent > MEMORY_CRITICAL_THRESHOLD) {
+    // Critical: Clear all caches aggressively
+    console.log(`[Cache] CRITICAL memory pressure (${(memoryPercent * 100).toFixed(1)}%) - clearing all caches`);
+    memoryCache.clear();
+    userCache.clear();
+    searchCache.clear();
+    aiCache.clear();
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+    }
+  } else if (memoryPercent > MEMORY_WARNING_THRESHOLD) {
+    // Warning: Reduce cache sizes
+    console.log(`[Cache] Memory pressure detected (${(memoryPercent * 100).toFixed(1)}%) - reducing cache sizes`);
+    
+    // Keep only most recent 25% of entries in each cache
+    const reduceCacheSize = (cache: MemoryCache, targetPercent: number = 0.25) => {
+      const stats = cache.stats();
+      const targetSize = Math.floor(stats.size * targetPercent);
+      const toRemove = stats.size - targetSize;
+      
+      for (let i = 0; i < toRemove; i++) {
+        // Remove oldest entries by forcing LRU eviction
+        if (cache.size() > targetSize) {
+          cache['evictLRU']();
+        }
+      }
+    };
+    
+    reduceCacheSize(memoryCache);
+    reduceCacheSize(userCache);
+    reduceCacheSize(searchCache);
+    reduceCacheSize(aiCache);
+  }
+}
+
+/**
+ * Automatic cache cleanup with memory pressure monitoring
  */
 let cleanupInterval: NodeJS.Timeout | null = null;
 
@@ -367,10 +421,14 @@ export function startCacheCleanup(): void {
   }
   
   const isDev = process.env.NODE_ENV === 'development';
-  const cleanupIntervalMs = isDev ? 10 * 60 * 1000 : 5 * 60 * 1000; // 10 min in dev, 5 min in prod
+  const cleanupIntervalMs = isDev ? 2 * 60 * 1000 : 60 * 1000; // 2 min in dev, 1 min in prod (more frequent)
   
   cleanupInterval = setInterval(() => {
     try {
+      // Check memory pressure first
+      performMemoryPressureCleanup();
+      
+      // Regular cleanup of expired entries
       const cleaned = [
         memoryCache.cleanup(),
         userCache.cleanup(), 
@@ -380,6 +438,12 @@ export function startCacheCleanup(): void {
       
       if (cleaned > 0) {
         console.log(`[Cache] Cleaned up ${cleaned} expired entries`);
+      }
+      
+      // Log memory stats
+      const memoryPercent = getMemoryUsagePercent();
+      if (memoryPercent > 0.7) { // Log when above 70%
+        console.log(`[Cache] Memory usage: ${(memoryPercent * 100).toFixed(1)}%`);
       }
     } catch (error) {
       console.error('Cache cleanup error:', error);
@@ -393,6 +457,11 @@ export function stopCacheCleanup(): void {
     cleanupInterval = null;
   }
 }
+
+/**
+ * Export memory pressure functions for use in health checks
+ */
+export { getMemoryUsagePercent, performMemoryPressureCleanup };
 
 // Start cleanup on module load only in production
 if (process.env.NODE_ENV === 'production') {

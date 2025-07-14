@@ -33,7 +33,7 @@ export async function verifyFirebaseToken(token: string): Promise<AuthenticatedU
       companyId
     };
   } catch (error) {
-    console.error('Firebase ID Token verification failed:', error);
+    console.error('[verifyFirebaseToken] Firebase ID Token verification failed:', error);
     return null;
   }
 }
@@ -49,13 +49,13 @@ export function withAuth(
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
     if (!token) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication required: No token provided.' }, { status: 401 });
     }
 
     const user = await verifyFirebaseToken(token);
     
     if (!user) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid or expired token.' }, { status: 401 });
     }
 
     req.user = user;
@@ -72,7 +72,7 @@ export function withRole(
 ) {
   return withAuth(async (req, ...args) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return NextResponse.json({ error: 'Insufficient permissions for this action.' }, { status: 403 });
     }
     return handler(req, ...args);
   });

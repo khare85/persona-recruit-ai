@@ -1,7 +1,6 @@
 
-
 import admin from 'firebase-admin';
-import { db } from './firestoreService';
+import { getFirebaseAdmin } from '@/lib/firebase/server';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
 import { Company, CompanyInvitation } from '@/models/company.model';
 import { Job, JobApplication } from '@/models/job.model';
@@ -23,44 +22,72 @@ export const COLLECTIONS = {
 
 // Database service class
 class DatabaseService {
-  private db = db;
+  private dbPromise: Promise<admin.firestore.Firestore>;
+  private db: admin.firestore.Firestore | null = null;
+  private isInitializing = false;
 
-  // Helper to ensure DB is available
-  private ensureDb() {
-    if (!this.db) {
-      throw new Error('Firestore database not available. Check Firebase configuration.');
+  constructor() {
+    this.dbPromise = this.initializeDb();
+  }
+  
+  private async initializeDb(): Promise<admin.firestore.Firestore> {
+    if (this.db) return this.db;
+    if (this.isInitializing) return this.dbPromise;
+
+    this.isInitializing = true;
+    try {
+      const app = await getFirebaseAdmin();
+      this.db = admin.firestore(app);
+      console.log('[FirestoreService] Firestore instance acquired successfully.');
+      this.isInitializing = false;
+      return this.db;
+    } catch (error) {
+        this.isInitializing = false;
+        console.error('[FirestoreService] Critical error getting Firebase Admin instance. Firestore operations will fail.', error);
+        throw new Error('Failed to initialize Firestore database connection.');
     }
+  }
+
+  // Helper to ensure DB is available before every operation
+  private async ensureDb(): Promise<admin.firestore.Firestore> {
+    if (!this.db) {
+      this.db = await this.dbPromise;
+    }
+    if (!this.db) {
+       throw new Error('Firestore database not available. Check Firebase configuration.');
+    }
+    return this.db;
   }
 
   // Generic helpers
   private async create<T>(collection: string, data: T, id?: string): Promise<string> {
-    this.ensureDb();
+    const db = await this.ensureDb();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     
-    const docRef = id ? this.db!.collection(collection).doc(id) : this.db!.collection(collection).doc();
+    const docRef = id ? db.collection(collection).doc(id) : db.collection(collection).doc();
     
     await docRef.set({
       ...data,
-      id: docRef.id, // Ensure the ID is part of the document data
+      id: docRef.id,
       createdAt: timestamp,
       updatedAt: timestamp,
-      deletedAt: null // Explicitly set for soft delete support
+      deletedAt: null
     });
 
     return docRef.id;
   }
 
   private async update<T>(collection: string, id: string, data: Partial<T>): Promise<void> {
-    this.ensureDb();
-    await this.db!.collection(collection).doc(id).update({
+    const db = await this.ensureDb();
+    await db.collection(collection).doc(id).update({
       ...data,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
   }
 
   private async get<T>(collection: string, id: string): Promise<T | null> {
-    this.ensureDb();
-    const doc = await this.db!.collection(collection).doc(id).get();
+    const db = await this.ensureDb();
+    const doc = await db.collection(collection).doc(id).get();
     if (!doc.exists || doc.data()?.deletedAt) return null;
     return { id: doc.id, ...doc.data() } as T;
   }
@@ -75,14 +102,15 @@ class DatabaseService {
   }
   
   async count(collection: string, where: any): Promise<number> {
-     const snapshot = await this.db!.collection(collection).where(where).count().get();
-     return snapshot.data().count;
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(collection).where(where).count().get();
+    return snapshot.data().count;
   }
 
   private async delete(collection: string, id: string, hard = false): Promise<void> {
-    this.ensureDb();
+    const db = await this.ensureDb();
     if (hard) {
-      await this.db!.collection(collection).doc(id).delete();
+      await db.collection(collection).doc(id).delete();
     } else {
       await this.update(collection, id, { deletedAt: admin.firestore.FieldValue.serverTimestamp() });
     }
@@ -99,24 +127,21 @@ class DatabaseService {
       useCollectionGroup?: boolean;
     }
   ): Promise<{ items: T[]; total: number; hasMore: boolean }> {
-    this.ensureDb();
+    const db = await this.ensureDb();
     let query: any = options?.useCollectionGroup 
-      ? this.db!.collectionGroup(collection)
-      : this.db!.collection(collection);
+      ? db.collectionGroup(collection)
+      : db.collection(collection);
 
-    // Apply where conditions
     if (options?.where) {
       options.where.forEach(condition => {
         query = query.where(condition.field, condition.operator, condition.value);
       });
     }
 
-    // Exclude soft deleted by default
     if (!options?.includeDeleted) {
       query = query.where('deletedAt', '==', null);
     }
 
-    // Get total count for pagination before applying order and limit
     const totalSnapshot = await query.count().get();
     const total = totalSnapshot.data().count;
     
@@ -126,7 +151,6 @@ class DatabaseService {
       query = query.orderBy('createdAt', 'desc');
     }
 
-    // Apply pagination
     if (options?.offset) {
       query = query.offset(options.offset);
     }
@@ -137,7 +161,6 @@ class DatabaseService {
     const snapshot = await query.get();
     const items = snapshot.docs.map((doc: any) => {
       const data = doc.data();
-      // Convert Timestamps to ISO strings to prevent serialization errors
       for (const key in data) {
         if (data[key] instanceof admin.firestore.Timestamp) {
           data[key] = data[key].toDate().toISOString();
@@ -154,7 +177,8 @@ class DatabaseService {
   // User Management
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'fullName'>): Promise<string> {
     try {
-      const plainPassword = userData.passwordHash; // Seeding script passes plain text here
+      const db = await this.ensureDb();
+      const plainPassword = userData.passwordHash;
       
       let authUser;
       try {
@@ -188,11 +212,11 @@ class DatabaseService {
         passwordHash,
         emailVerified: authUser.emailVerified,
         status: 'active',
-        deletedAt: null // FIX: Ensure deletedAt is set to null on creation
+        deletedAt: null
       };
       
       const userId = authUser.uid;
-      const userDocRef = this.db.collection(COLLECTIONS.USERS).doc(userId);
+      const userDocRef = db.collection(COLLECTIONS.USERS).doc(userId);
       const userDoc = await userDocRef.get();
       
       if (!userDoc.exists) {
@@ -223,8 +247,8 @@ class DatabaseService {
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.USERS)
       .where('email', '==', email)
       .limit(1)
       .get();
@@ -242,8 +266,8 @@ class DatabaseService {
   }
 
   async getUserByResetToken(resetToken: string): Promise<User | null> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.USERS)
       .where('resetToken', '==', resetToken)
       .where('deletedAt', '==', null)
       .limit(1)
@@ -315,7 +339,6 @@ class DatabaseService {
     });
   }
 
-  // Candidate Profile Management
   async createCandidateProfile(profile: Omit<CandidateProfile, 'createdAt' | 'updatedAt'>): Promise<void> {
     try {
       await this.create(COLLECTIONS.CANDIDATE_PROFILES, profile, profile.userId);
@@ -334,7 +357,6 @@ class DatabaseService {
     return this.update(COLLECTIONS.CANDIDATE_PROFILES, userId, data);
   }
 
-  // Interviewer Profile Management
   async createInterviewerProfile(profile: Omit<InterviewerProfile, 'createdAt' | 'updatedAt'>): Promise<void> {
     try {
       await this.create(COLLECTIONS.INTERVIEWER_PROFILES, profile, profile.userId);
@@ -345,7 +367,6 @@ class DatabaseService {
     }
   }
 
-  // Company Management
   async createCompany(company: Omit<Company, 'id' | 'createdAt' | 'updatedAt' | 'stats' | 'createdBy'>): Promise<string> {
     try {
       const companyData = {
@@ -356,7 +377,7 @@ class DatabaseService {
           totalApplications: 0,
           totalHires: 0
         },
-        createdBy: 'system' // or pass in user id
+        createdBy: 'system'
       };
 
       const companyId = await this.create(COLLECTIONS.COMPANIES, companyData);
@@ -369,8 +390,8 @@ class DatabaseService {
   }
   
   async getCompanyAdmins(companyId: string): Promise<User[]> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.USERS)
         .where('companyId', '==', companyId)
         .where('role', '==', 'company_admin')
         .where('deletedAt', '==', null)
@@ -380,8 +401,8 @@ class DatabaseService {
   }
 
   async getCompanyRecruiters(companyId: string): Promise<User[]> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.USERS)
         .where('companyId', '==', companyId)
         .where('role', '==', 'recruiter')
         .where('deletedAt', '==', null)
@@ -396,8 +417,8 @@ class DatabaseService {
 
   async getCompaniesByIds(ids: string[]): Promise<Company[]> {
     if (ids.length === 0) return [];
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.COMPANIES)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.COMPANIES)
         .where(admin.firestore.FieldPath.documentId(), 'in', ids)
         .get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Company));
@@ -433,8 +454,8 @@ class DatabaseService {
   }
 
   async getCompanyByDomain(domain: string): Promise<Company | null> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.COMPANIES)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.COMPANIES)
       .where('domain', '==', domain)
       .where('deletedAt', '==', null)
       .limit(1)
@@ -446,8 +467,8 @@ class DatabaseService {
   }
 
   async getCompanyUserCount(companyId: string): Promise<number> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.USERS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.USERS)
       .where('companyId', '==', companyId)
       .where('deletedAt', '==', null)
       .count()
@@ -457,8 +478,8 @@ class DatabaseService {
   }
 
   async getCompanyActiveJobsCount(companyId: string): Promise<number> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.JOBS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.JOBS)
       .where('companyId', '==', companyId)
       .where('status', '==', 'active')
       .where('deletedAt', '==', null)
@@ -468,7 +489,6 @@ class DatabaseService {
     return snapshot.data().count;
   }
 
-  // Company Invitation Management
   async createCompanyInvitation(invitation: Omit<CompanyInvitation, 'id' | 'sentAt'>): Promise<string> {
     try {
       const invitationData = {
@@ -486,8 +506,8 @@ class DatabaseService {
   }
 
   async getInvitationByToken(token: string): Promise<CompanyInvitation | null> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.COMPANY_INVITATIONS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.COMPANY_INVITATIONS)
       .where('invitationToken', '==', token)
       .where('status', '==', 'pending')
       .limit(1)
@@ -503,8 +523,8 @@ class DatabaseService {
   }
 
   async getCompanyInvitations(companyId: string, status?: string): Promise<CompanyInvitation[]> {
-    this.ensureDb();
-    let query: any = this.db!.collection(COLLECTIONS.COMPANY_INVITATIONS)
+    const db = await this.ensureDb();
+    let query: any = db.collection(COLLECTIONS.COMPANY_INVITATIONS)
       .where('companyId', '==', companyId);
     
     if (status) {
@@ -518,7 +538,6 @@ class DatabaseService {
     } as CompanyInvitation));
   }
 
-  // Job Management
   async createJob(job: Omit<Job, 'id' | 'createdAt' | 'updatedAt' | 'stats'>): Promise<string> {
     try {
       const jobData = {
@@ -588,7 +607,6 @@ class DatabaseService {
     });
   }
 
-  // Job Application Management
   async createJobApplication(application: Omit<JobApplication, 'id' | 'appliedAt' | 'lastActivityAt' | 'timeline'>): Promise<string> {
     try {
       const now = new Date();
@@ -629,8 +647,8 @@ class DatabaseService {
   }
 
   async getCandidateApplications(candidateId: string): Promise<JobApplication[]> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('candidateId', '==', candidateId)
       .where('deletedAt', '==', null)
       .orderBy('appliedAt', 'desc')
@@ -643,8 +661,8 @@ class DatabaseService {
   }
 
   async getJobApplications(jobId: string, status?: string): Promise<JobApplication[]> {
-    this.ensureDb();
-    let query: any = this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+    const db = await this.ensureDb();
+    let query: any = db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('jobId', '==', jobId)
       .where('deletedAt', '==', null);
     
@@ -661,7 +679,7 @@ class DatabaseService {
 
   async getApplicationsForJobs(jobIds: string[]): Promise<JobApplication[]> {
     if (jobIds.length === 0) return [];
-    this.ensureDb();
+    const db = await this.ensureDb();
     
     const chunks = [];
     for (let i = 0; i < jobIds.length; i += 30) {
@@ -669,7 +687,7 @@ class DatabaseService {
     }
 
     const promises = chunks.map(chunk => 
-      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+      db.collection(COLLECTIONS.JOB_APPLICATIONS)
         .where('jobId', 'in', chunk)
         .where('deletedAt', '==', null)
         .get()
@@ -688,7 +706,7 @@ class DatabaseService {
 
   async getInterviewsForJobs(jobIds: string[]): Promise<any[]> {
     if (jobIds.length === 0) return [];
-    this.ensureDb();
+    const db = await this.ensureDb();
     
     const chunks = [];
     for (let i = 0; i < jobIds.length; i += 30) {
@@ -696,7 +714,7 @@ class DatabaseService {
     }
 
     const promises = chunks.map(chunk => 
-      this.db!.collection(COLLECTIONS.INTERVIEWS)
+      db.collection(COLLECTIONS.INTERVIEWS)
         .where('jobId', 'in', chunk)
         .where('deletedAt', '==', null)
         .get()
@@ -714,8 +732,8 @@ class DatabaseService {
   }
 
   async getJobApplicationByCandidate(jobId: string, candidateId: string): Promise<any> {
-    this.ensureDb();
-    const snapshot = await this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+    const db = await this.ensureDb();
+    const snapshot = await db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('jobId', '==', jobId)
       .where('candidateId', '==', candidateId)
       .where('deletedAt', '==', null)
@@ -728,8 +746,8 @@ class DatabaseService {
   }
 
   async getCompanyApplications(options: { companyId: string; status?: string; limit?: number; offset?: number }): Promise<JobApplication[]> {
-    this.ensureDb();
-    let query = this.db!.collection(COLLECTIONS.JOB_APPLICATIONS)
+    const db = await this.ensureDb();
+    let query = db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('companyId', '==', options.companyId)
       .where('deletedAt', '==', null);
       
@@ -753,7 +771,6 @@ class DatabaseService {
     } as JobApplication));
   }
 
-  // Utility methods
   async verifyPassword(hashedPassword: string, plainPassword: string): Promise<boolean> {
     return bcrypt.compare(plainPassword, hashedPassword);
   }
@@ -762,7 +779,6 @@ class DatabaseService {
     return bcrypt.hash(password, 12);
   }
 
-  // Interview management
   async createInterview(interviewData: any): Promise<any> {
     const id = await this.create(COLLECTIONS.INTERVIEWS, interviewData);
     return { id, ...interviewData };
@@ -777,8 +793,8 @@ class DatabaseService {
   }
 
   async getInterviews(filters: any = {}): Promise<any[]> {
-    this.ensureDb();
-    let query = this.db!.collection(COLLECTIONS.INTERVIEWS)
+    const db = await this.ensureDb();
+    let query = db.collection(COLLECTIONS.INTERVIEWS)
       .where('deletedAt', '==', null);
     
     if (filters.startDate) {
@@ -809,8 +825,8 @@ class DatabaseService {
   }
 
   async getInterviewerSchedule(interviewerId: string, startTime: Date, endTime: Date, excludeInterviewId?: string): Promise<any[]> {
-    this.ensureDb();
-    let query = this.db!.collection(COLLECTIONS.INTERVIEWS)
+    const db = await this.ensureDb();
+    let query = db.collection(COLLECTIONS.INTERVIEWS)
       .where('interviewerId', '==', interviewerId)
       .where('scheduledFor', '>=', startTime.toISOString())
       .where('scheduledFor', '<=', endTime.toISOString())
@@ -827,7 +843,7 @@ class DatabaseService {
   }
   
   async getSystemAnalytics(): Promise<any> {
-    this.ensureDb();
+    const db = await this.ensureDb();
     
     const [
       companiesSnapshot,
@@ -836,11 +852,11 @@ class DatabaseService {
       applicationsSnapshot,
       interviewsSnapshot
     ] = await Promise.all([
-      this.db!.collection(COLLECTIONS.COMPANIES).where('deletedAt', '==', null).count().get(),
-      this.db!.collection(COLLECTIONS.USERS).where('deletedAt', '==', null).count().get(),
-      this.db!.collection(COLLECTIONS.JOBS).where('deletedAt', '==', null).where('status', '==', 'active').count().get(),
-      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS).where('deletedAt', '==', null).count().get(),
-      this.db!.collection(COLLECTIONS.INTERVIEWS).count().get()
+      db.collection(COLLECTIONS.COMPANIES).where('deletedAt', '==', null).count().get(),
+      db.collection(COLLECTIONS.USERS).where('deletedAt', '==', null).count().get(),
+      db.collection(COLLECTIONS.JOBS).where('deletedAt', '==', null).where('status', '==', 'active').count().get(),
+      db.collection(COLLECTIONS.JOB_APPLICATIONS).where('deletedAt', '==', null).count().get(),
+      db.collection(COLLECTIONS.INTERVIEWS).count().get()
     ]);
     
     return {
@@ -855,16 +871,16 @@ class DatabaseService {
   }
   
   async getCompanyAnalytics(companyId: string): Promise<any> {
-    this.ensureDb();
+    const db = await this.ensureDb();
     
     const [
       jobsSnapshot,
       applicationsSnapshot,
       interviewsSnapshot
     ] = await Promise.all([
-      this.db!.collection(COLLECTIONS.JOBS).where('companyId', '==', companyId).where('deletedAt', '==', null).get(),
-      this.db!.collection(COLLECTIONS.JOB_APPLICATIONS).where('companyId', '==', companyId).where('deletedAt', '==', null).get(),
-      this.db!.collection(COLLECTIONS.INTERVIEWS).where('companyId', '==', companyId).where('deletedAt', '==', null).get()
+      db.collection(COLLECTIONS.JOBS).where('companyId', '==', companyId).where('deletedAt', '==', null).get(),
+      db.collection(COLLECTIONS.JOB_APPLICATIONS).where('companyId', '==', companyId).where('deletedAt', '==', null).get(),
+      db.collection(COLLECTIONS.INTERVIEWS).where('companyId', '==', companyId).where('deletedAt', '==', null).get()
     ]);
     
     const jobs = jobsSnapshot.docs.map(doc => doc.data());
@@ -925,12 +941,3 @@ class DatabaseService {
 
 export const databaseService = new DatabaseService();
 export default databaseService;
-
-// Function to reload the Firebase connection, used for health checks
-export function reloadFirebaseConnection() {
-  // This would re-initialize or re-check the connection.
-  // For this setup, we'll just log an attempt.
-  console.log('[FirestoreService] Attempting to reload Firebase connection...');
-  // The singleton pattern means we can't easily re-init. The health check
-  // itself will test the connection.
-}

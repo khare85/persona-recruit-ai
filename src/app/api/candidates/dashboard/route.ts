@@ -20,11 +20,11 @@ export const GET = withAuth(
         databaseService.listJobs({ 
           status: 'active', 
           limit: 3, 
-          orderBy: { field: 'publishedAt', direction: 'desc' } 
+          orderBy: { field: 'createdAt', direction: 'desc' } // Changed from publishedAt
         }),
       ]);
 
-      const offers = applications.filter(app => app.status === 'offered' || app.status === 'hired');
+      const offers = applications.filter(app => app.status === 'hired' || (app.status as any) === 'offer');
 
       const metrics = {
         applicationsApplied: applications.length,
@@ -34,8 +34,7 @@ export const GET = withAuth(
 
       const recentJobs = recentJobsResult.items;
 
-      // Enrich jobs with company info
-      const companyIds = [...new Set(recentJobs.map(j => j.companyId))];
+      const companyIds = [...new Set(recentJobs.map(j => j.companyId).filter(id => id))];
       const companies = companyIds.length > 0 ? await databaseService.getCompaniesByIds(companyIds) : [];
       const companyMap = new Map(companies.map(c => [c.id, c.name]));
 

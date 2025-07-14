@@ -254,6 +254,16 @@ class DatabaseService {
     return { id: doc.id, ...doc.data() } as User;
   }
 
+  async createUserDocument(userId: string, userData: Omit<User, 'createdAt' | 'updatedAt'>): Promise<void> {
+    try {
+      await this.create(COLLECTIONS.USERS, userData, userId);
+      dbLogger.info('User document created in Firestore', { userId, email: userData.email });
+    } catch (error) {
+      dbLogger.error('Error creating user document', { error: String(error), userId });
+      throw error;
+    }
+  }
+
   async updateUser(id: string, data: Partial<User>): Promise<void> {
     if (data.passwordHash) {
       data.passwordHash = await bcrypt.hash(data.passwordHash, 12);

@@ -60,11 +60,11 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       role: 'candidate' as const,
       status: 'active' as const,
       emailVerified: decodedToken.email_verified || false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      passwordHash: '', // Firebase Auth handles password, this is just for model compatibility
       deletedAt: null 
     };
-    await databaseService.updateUser(userId, userDoc);
+    // Create user document directly in Firestore since Auth user already exists
+    await databaseService.createUserDocument(userId, userDoc);
 
     // Create candidate profile document
     const profileDoc = {

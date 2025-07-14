@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
   Mic, 
   MicOff, 
   Play, 
-  Pause, 
+  Square, 
   RotateCcw,
   Upload,
   CheckCircle,
@@ -21,6 +21,8 @@ import {
   Loader2,
   Info
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 const VIDEO_DURATION_LIMIT = 10; // seconds
 const VIDEO_COUNTDOWN = 3; // countdown before recording starts
@@ -28,10 +30,12 @@ const VIDEO_COUNTDOWN = 3; // countdown before recording starts
 export default function VideoIntroPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const authenticatedFetch = useAuthenticatedFetch();
   
   const [isRecording, setIsRecording] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -42,36 +46,7 @@ export default function VideoIntroPage() {
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   const [audioEnabled, setAudioEnabled] = useState(true);
 
-  useEffect(() => {
-    requestCameraPermission();
-    return () => {
-      stopStream();
-    };
-  }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown(prev => prev - 1);
-      }, 1000);
-    } else if (countdown === 0 && isRecording && recordingTime < VIDEO_DURATION_LIMIT) {
-      interval = setInterval(() => {
-        setRecordingTime(prev => {
-          if (prev >= VIDEO_DURATION_LIMIT - 0.1) {
-            stopRecording();
-            return VIDEO_DURATION_LIMIT;
-          }
-          return prev + 0.1;
-        });
-      }, 100);
-    }
-
-    return () => clearInterval(interval);
-  }, [countdown, isRecording, recordingTime]);
-
-  const requestCameraPermission = async () => {
+  const requestCameraPermission = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -96,22 +71,41 @@ export default function VideoIntroPage() {
         variant: "destructive"
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    requestCameraPermission();
+    return () => {
+      stopStream();
+    };
+  }, [requestCameraPermission]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && isRecording && recordingTime < VIDEO_DURATION_LIMIT) {
+      interval = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= VIDEO_DURATION_LIMIT) {
+            stopRecording();
+            return VIDEO_DURATION_LIMIT;
+          }
+          return prev + 0.1;
+        });
+      }, 100);
+    }
+
+    return () => clearInterval(interval);
+  }, [countdown, isRecording, recordingTime]);
 
   const stopStream = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
-    }
-  };
-
-  const toggleAudio = () => {
-    if (streamRef.current) {
-      const audioTracks = streamRef.current.getAudioTracks();
-      audioTracks.forEach(track => {
-        track.enabled = !audioEnabled;
-      });
-      setAudioEnabled(!audioEnabled);
     }
   };
 
@@ -144,14 +138,12 @@ export default function VideoIntroPage() {
         setRecordedBlob(blob);
         setIsPreviewing(true);
         
-        // Set video source to recorded blob
         if (videoRef.current) {
           videoRef.current.srcObject = null;
           videoRef.current.src = URL.createObjectURL(blob);
         }
       };
 
-      // Start recording after countdown
       setTimeout(() => {
         mediaRecorder.start();
         setIsRecording(true);
@@ -173,17 +165,13 @@ export default function VideoIntroPage() {
       setIsRecording(false);
     }
   };
-
+  
   const resetRecording = () => {
     setRecordedBlob(null);
     setRecordingTime(0);
     setIsPreviewing(false);
     setCountdown(0);
-    
-    if (videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-      videoRef.current.src = '';
-    }
+    requestCameraPermission(); // Re-request to show live feed
   };
 
   const uploadVideo = async () => {
@@ -191,32 +179,23 @@ export default function VideoIntroPage() {
 
     try {
       setIsUploading(true);
+      
+      const arrayBuffer = await recordedBlob.arrayBuffer();
+      const base64Content = Buffer.from(arrayBuffer).toString('base64');
 
-      const formData = new FormData();
-      formData.append('video', recordedBlob, 'intro.webm');
-      formData.append('duration', recordingTime.toString());
-
-      // TODO: Generate thumbnail from video
-      // For now, we'll skip thumbnail generation
-
-      const response = await fetch('/api/candidates/video-intro', {
+      const response = await authenticatedFetch('/api/candidates/onboarding', {
         method: 'POST',
-        body: formData
+        body: JSON.stringify({ videoBlob: base64Content })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+      if (!response.success) {
+        throw new Error(response.error || 'Upload failed');
       }
-
-      const result = await response.json();
 
       toast({
         title: "🎉 Profile Complete!",
         description: "Your video introduction has been uploaded successfully."
       });
-
-      // Redirect to candidate dashboard
       router.push('/candidates/dashboard');
     } catch (error) {
       toast({
@@ -235,8 +214,9 @@ export default function VideoIntroPage() {
     }
   };
 
+  // ... (rest of the UI remains largely the same)
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-3xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -254,7 +234,6 @@ export default function VideoIntroPage() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Tips Section */}
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
@@ -269,7 +248,6 @@ export default function VideoIntroPage() {
             </AlertDescription>
           </Alert>
 
-          {/* Video Recording Area */}
           <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
             {cameraPermission === 'denied' ? (
               <div className="absolute inset-0 flex items-center justify-center bg-muted">
@@ -291,7 +269,6 @@ export default function VideoIntroPage() {
                   className="w-full h-full object-cover"
                 />
                 
-                {/* Countdown Overlay */}
                 {countdown > 0 && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="text-white text-6xl font-bold animate-pulse">
@@ -300,30 +277,16 @@ export default function VideoIntroPage() {
                   </div>
                 )}
 
-                {/* Recording Indicator */}
                 {isRecording && countdown === 0 && (
                   <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-full">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                     <span className="text-sm font-medium">Recording</span>
                   </div>
                 )}
-
-                {/* Audio Toggle */}
-                {!isPreviewing && (
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute bottom-4 right-4"
-                    onClick={toggleAudio}
-                  >
-                    {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                  </Button>
-                )}
               </>
             )}
           </div>
 
-          {/* Progress Bar */}
           {(isRecording || recordingTime > 0) && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-muted-foreground">
@@ -334,7 +297,6 @@ export default function VideoIntroPage() {
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex gap-3 justify-center">
             {!isRecording && !isPreviewing && (
               <Button 
@@ -353,7 +315,7 @@ export default function VideoIntroPage() {
                 size="lg"
                 variant="destructive"
               >
-                <Pause className="h-5 w-5 mr-2" />
+                <Square className="h-5 w-5 mr-2" />
                 Stop Recording
               </Button>
             )}
@@ -389,7 +351,6 @@ export default function VideoIntroPage() {
             )}
           </div>
 
-          {/* Skip Option */}
           <div className="text-center">
             <Button 
               variant="link" 

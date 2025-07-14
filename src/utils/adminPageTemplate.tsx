@@ -14,7 +14,7 @@ interface UseAdminDataOptions {
 }
 
 export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOptions) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOpt
     }
 
     try {
-      const token = await user.getIdToken();
+      const token = await getToken();
       const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -29,6 +29,7 @@ export const GET = withRateLimit('profile',
         const userId = req.user!.id;
 
         apiLogger.info('Fetching candidate profile', { userId });
+        console.log('Profile API called for user:', userId);
 
         // Get user basic info
         const user = await databaseService.getUserById(userId);
@@ -39,13 +40,30 @@ export const GET = withRateLimit('profile',
           );
         }
 
-        // Get candidate profile
-        const candidateProfile = await databaseService.getCandidateProfile(userId);
+        // Get candidate profile, create basic one if doesn't exist
+        let candidateProfile = await databaseService.getCandidateProfile(userId);
         if (!candidateProfile) {
-          return NextResponse.json(
-            { error: 'Candidate profile not found' },
-            { status: 404 }
-          );
+          // Create basic profile for user
+          const basicProfile = {
+            userId,
+            currentTitle: 'Professional',
+            summary: '',
+            skills: [],
+            profileComplete: false,
+            availableForWork: true,
+            phone: '',
+            location: '',
+            linkedinUrl: '',
+            portfolioUrl: '',
+            resumeUrl: '',
+            videoIntroUrl: '',
+            availability: 'immediate' as const
+          };
+          
+          await databaseService.createCandidateProfile(basicProfile);
+          candidateProfile = basicProfile;
+          
+          apiLogger.info('Created basic candidate profile', { userId });
         }
 
         // Combine user and profile data

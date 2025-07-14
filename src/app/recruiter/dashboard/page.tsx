@@ -37,7 +37,7 @@ interface RecruiterDashboardData {
 }
 
 export default function RecruiterDashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [data, setData] = useState<RecruiterDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function RecruiterDashboardPage() {
         return;
       }
       
-      const token = await user.getIdToken();
+      const token = await getToken();
       const response = await fetch('/api/recruiter/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`,

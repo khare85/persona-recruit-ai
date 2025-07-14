@@ -64,14 +64,34 @@ export default function CandidateProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/candidates/profile');
+      // Get auth token from Firebase
+      const { auth } = await import('@/config/firebase');
+      const user = auth.currentUser;
+      
+      if (!user) {
+        setError('Please sign in to view your profile');
+        setIsLoading(false);
+        return;
+      }
+      
+      const token = await user.getIdToken();
+      
+      const response = await fetch('/api/candidates/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setProfile(data.profile);
       } else {
-        setError('Failed to load profile');
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to load profile');
       }
     } catch (error) {
+      console.error('Profile fetch error:', error);
       setError('An error occurred while loading your profile');
     } finally {
       setIsLoading(false);

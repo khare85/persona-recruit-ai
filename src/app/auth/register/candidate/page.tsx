@@ -10,9 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -197,6 +195,12 @@ export default function CandidateRegistrationPage() {
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'video/webm' });
         setVideoBlob(blob);
+        
+        // Stop the camera after recording is complete
+        setTimeout(() => {
+          stopCamera();
+          console.log('Camera stopped after recording completion');
+        }, 500);
       };
       
       setMediaRecorder(recorder);
@@ -222,23 +226,41 @@ export default function CandidateRegistrationPage() {
       mediaRecorder.stop();
       setIsRecording(false);
       console.log('Recording stopped');
+      
+      // Stop camera after recording is complete
+      setTimeout(() => {
+        stopCamera();
+      }, 1000); // Give time for the recording to finalize
     }
   };
   
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log(`Stopped ${track.kind} track`);
+      });
       setStream(null);
-      console.log('Camera stopped');
+      
+      // Clear the video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.pause();
+        console.log('Video element cleared');
+      }
+      
+      console.log('Camera and all tracks stopped');
     }
   };
   
   const resetRecording = () => {
     setVideoBlob(null);
     setRecordingTime(0);
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+    setIsRecording(false);
+    setMediaRecorder(null);
+    stopCamera();
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
   
@@ -291,19 +313,90 @@ export default function CandidateRegistrationPage() {
       setIsRegistering(true);
       
       // Create user with Firebase Auth
-      await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
+      const userCredential = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      // Firebase Auth handles authentication automatically
       console.log('User registered successfully with Firebase Auth');
       
-      // TODO: Create candidate profile in Firestore (should be handled by Cloud Function on user creation)
-      // TODO: Upload resume and video to Firebase Storage
-      // TODO: Process resume with Document AI to update profile
+      // Wait briefly for Firebase Auth to process the user creation
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      toast({
-        title: "🎉 Registration Successful!",
-        description: redirectUrl ? "Welcome to the platform! Redirecting you to apply for the job." : "Welcome to the platform! Your profile will be created from your resume."
-      });
+      // Get the auth token - our new API endpoint will handle setting custom claims
+      const token = await userCredential.getIdToken(true);
+      
+      // Prepare onboarding data
+      const onboardingData: any = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        location: data.location
+      };
+      
+      // Add resume file if uploaded
+      if (resumeFile) {
+        const arrayBuffer = await resumeFile.arrayBuffer();
+        const base64Content = Buffer.from(arrayBuffer).toString('base64');
+        onboardingData.resumeFile = base64Content;
+        onboardingData.resumeMimeType = resumeFile.type;
+      }
+      
+      // Add video blob if recorded
+      if (videoBlob) {
+        const arrayBuffer = await videoBlob.arrayBuffer();
+        const base64Content = Buffer.from(arrayBuffer).toString('base64');
+        onboardingData.videoBlob = base64Content;
+      }
+      
+      // Call registration API to create profile with AI processing
+      let registrationSuccess = false;
+      try {
+        const response = await fetch('/api/candidates/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(onboardingData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Profile created successfully:', result);
+          registrationSuccess = true;
+          
+          toast({
+            title: "🎉 Registration Successful!",
+            description: result.message || "Your account and profile have been created successfully!",
+            variant: "default"
+          });
+        } else {
+          const errorData = await response.json();
+          console.warn('Profile creation failed:', errorData);
+          
+          toast({
+            title: "Account Created",
+            description: "Your account has been created! There may have been an issue setting up your profile, but you can complete it later.",
+            variant: "default"
+          });
+        }
+      } catch (profileError) {
+        console.warn('Profile creation failed:', profileError);
+        toast({
+          title: "Account Created",
+          description: "Your account has been created! You can complete your profile setup later.",
+          variant: "default"
+        });
+      }
+      
+      // Only show additional success message if registration was successful
+      if (registrationSuccess) {
+        setTimeout(() => {
+          toast({
+            title: "Welcome!",
+            description: redirectUrl ? "Redirecting you to apply for the job." : "Welcome to the platform!",
+            variant: "default"
+          });
+        }, 1000);
+      }
 
       // Redirect to provided URL or dashboard
       if (redirectUrl) {
@@ -734,7 +827,7 @@ export default function CandidateRegistrationPage() {
                           <div>
                             <p className="font-medium">Video recorded successfully!</p>
                             <p className="text-sm text-muted-foreground">
-                              You can re-record if you'd like to make changes
+                              Camera has been disconnected. You can re-record if needed.
                             </p>
                           </div>
                           <Button type="button" variant="outline" onClick={resetRecording}>

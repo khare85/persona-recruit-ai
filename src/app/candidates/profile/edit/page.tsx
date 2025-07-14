@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,6 +29,10 @@ import {
   Camera,
   RefreshCw
 } from 'lucide-react';
+import { resumeProcessingService } from '@/services/resumeProcessing.service';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { ResumeUploadWithProcessing } from '@/components/resume/ResumeUploadWithProcessing';
 
 interface CandidateProfile {
   id: string;
@@ -48,19 +53,16 @@ interface CandidateProfile {
 }
 
 export default function CandidateProfileEditPage() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [newSkill, setNewSkill] = useState('');
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [uploadingResume, setUploadingResume] = useState(false);
   
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchProfile();
@@ -134,67 +136,14 @@ export default function CandidateProfileEditPage() {
     }
   };
 
-  const handleVideoUpload = async (file: File) => {
-    setUploadingVideo(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('video', file);
-
-      const response = await fetch('/api/candidates/video-intro', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(prev => prev ? { ...prev, videoIntroUrl: data.videoUrl } : null);
-        setSuccess('Video introduction updated successfully!');
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to upload video');
-      }
-    } catch (error) {
-      setError('An error occurred while uploading your video');
-    } finally {
-      setUploadingVideo(false);
-      setVideoFile(null);
-    }
-  };
-
-  const handleResumeUpload = async (file: File) => {
-    setUploadingResume(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('resume', file);
-
-      const response = await fetch('/api/candidates/resume', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(prev => prev ? { ...prev, resumeUrl: data.resumeUrl } : null);
-        setSuccess('Resume updated successfully!');
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to upload resume');
-      }
-    } catch (error) {
-      setError('An error occurred while uploading your resume');
-    } finally {
-      setUploadingResume(false);
-      setResumeFile(null);
-    }
-  };
-
-  const startVideoRecording = () => {
-    // Redirect to video recording page
-    router.push('/candidates/onboarding/video-intro?edit=true');
+  const handleResumeEnrichment = async (result: any) => {
+    toast({
+      title: 'Resume Processed',
+      description: 'Your profile will be updated with the latest information.',
+    });
+    
+    // Refresh profile data after enrichment
+    await fetchProfile();
   };
 
   if (isLoading) {
@@ -245,7 +194,7 @@ export default function CandidateProfileEditPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -259,6 +208,19 @@ export default function CandidateProfileEditPage() {
             <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
+        
+        {/* Enrich Profile Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Enrich Profile with Resume</CardTitle>
+            <CardDescription>
+              Upload a new resume to automatically update your profile with AI.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResumeUploadWithProcessing onUploadComplete={handleResumeEnrichment} />
+          </CardContent>
+        </Card>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
@@ -466,134 +428,6 @@ export default function CandidateProfileEditPage() {
                   onChange={(e) => setProfile({ ...profile, portfolioUrl: e.target.value })}
                   placeholder="https://yourwebsite.com"
                 />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Video Introduction */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <VideoIcon className="h-5 w-5" />
-                Video Introduction
-              </CardTitle>
-              <CardDescription>
-                Record a short video to introduce yourself to employers
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {profile.videoIntroUrl ? (
-                <div className="space-y-4">
-                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                    <video
-                      src={profile.videoIntroUrl}
-                      controls
-                      className="w-full h-full rounded-lg"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={startVideoRecording}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <Camera className="h-4 w-4 mr-2" />
-                      Re-record Video
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="aspect-video bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                    <div className="text-center">
-                      <VideoIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No video introduction yet</p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={startVideoRecording}
-                    className="w-full"
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Record Video Introduction
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Resume Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Resume
-              </CardTitle>
-              <CardDescription>
-                Upload your latest resume (PDF format recommended)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {profile.resumeUrl ? (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm">Current resume uploaded</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(profile.resumeUrl, '_blank')}
-                      >
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No resume uploaded yet</p>
-                  </div>
-                )}
-
-                <div>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setResumeFile(file);
-                        handleResumeUpload(file);
-                      }
-                    }}
-                    className="hidden"
-                    id="resume-upload"
-                  />
-                  <label htmlFor="resume-upload">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      disabled={uploadingResume}
-                      asChild
-                    >
-                      <span>
-                        {uploadingResume ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Upload className="h-4 w-4 mr-2" />
-                        )}
-                        {uploadingResume ? 'Uploading...' : profile.resumeUrl ? 'Update Resume' : 'Upload Resume'}
-                      </span>
-                    </Button>
-                  </label>
-                </div>
               </div>
             </CardContent>
           </Card>

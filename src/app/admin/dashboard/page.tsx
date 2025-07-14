@@ -24,7 +24,7 @@ interface AdminDashboardData {
 }
 
 export default function AdminDashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export default function AdminDashboardPage() {
         return;
       }
       
-      const token = await user.getIdToken();
+      const token = await getToken();
       const response = await fetch('/api/admin/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`,

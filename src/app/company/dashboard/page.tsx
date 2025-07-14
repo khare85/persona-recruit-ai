@@ -22,7 +22,7 @@ interface CompanyDashboardData {
 }
 
 export default function CompanyDashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [data, setData] = useState<CompanyDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export default function CompanyDashboardPage() {
         return;
       }
       
-      const token = await user.getIdToken();
+      const token = await getToken();
       const response = await fetch('/api/company/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -56,7 +56,7 @@ export default function CompanyDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, getToken]);
   
   useEffect(() => {
     fetchData();

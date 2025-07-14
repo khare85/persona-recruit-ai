@@ -40,9 +40,8 @@ export default function AuthenticationPage() {
       const userCredential = await signIn(email, password);
       setSuccess('Login successful! Redirecting...');
       
-      const user = userCredential; // The user object from firebase
-      const tokenResult = await user.getIdTokenResult();
-      const role = (tokenResult.claims.role as string) || 'candidate';
+      // Get the user role from the updated user object
+      const role = userCredential.role || 'candidate';
 
       // Check if there's a redirect URL
       if (redirectUrl) {

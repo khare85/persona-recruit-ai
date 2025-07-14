@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Card } from "@/components/ui/card"; 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Briefcase, Users, LayoutDashboard, Building, Gift, Video, ShieldCheck, Menu, Zap,
   UserCog, CalendarClock, FolderOpen, SearchCode, DollarSign, Search,
@@ -140,6 +141,29 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { currentNavItems, currentPersona, CurrentPersonaIcon, currentDashboardHome } = determineNavigation(pathname);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { signOut, user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Get user display name and role
+  const displayName = user?.fullName || user?.displayName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+  const userRole = user?.role || 'user';
+  const roleDisplayName = {
+    'candidate': 'Candidate',
+    'recruiter': 'Recruiter', 
+    'interviewer': 'Interviewer',
+    'company_admin': 'Company Admin',
+    'super_admin': 'Super Admin'
+  }[userRole] || 'User';
+  
+  // Get initials for avatar
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'U';
 
   return (
     <div className="flex h-screen bg-background">
@@ -208,13 +232,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Badge variant="outline" className="border-primary/50 text-primary text-xs hidden sm:flex items-center">
                 <Info className="h-3.5 w-3.5 mr-1.5" /> Demo Environment
               </Badge>
-              <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://placehold.co/100x100.png?text=DU" alt="Demo User" data-ai-hint="user avatar"/>
-                  <AvatarFallback>DU</AvatarFallback>
-              </Avatar>
-               <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
-                  <Link href="/auth"><LogOut className="h-5 w-5" /></Link>
-                </Button>
+              <div className="flex items-center space-x-3">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-medium text-foreground">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{roleDisplayName}</p>
+                </div>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=3b82f6&color=fff&size=32`} alt={displayName} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
+                </Avatar>
+              </div>
+               <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={handleLogout}
+               >
+                  <LogOut className="h-5 w-5" />
+               </Button>
           </div>
         </header>
 

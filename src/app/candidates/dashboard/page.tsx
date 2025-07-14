@@ -24,7 +24,7 @@ interface CandidateDashboardData {
 }
 
 export default function CandidateDashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,15 @@ export default function CandidateDashboardPage() {
         return;
       }
       
-      const token = await user.getIdToken();
+      console.log('Dashboard: Getting token...', { userId: user.uid, userRole: user.role });
+      const token = await getToken();
+      
+      if (!token) {
+        setError('Unable to get authentication token. Please try signing in again.');
+        return;
+      }
+      
+      console.log('Dashboard: Token obtained, making API call...');
       const response = await fetch('/api/candidates/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -48,17 +56,21 @@ export default function CandidateDashboardPage() {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Dashboard API error:', { status: response.status, error: errorText });
+        throw new Error(`Dashboard API error (${response.status}): ${errorText}`);
       }
       
       const result = await response.json();
+      console.log('Dashboard data loaded successfully:', result);
       setDashboardData(result.data);
     } catch (err) {
+      console.error('Dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, getToken]);
   
   useEffect(() => {
     fetchData();

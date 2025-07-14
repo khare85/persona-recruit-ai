@@ -5,31 +5,49 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { auth } from '@/config/firebase';
 import { Loader2 } from 'lucide-react';
 
 export default function DebugAuthPage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, getToken } = useAuth();
   const router = useRouter();
   const [tokenClaims, setTokenClaims] = useState<any>(null);
   const [refreshingToken, setRefreshingToken] = useState(false);
 
   useEffect(() => {
     async function fetchClaims() {
-      if (auth.currentUser) {
-        const tokenResult = await auth.currentUser.getIdTokenResult();
-        setTokenClaims(tokenResult.claims);
+      if (user) {
+        try {
+          const token = await getToken();
+          // Decode the token to get claims
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const claims = JSON.parse(jsonPayload);
+          setTokenClaims(claims);
+        } catch (error) {
+          console.error('Error fetching claims:', error);
+        }
       }
     }
     fetchClaims();
-  }, [user]);
+  }, [user, getToken]);
 
   const refreshToken = async () => {
     setRefreshingToken(true);
     try {
-      if (auth.currentUser) {
-        const tokenResult = await auth.currentUser.getIdTokenResult(true);
-        setTokenClaims(tokenResult.claims);
+      if (user) {
+        // Force refresh the token
+        const token = await getToken(true);
+        // Decode the refreshed token to get claims
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const claims = JSON.parse(jsonPayload);
+        setTokenClaims(claims);
         window.location.reload();
       }
     } catch (error) {

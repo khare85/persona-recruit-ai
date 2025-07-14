@@ -65,7 +65,7 @@ interface InterviewerDashboardData {
 }
 
 export default function InterviewerDashboardPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getToken } = useAuth();
   const [data, setData] = useState<InterviewerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function InterviewerDashboardPage() {
         return;
       }
       
-      const token = await user.getIdToken();
+      const token = await getToken();
       const response = await fetch('/api/interviewer/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -99,7 +99,7 @@ export default function InterviewerDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, getToken]);
   
   useEffect(() => {
     fetchData();

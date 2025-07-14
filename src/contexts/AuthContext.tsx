@@ -90,11 +90,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const getToken = useCallback(async (): Promise<string | null> => {
-    if (auth.currentUser) {
-      return auth.currentUser.getIdToken(true); // Force refresh
+    try {
+      if (auth && auth.currentUser) {
+        return auth.currentUser.getIdToken(true); // Force refresh
+      }
+      console.warn('getToken: auth or currentUser is null', { 
+        authExists: !!auth, 
+        currentUserExists: !!auth?.currentUser,
+        userState: !!user 
+      });
+      return null;
+    } catch (error) {
+      console.error('getToken error:', error);
+      return null;
     }
-    return null;
-  }, []);
+  }, [user]);
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     setLoading(true);

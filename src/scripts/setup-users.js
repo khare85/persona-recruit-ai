@@ -15,7 +15,7 @@ try {
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      projectId: 'ai-talent-stream'
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream'
     });
   }
 } catch (error) {

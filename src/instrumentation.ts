@@ -8,10 +8,8 @@ export async function register() {
     const { loadSecrets } = await import('./lib/secrets');
     await loadSecrets(); // Load secrets at startup
 
-    // Only initialize in production to prevent memory issues in development
-    if (process.env.NODE_ENV === 'production') {
-      const { initializeApp } = await import('@/lib/appInit');
-      await initializeApp();
-    }
+    // Initialize core services on startup
+    const { initializeApp } = await import('@/lib/appInit');
+    await initializeApp();
   }
 }

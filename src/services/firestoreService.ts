@@ -15,34 +15,29 @@ let app: App | undefined;
 // Prevent multiple initializations during development hot reloads
 if (!admin.apps.length) {
   try {
-    // Check if we have service account credentials as JSON string in environment
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-      console.log('[FirestoreService] Initializing Firebase Admin SDK using service account from environment...');
-      const serviceAccountJson = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    const serviceAccountJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (serviceAccountJson) {
+      const serviceAccount = JSON.parse(serviceAccountJson);
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountJson),
-        projectId: serviceAccountJson.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
+        credential: admin.credential.cert(serviceAccount),
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
       });
     } else {
-      // Fallback to Application Default Credentials for local development or GCP environments
-      console.log('[FirestoreService] Attempting to initialize Firebase Admin SDK using Application Default Credentials...');
       admin.initializeApp({
         credential: admin.credential.applicationDefault(),
         projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream',
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app'
       });
     }
-    app = admin.app(); // Get the default app instance
+    app = admin.app();
     console.log('[FirestoreService] Firebase Admin SDK initialized successfully.');
   } catch (error) {
     console.error('[FirestoreService] Error initializing Firebase Admin SDK. Error details:', error);
     console.error('[FirestoreService] Firebase Admin SDK initialization failed. Ensure credentials are correctly configured.');
-    // If initialization fails, 'app' will remain undefined, and subsequent db/storage operations will be gracefully handled.
   }
 } else {
-  app = admin.app(); // Get the default app instance if already initialized
-  console.log('[FirestoreService] Firebase Admin SDK was already initialized.');
+  app = admin.app();
 }
 
 let db: Firestore | undefined;
@@ -50,7 +45,7 @@ let storageBucket: Bucket | undefined;
 
 if (app) {
   try {
-    db = admin.firestore(app); // Pass app instance
+    db = admin.firestore(app);
     console.log('[FirestoreService] Firestore DB instance acquired.');
   } catch (error) {
     console.error('[FirestoreService] Failed to acquire Firestore DB instance after SDK init. Details:', error);
@@ -59,7 +54,7 @@ if (app) {
 
   try {
     const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app';
-    storageBucket = admin.storage(app).bucket(bucketName); // Pass app instance and specify bucket name
+    storageBucket = admin.storage(app).bucket(bucketName);
     console.log(`[FirestoreService] Firebase Storage bucket '${storageBucket.name}' instance acquired.`);
   } catch (error) {
     console.error('[FirestoreService] Failed to acquire Firebase Storage bucket instance after SDK init. Details:', error);
@@ -389,6 +384,3 @@ export async function reloadFirebaseConnection(): Promise<void> {
 // However, it's generally better practice for other services to call functions from this module
 // rather than directly accessing db/storageBucket, to encapsulate logic and error handling.
 export { db, storageBucket, storageBucket as storage };
-
-
-    

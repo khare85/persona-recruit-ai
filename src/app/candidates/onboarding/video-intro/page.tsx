@@ -185,6 +185,9 @@ function VideoIntroContent() {
       const token = await user?.getIdToken();
       if (!token) throw new Error("Authentication failed");
 
+      const arrayBuffer = await recordedBlob.arrayBuffer();
+      const base64Content = Buffer.from(arrayBuffer).toString('base64');
+      
       const response = await fetch('/api/upload/video-intro', {
         method: 'POST',
         headers: {
@@ -238,7 +241,7 @@ function VideoIntroContent() {
             Step 3 of 3: Record a quick 10-second video to introduce yourself
           </CardDescription>
           <div className="mt-4">
-            <Progress value={66.67} className="w-full" />
+            <Progress value={100} className="w-full" />
             <p className="text-sm text-muted-foreground mt-2">Step 3 of 3</p>
           </div>
         </CardHeader>

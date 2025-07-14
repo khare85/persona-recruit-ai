@@ -102,3 +102,7 @@ env:
     value: "firebase-service-account"
     availability:
       - RUNTIME
+  
+  # Firebase Service Account from Secret Manager
+  - variable: GOOGLE_APPLICATION_CREDENTIALS_JSON
+    secret: firebase-service-account

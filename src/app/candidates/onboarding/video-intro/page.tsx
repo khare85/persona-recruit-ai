@@ -23,7 +23,6 @@ import {
   Info
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 const VIDEO_DURATION_LIMIT = 10; // seconds
 const VIDEO_COUNTDOWN = 3; // countdown before recording starts
@@ -36,7 +35,6 @@ export default function VideoIntroPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const authenticatedFetch = useAuthenticatedFetch();
   
   const [isRecording, setIsRecording] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -45,7 +43,6 @@ export default function VideoIntroPage() {
   const [countdown, setCountdown] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
-  const [audioEnabled, setAudioEnabled] = useState(true);
 
   const requestCameraPermission = useCallback(async () => {
     try {
@@ -183,12 +180,15 @@ export default function VideoIntroPage() {
       
       const arrayBuffer = await recordedBlob.arrayBuffer();
       const base64Content = Buffer.from(arrayBuffer).toString('base64');
+      
+      const token = await user?.getIdToken();
+      if (!token) throw new Error("Authentication failed");
 
       const response = await fetch('/api/upload/video-intro', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user?.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ videoBlob: base64Content })
       });
@@ -210,7 +210,6 @@ export default function VideoIntroPage() {
         description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsUploading(false);
     }
   };
@@ -238,8 +237,8 @@ export default function VideoIntroPage() {
             Step 3 of 3: Record a quick 10-second video to introduce yourself
           </CardDescription>
           <div className="mt-4">
-            <Progress value={100} className="w-full" />
-            <p className="text-sm text-muted-foreground mt-2">Final Step</p>
+            <Progress value={66.67} className="w-full" />
+            <p className="text-sm text-muted-foreground mt-2">Step 3 of 3</p>
           </div>
         </CardHeader>
 

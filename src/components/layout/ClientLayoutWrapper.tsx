@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -23,6 +24,8 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
       '/auth/register/candidate',
       '/auth/forgot-password',
       '/auth/reset-password',
+      '/candidates/onboarding/resume',
+      '/candidates/onboarding/video-intro',
       '/privacy',
       '/terms',
       '/about',

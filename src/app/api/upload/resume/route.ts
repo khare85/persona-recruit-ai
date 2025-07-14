@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withRole } from '@/middleware/auth';
 import { withRateLimit } from '@/middleware/security';
@@ -5,13 +6,9 @@ import { handleApiError } from '@/lib/errors';
 import { resumeProcessingService } from '@/services/resumeProcessing.service';
 
 /**
- * POST /api/upload/resume - Upload and process candidate resume with full AI pipeline
- * This endpoint uses the complete resume processing service which includes:
- * - File validation and upload to Firebase Storage
- * - Document AI text extraction
- * - AI-powered resume summary generation
- * - Vector embedding generation
- * - Vector database storage for semantic search
+ * POST /api/upload/resume - DEPRECATED
+ * This endpoint has been replaced by the more comprehensive /api/candidates/resume-process
+ * Kept for backward compatibility if needed, but should not be used for new implementations.
  */
 export const POST = withRateLimit('upload',
   withAuth(
@@ -28,16 +25,15 @@ export const POST = withRateLimit('upload',
           );
         }
 
-        // Process resume using the comprehensive service
         const result = await resumeProcessingService.processResume({
           userId,
           file,
-          skipEmbeddings: false // Enable full AI processing
+          skipEmbeddings: false
         });
 
         if (!result.success) {
           return NextResponse.json(
-            { error: result.error },
+            { error: result.error, warnings: result.warnings },
             { status: 400 }
           );
         }

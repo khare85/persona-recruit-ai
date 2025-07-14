@@ -20,6 +20,7 @@ import {
   Lock, 
   ArrowRight
 } from 'lucide-react';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 const candidateRegistrationSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -44,6 +45,7 @@ export default function CandidateRegistrationPage() {
   const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const form = useForm<CandidateRegistrationData>({
     resolver: zodResolver(candidateRegistrationSchema),
@@ -65,7 +67,6 @@ export default function CandidateRegistrationPage() {
       
       const token = await userCredential.getIdToken();
       
-      // Create the basic profile documents in Firestore
       const profileResponse = await fetch('/api/candidates/register', {
         method: 'POST',
         headers: {
@@ -75,7 +76,7 @@ export default function CandidateRegistrationPage() {
         body: JSON.stringify({
           firstName: data.firstName,
           lastName: data.lastName,
-          location: '' // Location will be collected in onboarding
+          location: '' // To be collected during onboarding
         })
       });
 
@@ -85,11 +86,11 @@ export default function CandidateRegistrationPage() {
 
       toast({
         title: "🎉 Account Created!",
-        description: "Your account has been created. Let's build your profile.",
+        description: "Welcome! Let's build your profile.",
       });
 
-      // Redirect to the first step of onboarding: resume upload
-      router.push('/candidates/onboarding');
+      // Redirect to the first step of onboarding
+      router.push('/candidates/onboarding/resume');
 
     } catch (error) {
       toast({

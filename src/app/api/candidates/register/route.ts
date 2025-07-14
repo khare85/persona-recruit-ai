@@ -1,17 +1,17 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
-import { verifyFirebaseToken } from '@/middleware/auth';
 import admin from 'firebase-admin';
 import { databaseService } from '@/services/database.service';
 
 const candidateOnboardingSchema = z.object({
   firstName: z.string().min(2, 'First name is required').transform(sanitizeString),
   lastName: z.string().min(2, 'Last name is required').transform(sanitizeString),
-  location: z.string().min(2, 'Location is required').transform(sanitizeString),
+  location: z.string().min(2, 'Location is required').transform(sanitizeString).optional(),
   phone: z.string().min(10).max(20).transform(sanitizeString).optional(),
 });
 
@@ -57,12 +57,12 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       firstName: data.firstName,
       lastName: data.lastName,
       displayName: `${data.firstName} ${data.lastName}`,
-      role: 'candidate',
-      status: 'active',
+      role: 'candidate' as const,
+      status: 'active' as const,
       emailVerified: decodedToken.email_verified || false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      deletedAt: null // Explicitly set for soft delete support
+      deletedAt: null 
     };
     await databaseService.updateUser(userId, userDoc);
 
@@ -70,13 +70,13 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     const profileDoc = {
       userId,
       phone: data.phone,
-      location: data.location,
-      currentTitle: 'Professional', // Placeholder, to be updated by resume upload
+      location: data.location || '',
+      currentTitle: 'Professional',
       summary: '',
       skills: [],
       profileComplete: false,
       availableForWork: true,
-      availability: 'immediate'
+      availability: 'immediate' as const,
     };
     await databaseService.createCandidateProfile(profileDoc);
 
@@ -87,7 +87,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       message: 'Profile foundation created. Please upload your resume and record a video intro.',
       data: {
         userId,
-        nextStep: 'onboarding' // The client will now proceed to the full onboarding flow.
+        nextStep: 'onboarding'
       }
     }, { status: 201 });
 

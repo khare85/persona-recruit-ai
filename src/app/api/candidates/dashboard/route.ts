@@ -14,32 +14,40 @@ export const GET = withAuth(
       const candidateId = req.user!.id;
       apiLogger.info('Fetching candidate dashboard data', { candidateId });
 
-      const [applications, interviews] = await Promise.all([
+      const [applications, interviews, recentJobsResult] = await Promise.all([
         databaseService.getCandidateApplications(candidateId),
         databaseService.getInterviews({ candidateId }),
+        databaseService.listJobs({ 
+          status: 'active', 
+          limit: 3, 
+          orderBy: { field: 'publishedAt', direction: 'desc' } 
+        }),
       ]);
 
       const offers = applications.filter(app => app.status === 'offered' || app.status === 'hired');
 
       const metrics = {
         applicationsApplied: applications.length,
-        upcomingInterviews: interviews.filter(i => new Date(i.scheduledFor) > new Date() && i.status === 'scheduled').length,
+        upcomingInterviews: interviews.filter(i => i.scheduledFor && new Date(i.scheduledFor) > new Date() && i.status === 'scheduled').length,
         offersReceived: offers.length,
       };
 
-      // In a real app, this would come from an AI recommendation engine
-      const recentJobs = await databaseService.getRecentJobs(3);
-      
+      const recentJobs = recentJobsResult.items;
+
+      // Enrich jobs with company info
+      const companyIds = [...new Set(recentJobs.map(j => j.companyId))];
+      const companies = companyIds.length > 0 ? await databaseService.getCompaniesByIds(companyIds) : [];
+      const companyMap = new Map(companies.map(c => [c.id, c.name]));
+
       const dashboardData = {
         ...metrics,
         aiRecommendedJobs: recentJobs.length,
         recentJobs: recentJobs.map(job => ({
           id: job.id,
           title: job.title,
-          company: job.companyName || 'A Company',
+          company: companyMap.get(job.companyId) || 'A Company',
           jobIdForLink: job.id,
         })),
-        // Add more data as needed
       };
 
       return NextResponse.json({

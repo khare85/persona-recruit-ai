@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  Sparkles,
   Briefcase,
   MapPin,
   Clock,
@@ -150,32 +149,7 @@ export default function CareersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
-      {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Persona Recruit AI
-              </span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="outline" size="sm">Back to Home</Button>
-              </Link>
-              <Link href="/auth">
-                <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600">
-                  Apply Now
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      
       {/* Hero Section */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
@@ -254,7 +228,7 @@ export default function CareersPage() {
                     <value.icon className="h-6 w-6 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{value.title}</h3>
-                  <p className="text-gray-600 text-sm">{value.description}</p>
+                  <p className="text-sm text-gray-600">{value.description}</p>
                 </CardContent>
               </Card>
             ))}

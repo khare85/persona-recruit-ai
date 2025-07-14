@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -81,7 +82,7 @@ export default function ForgotPasswordPage() {
                 </h3>
                 <div className="mt-2 text-sm text-blue-700">
                   <ul role="list" className="list-disc list-inside space-y-1">
-                    <li>Check your email inbox for a message from AI Talent Stream</li>
+                    <li>Check your email inbox for a message from Persona AI</li>
                     <li>Click the reset link in the email (it expires in 1 hour)</li>
                     <li>Create a new password for your account</li>
                     <li>Check your spam folder if you don't see the email</li>

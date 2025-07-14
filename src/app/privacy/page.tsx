@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -5,10 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Sparkles,
   Shield,
   Lock,
-  Eye,
   Database,
   Globe,
   Mail,
@@ -141,32 +140,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
-      {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Persona Recruit AI
-              </span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="outline" size="sm">Back to Home</Button>
-              </Link>
-              <Link href="/support">
-                <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600">
-                  Contact Us
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      
       {/* Header */}
       <section className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
@@ -229,7 +203,9 @@ export default function PrivacyPolicyPage() {
               <CardContent className="space-y-6">
                 {section.content.map((item, itemIndex) => (
                   <div key={itemIndex}>
-                    <h4 className="font-semibold text-gray-900 mb-2">{item.subtitle}</h4>
+                    {item.subtitle && (
+                      <h4 className="font-semibold text-gray-900 mb-2">{item.subtitle}</h4>
+                    )}
                     <p className="text-gray-600 leading-relaxed">{item.text}</p>
                   </div>
                 ))}
@@ -298,11 +274,11 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 ml-4">
               <li>Posting the updated policy on our website</li>
-              <li>Sending you an email notification</li>
+              <li>Sending email notifications to registered users</li>
               <li>Displaying a prominent notice on our platform</li>
             </ul>
             <p className="text-gray-600 leading-relaxed mt-4">
-              Your continued use of our platform after the effective date of the updated policy constitutes 
+              Continued use of our platform after the effective date of the updated policy constitutes 
               your acceptance of the changes.
             </p>
           </CardContent>

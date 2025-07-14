@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import Image from 'next/image';
 
 export default function ReferralsPage() {
   return (
-    <Container>
+    <Container className="pt-12 pb-20">
       <div className="text-center mb-12">
         <Gift className="mx-auto h-16 w-16 text-primary mb-4" />
         <h1 className="text-4xl font-headline font-bold text-foreground">

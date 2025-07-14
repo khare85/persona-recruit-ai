@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,8 +7,6 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowRight,
   Zap,
@@ -21,7 +20,6 @@ import {
   Shield,
   Clock,
   Globe,
-  Sparkles,
   Target,
   Award,
   MessageSquare,
@@ -33,15 +31,16 @@ import {
   Crown,
   Infinity,
   Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Play
+  Phone
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     setIsVisible(true);
@@ -50,6 +49,8 @@ export default function HomePage() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+  
+  // No need for a separate Navbar component here, it's in the layout
 
   const features = [
     {
@@ -200,37 +201,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Persona Recruit AI
-              </span>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-green-600 transition-colors">Features</Link>
-              <Link href="#pricing" className="text-gray-600 hover:text-green-600 transition-colors">Pricing</Link>
-              <Link href="/support" className="text-gray-600 hover:text-green-600 transition-colors">Support</Link>
-              <Link href="/auth">
-                <Button variant="outline" size="sm">Sign In</Button>
-              </Link>
-              <Link href="/auth">
-                <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="pt-20 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -571,65 +544,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">Persona Recruit AI</span>
-              </div>
-              <p className="text-gray-400 mb-4">
-                Accelerating recruitment with AI-powered intelligence. 
-                Transform your hiring process and find the perfect candidates faster.
-              </p>
-              <div className="flex space-x-4">
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                  <Mail className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                  <Phone className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="#features" className="hover:text-white">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white">Pricing</Link></li>
-                <li><Link href="/auth" className="hover:text-white">Sign Up</Link></li>
-                <li><Link href="/auth" className="hover:text-white">Sign In</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/support" className="hover:text-white">Help Center</Link></li>
-                <li><Link href="/support" className="hover:text-white">Contact Us</Link></li>
-                <li><Link href="/support" className="hover:text-white">Documentation</Link></li>
-                <li><Link href="/support" className="hover:text-white">API Reference</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
-                <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">© 2024 Persona Recruit AI. All rights reserved.</p>
-            <p className="text-gray-400 mt-4 md:mt-0">Made with ❤️ for better recruitment</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

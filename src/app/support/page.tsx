@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -36,8 +37,7 @@ import {
   Headphones,
   Lightbulb,
   Target,
-  Award,
-  Sparkles
+  Award
 } from 'lucide-react';
 
 export default function SupportPage() {
@@ -213,33 +213,8 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-green-50 to-emerald-50">
-      {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Pra recruit AI
-              </span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="outline" size="sm">Back to Home</Button>
-              </Link>
-              <Link href="/auth">
-                <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600">
-                  Sign In
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
+      
+      {/* Header */}
       <section className="pt-16 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <Badge className="mb-6 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200">

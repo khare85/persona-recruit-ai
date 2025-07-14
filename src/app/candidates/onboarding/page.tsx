@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import { resumeProcessingService } from '@/services/resumeProcessing.service';
 
 export default function ResumeUploadPage() {
   const router = useRouter();
@@ -68,14 +70,13 @@ export default function ResumeUploadPage() {
     try {
       setIsUploading(true);
       setUploadProgress(10);
-
-      // Use the resume processing API endpoint
+      
       const formData = new FormData();
-      formData.append('resume', selectedFile);
+      formData.append('file', selectedFile);
 
       setUploadProgress(30);
 
-      const response = await fetch('/api/candidates/resume-process', {
+      const response = await fetch('/api/upload/resume', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${await user?.getIdToken()}`
@@ -171,11 +172,11 @@ export default function ResumeUploadPage() {
                 accept=".pdf,.doc,.docx"
                 onChange={handleFileSelect}
               />
-              <Button asChild>
-                <label htmlFor="resume-upload" className="cursor-pointer">
-                  Choose File
-                </label>
-              </Button>
+              <label htmlFor="resume-upload" className="cursor-pointer">
+                <Button asChild>
+                  <span>Choose File</span>
+                </Button>
+              </label>
               <p className="text-xs text-muted-foreground mt-2">
                 Supports PDF, DOC, and DOCX files (max 5MB)
               </p>

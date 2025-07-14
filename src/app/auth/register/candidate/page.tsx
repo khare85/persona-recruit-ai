@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -17,8 +18,6 @@ import {
   User, 
   Mail, 
   Lock, 
-  Phone, 
-  MapPin, 
   ArrowRight
 } from 'lucide-react';
 
@@ -28,8 +27,6 @@ const candidateRegistrationSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(8, 'Please confirm your password'),
-  phone: z.string().optional(),
-  location: z.string().min(2, 'Location is required'),
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions"
   })
@@ -56,8 +53,6 @@ export default function CandidateRegistrationPage() {
       email: '',
       password: '',
       confirmPassword: '',
-      phone: '',
-      location: '',
       termsAccepted: false
     }
   });
@@ -68,9 +63,9 @@ export default function CandidateRegistrationPage() {
       
       const userCredential = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      // After Firebase Auth user is created, create their profile in our DB
       const token = await userCredential.getIdToken();
       
+      // Create the basic profile documents in Firestore
       const profileResponse = await fetch('/api/candidates/register', {
         method: 'POST',
         headers: {
@@ -80,8 +75,7 @@ export default function CandidateRegistrationPage() {
         body: JSON.stringify({
           firstName: data.firstName,
           lastName: data.lastName,
-          phone: data.phone,
-          location: data.location
+          location: '' // Location will be collected in onboarding
         })
       });
 
@@ -90,11 +84,11 @@ export default function CandidateRegistrationPage() {
       }
 
       toast({
-        title: "🎉 Registration Successful!",
+        title: "🎉 Account Created!",
         description: "Your account has been created. Let's build your profile.",
       });
 
-      // Redirect to step 2: resume upload
+      // Redirect to the first step of onboarding: resume upload
       router.push('/candidates/onboarding');
 
     } catch (error) {
@@ -115,9 +109,9 @@ export default function CandidateRegistrationPage() {
           <div className="flex justify-center mb-4">
             <User className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Join as a Candidate</CardTitle>
+          <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>
-            Create your profile to discover amazing job opportunities
+            Step 1 of 3: Set up your account to get started
           </CardDescription>
         </CardHeader>
         
@@ -204,41 +198,6 @@ export default function CandidateRegistrationPage() {
                   )}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number (Optional)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="+1 (555) 123-4567" className="pl-10" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="San Francisco, CA" className="pl-10" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
               
               <FormField
                 control={form.control}
@@ -270,7 +229,7 @@ export default function CandidateRegistrationPage() {
                     </>
                   ) : (
                     <>
-                      Create Account & Continue
+                      Create Account
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </>
                   )}

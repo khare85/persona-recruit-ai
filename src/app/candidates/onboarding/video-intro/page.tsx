@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -220,7 +221,6 @@ export default function VideoIntroPage() {
     }
   };
 
-  // ... (rest of the UI remains largely the same)
   return (
      <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-3xl">
@@ -235,7 +235,7 @@ export default function VideoIntroPage() {
           </div>
           <CardTitle className="text-2xl">Record Your Introduction</CardTitle>
           <CardDescription>
-            Step 3 of 3: Record a quick 10-second video to introduce yourself to potential employers
+            Step 3 of 3: Record a quick 10-second video to introduce yourself
           </CardDescription>
           <div className="mt-4">
             <Progress value={100} className="w-full" />
@@ -353,7 +353,7 @@ export default function VideoIntroPage() {
                   ) : (
                     <>
                       <Upload className="h-5 w-5 mr-2" />
-                      Save & Continue
+                      Save & Complete Profile
                     </>
                   )}
                 </Button>

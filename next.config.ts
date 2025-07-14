@@ -9,10 +9,23 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Allow cross-origin requests from preview environments
+  ...(process.env.NODE_ENV === 'development' && {
+    allowedDevOrigins: [
+      'https://9000-firebase-studio-1749940755362.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
+      'https://firebase-studio-1749940755362.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
+      'http://localhost:9000',
+      'http://localhost:3000',
+    ],
+  }),
   // Development-specific optimizations
   ...(process.env.NODE_ENV === 'development' && {
     // Disable source maps in dev to save memory
     productionBrowserSourceMaps: false,
+    // Experimental features for better performance
+    experimental: {
+      optimizeCss: false,
+    },
   }),
   images: {
     remotePatterns: [

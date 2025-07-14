@@ -39,7 +39,6 @@ export default function CandidateDashboardPage() {
         return;
       }
       
-      console.log('Dashboard: Getting token...', { userId: user.uid, userRole: user.role });
       const token = await getToken();
       
       if (!token) {
@@ -47,7 +46,6 @@ export default function CandidateDashboardPage() {
         return;
       }
       
-      console.log('Dashboard: Token obtained, making API call...');
       const response = await fetch('/api/candidates/dashboard', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -62,7 +60,6 @@ export default function CandidateDashboardPage() {
       }
       
       const result = await response.json();
-      console.log('Dashboard data loaded successfully:', result);
       setDashboardData(result.data);
     } catch (err) {
       console.error('Dashboard fetch error:', err);
@@ -96,7 +93,7 @@ export default function CandidateDashboardPage() {
               <CardTitle>Error Loading Dashboard</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-center text-muted-foreground">{error || 'Could not load your dashboard data.'}</p>
+              <p className="text-center text-muted-foreground">{error || "Could not load your dashboard data."}</p>
               <Button className="w-full mt-4" onClick={() => window.location.reload()}>
                 Try Again
               </Button>

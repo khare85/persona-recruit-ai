@@ -610,16 +610,12 @@ class DatabaseService {
     }
   }
 
-  async getJobApplicationById(id: string): Promise<JobApplication | null> {
+  async getApplicationById(id: string): Promise<JobApplication | null> {
     return this.get<JobApplication>(COLLECTIONS.JOB_APPLICATIONS, id);
   }
 
-  async updateJobApplication(id: string, data: Partial<JobApplication>): Promise<void> {
-    const updateData = {
-      ...data,
-      lastActivityAt: new Date()
-    };
-    return this.update(COLLECTIONS.JOB_APPLICATIONS, id, updateData);
+  async updateApplication(id: string, data: Partial<JobApplication>): Promise<void> {
+    return this.update(COLLECTIONS.JOB_APPLICATIONS, id, data);
   }
 
   async getCandidateApplications(candidateId: string): Promise<JobApplication[]> {

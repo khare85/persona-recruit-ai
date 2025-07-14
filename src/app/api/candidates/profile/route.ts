@@ -144,6 +144,40 @@ export const PUT = withRateLimit('profile',
           profileComplete: true // Mark as complete since they're updating
         });
 
+        // Update vector database with new profile information if candidate has embeddings
+        try {
+          const { embeddingDatabaseService } = await import('@/services/embeddingDatabase.service');
+          const candidateWithEmbedding = await embeddingDatabaseService.getCandidateWithEmbedding(userId);
+          
+          if (candidateWithEmbedding?.resumeEmbedding) {
+            // Update the candidate's searchable data in vector database
+            await embeddingDatabaseService.saveCandidateWithEmbedding(userId, {
+              fullName: `${profileData.firstName} ${profileData.lastName}`,
+              email: candidateWithEmbedding.email,
+              currentTitle: profileData.currentTitle,
+              extractedResumeText: candidateWithEmbedding.extractedResumeText,
+              resumeEmbedding: candidateWithEmbedding.resumeEmbedding,
+              skills: profileData.skills,
+              phone: profileData.phone,
+              linkedinProfile: profileData.linkedinUrl,
+              portfolioUrl: profileData.portfolioUrl,
+              experienceSummary: profileData.summary,
+              aiGeneratedSummary: candidateWithEmbedding.aiGeneratedSummary,
+              resumeFileUrl: candidateWithEmbedding.resumeFileUrl,
+              videoIntroductionUrl: candidateWithEmbedding.videoIntroductionUrl,
+              availability: profileData.availability
+            });
+            
+            apiLogger.info('Vector database updated with new profile data', { userId });
+          }
+        } catch (error) {
+          // Don't fail profile update if vector database update fails
+          apiLogger.warn('Failed to update vector database with profile changes', { 
+            userId, 
+            error: String(error) 
+          });
+        }
+
         apiLogger.info('Candidate profile updated successfully', { userId });
 
         return NextResponse.json({

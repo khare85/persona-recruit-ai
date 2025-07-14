@@ -104,7 +104,7 @@ const users = [
 
 export async function GET(request: NextRequest) {
   try {
-    // In production, get user ID from JWT token
+    // In production, get user ID from Firebase Auth token
     const userId = request.headers.get('x-user-id') || '1'; // Mock for demo
     
     const user = users.find(u => u.id === userId);
@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // In production, get user ID from JWT token
+    // In production, get user ID from Firebase Auth token
     const userId = request.headers.get('x-user-id') || '1'; // Mock for demo
     const body = await request.json();
     

@@ -94,8 +94,8 @@ export default function CandidateRegistrationPage() {
         description: "Your account has been created. Let's build your profile.",
       });
 
-      // Redirect to the full onboarding flow
-      router.push('/candidates/onboarding/video-intro');
+      // Redirect to step 2: resume upload
+      router.push('/candidates/onboarding');
 
     } catch (error) {
       toast({

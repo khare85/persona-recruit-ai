@@ -183,13 +183,19 @@ export default function VideoIntroPage() {
       const arrayBuffer = await recordedBlob.arrayBuffer();
       const base64Content = Buffer.from(arrayBuffer).toString('base64');
 
-      const response = await authenticatedFetch('/api/candidates/onboarding', {
+      const response = await fetch('/api/upload/video-intro', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user?.getIdToken()}`
+        },
         body: JSON.stringify({ videoBlob: base64Content })
       });
 
-      if (!response.success) {
-        throw new Error(response.error || 'Upload failed');
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
       }
 
       toast({
@@ -229,8 +235,12 @@ export default function VideoIntroPage() {
           </div>
           <CardTitle className="text-2xl">Record Your Introduction</CardTitle>
           <CardDescription>
-            Record a quick 10-second video to introduce yourself to potential employers
+            Step 3 of 3: Record a quick 10-second video to introduce yourself to potential employers
           </CardDescription>
+          <div className="mt-4">
+            <Progress value={100} className="w-full" />
+            <p className="text-sm text-muted-foreground mt-2">Final Step</p>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-6">

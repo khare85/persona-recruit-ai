@@ -66,11 +66,7 @@ class TextEmbeddingService {
       // Truncate text if too long
       const truncatedText = this.truncateText(request.text);
 
-      if (process.env.NODE_ENV === 'development') {
-        // For development, return mock embedding
-        aiLogger.info('Using mock embedding for development');
-        return this.generateMockEmbedding(truncatedText);
-      }
+      // Always use real Vertex AI for embeddings to ensure consistency
 
       // In production, use actual Vertex AI API
       const embedding = await this.callVertexAI(truncatedText, request.taskType);
@@ -88,9 +84,9 @@ class TextEmbeddingService {
         error: String(error)
       });
       
-      // Fall back to mock embedding on error
-      aiLogger.warn('Falling back to mock embedding due to error');
-      return this.generateMockEmbedding(request.text);
+      // Re-throw error instead of falling back to mock embedding
+      aiLogger.error('Text embedding generation failed');
+      throw error;
     }
   }
 
@@ -150,46 +146,7 @@ class TextEmbeddingService {
     }
   }
 
-  /**
-   * Generate mock embedding for development/testing
-   */
-  private generateMockEmbedding(text: string): number[] {
-    // Create deterministic but realistic-looking embeddings
-    const seed = this.hashString(text);
-    const embedding: number[] = [];
-    
-    for (let i = 0; i < this.dimension; i++) {
-      // Use seeded random to make embeddings consistent for same text
-      const value = this.seededRandom(seed + i);
-      // Normalize to typical embedding range [-1, 1] with normal distribution
-      embedding.push((value - 0.5) * 2);
-    }
 
-    // Normalize the vector
-    const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-    return embedding.map(val => val / magnitude);
-  }
-
-  /**
-   * Simple hash function for seeding mock embeddings
-   */
-  private hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
-  }
-
-  /**
-   * Seeded random number generator
-   */
-  private seededRandom(seed: number): number {
-    const x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-  }
 
   /**
    * Truncate text to fit within model's token limit

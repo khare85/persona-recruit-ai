@@ -85,7 +85,7 @@ const processResumeDocAIFlow = ai.defineFlow(
       console.error('Error processing document with Document AI:', error);
       // Log more detailed error if available
       if (error instanceof Error && 'details' in error) {
-        console.error('Document AI Error Details:', (error as any).details);
+        console.error('Document AI Error Details:', (error as Error & { details: unknown }).details);
       }
       throw new Error(`Failed to process resume with Document AI: ${error instanceof Error ? error.message : String(error)}`);
     }

@@ -27,26 +27,8 @@ if (!fs.existsSync(envPath)) {
 const envContent = fs.readFileSync(envPath, 'utf8');
 const envLines = envContent.split('\n');
 
-// Check for JWT_SECRET
-const hasJwtSecret = envLines.some(line => 
-  line.trim().startsWith('JWT_SECRET=') && 
-  !line.includes('your_jwt_secret') &&
-  !line.includes('your-super-secure') &&
-  line.split('=')[1]?.replace(/['"]/g, '').trim().length >= 32
-);
-
-if (!hasJwtSecret) {
-  console.log('⚠️  JWT_SECRET is missing or insecure!');
-  console.log('Generating a secure JWT_SECRET...');
-  
-  const newSecret = crypto.randomBytes(32).toString('base64');
-  const updatedContent = envContent + '\n# JWT Secret for authentication\nJWT_SECRET="' + newSecret + '"\n';
-  
-  fs.writeFileSync(envPath, updatedContent);
-  console.log('✅ JWT_SECRET has been added to .env.local');
-} else {
-  console.log('✅ JWT_SECRET is properly configured');
-}
+// JWT_SECRET is no longer required - using Firebase Auth exclusively
+console.log('ℹ️  JWT_SECRET is no longer required (using Firebase Auth)');
 
 // Check other required variables
 const requiredVars = [

@@ -111,7 +111,7 @@ npm start
 # Core Configuration
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project"
 GOOGLE_API_KEY="your-google-key"
-JWT_SECRET="your-secure-secret"
+# Note: JWT_SECRET is no longer required - using Firebase Auth exclusively
 
 # Optional but Recommended
 ELEVENLABS_API_KEY="your-elevenlabs-key"

@@ -1,97 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { withAuth, withRole } from '@/middleware/auth';
+import { withRateLimit } from '@/middleware/security';
+import { handleApiError } from '@/lib/errors';
+import { resumeProcessingService } from '@/services/resumeProcessing.service';
 
-export async function POST(request: NextRequest) {
-  try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const userId = formData.get('userId') as string;
+/**
+ * POST /api/upload/resume - Upload and process candidate resume with full AI pipeline
+ * This endpoint uses the complete resume processing service which includes:
+ * - File validation and upload to Firebase Storage
+ * - Document AI text extraction
+ * - AI-powered resume summary generation
+ * - Vector embedding generation
+ * - Vector database storage for semantic search
+ */
+export const POST = withRateLimit('upload',
+  withAuth(
+    withRole(['candidate'], async (request: NextRequest): Promise<NextResponse> => {
+      try {
+        const userId = request.user!.id;
+        const formData = await request.formData();
+        const file = formData.get('file') as File;
 
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
-    }
+        if (!file) {
+          return NextResponse.json(
+            { error: 'Resume file is required' },
+            { status: 400 }
+          );
+        }
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
-    }
+        // Process resume using the comprehensive service
+        const result = await resumeProcessingService.processResume({
+          userId,
+          file,
+          skipEmbeddings: false // Enable full AI processing
+        });
 
-    // Validate file type (resumes)
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
-    ];
+        if (!result.success) {
+          return NextResponse.json(
+            { error: result.error },
+            { status: 400 }
+          );
+        }
 
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Please upload PDF, DOC, DOCX, or TXT files only.' },
-        { status: 400 }
-      );
-    }
+        return NextResponse.json({
+          success: true,
+          data: {
+            resumeUrl: result.data!.resumeUrl,
+            fileName: result.data!.fileName,
+            hasTextExtraction: !!result.data!.extractedText,
+            hasEmbeddings: result.data!.hasEmbeddings,
+            vectorSearchEnabled: result.data!.hasEmbeddings,
+            processingSteps: result.data!.processingSteps
+          },
+          warnings: result.warnings,
+          message: 'Resume uploaded and processed successfully with AI'
+        });
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File size too large. Maximum size is 10MB.' },
-        { status: 400 }
-      );
-    }
-
-    // Generate unique filename
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    
-    // Create upload directory structure
-    const uploadDir = join(process.cwd(), 'uploads', 'resumes', userId);
-    await mkdir(uploadDir, { recursive: true });
-
-    // Save file
-    const filePath = join(uploadDir, fileName);
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // Store file metadata (in production, save to database)
-    const fileMetadata = {
-      id: uuidv4(),
-      originalName: file.name,
-      fileName: fileName,
-      filePath: filePath,
-      fileSize: file.size,
-      fileType: file.type,
-      userId: userId,
-      uploadedAt: new Date().toISOString(),
-      category: 'resume'
-    };
-
-    // In production, save metadata to database
-    console.log('File uploaded:', fileMetadata);
-
-    return NextResponse.json({
-      message: 'Resume uploaded successfully',
-      fileId: fileMetadata.id,
-      originalName: file.name,
-      fileName: fileName,
-      fileSize: file.size,
-      uploadedAt: fileMetadata.uploadedAt,
-      downloadUrl: `/api/files/${fileMetadata.id}`
-    });
-
-  } catch (error) {
-    console.error('Resume upload error:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload resume' },
-      { status: 500 }
-    );
-  }
-}
+      } catch (error) {
+        return handleApiError(error);
+      }
+    })
+  )
+);

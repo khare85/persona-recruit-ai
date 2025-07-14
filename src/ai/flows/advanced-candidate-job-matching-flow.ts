@@ -15,41 +15,40 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { generateTextEmbedding } from '@/ai/flows/generate-text-embedding-flow';
 import { searchCandidatesByEmbedding, CandidateWithEmbeddingFirestore } from '@/services/firestoreService';
-import { candidateJobMatcher, CandidateJobMatcherInput, CandidateJobMatcherOutput } from '@/ai/flows/candidate-job-matcher';
+import { candidateJobMatcher } from '@/ai/flows/candidate-job-matcher';
 
-// Function to fetch job details from API or mock data
+// Function to fetch job details from database
 async function getJobDetails(jobId?: string): Promise<{ description: string; companyInfo: string; title: string } | null> {
   if (!jobId) return null;
   
   try {
-    // First try to fetch from API (in production)
-    if (typeof window !== 'undefined') {
-      const response = await fetch(`/api/jobs/${jobId}`);
-      if (response.ok) {
-        const result = await response.json();
-        return {
-          description: result.data.description,
-          companyInfo: result.data.company + (result.data.benefits ? ` Benefits: ${result.data.benefits.join(', ')}` : ''),
-          title: result.data.title
-        };
+    // Import database service dynamically to avoid import issues in Genkit flow
+    const { databaseService } = await import('@/services/database.service');
+    
+    const job = await databaseService.getJobById(jobId);
+    if (!job) {
+      console.warn(`Job with ID ${jobId} not found`);
+      return null;
+    }
+
+    // Get company information if available
+    let companyInfo = job.company || 'Company information not available';
+    if (job.companyId) {
+      try {
+        const company = await databaseService.getCompanyById(job.companyId);
+        if (company) {
+          companyInfo = `${company.name}. ${company.description || ''} ${job.benefits ? `Benefits: ${job.benefits.join(', ')}` : ''}`.trim();
+        }
+      } catch (error) {
+        console.warn('Could not fetch company details:', error);
       }
     }
-    
-    // Fallback to mock data for development
-    const MOCK_JOB_DETAILS: Record<string, { description: string; companyInfo: string; title: string }> = {
-      'job1': {
-        title: 'Senior Software Engineer',
-        description: `We are seeking a highly skilled Senior Software Engineer with expertise in cloud technologies, distributed systems, and modern JavaScript frameworks. The ideal candidate will have a strong background in designing scalable solutions and a passion for innovation. Responsibilities include leading development projects, mentoring junior engineers, and collaborating with cross-functional teams to deliver high-quality software products. Required skills: Node.js, React, AWS, Kubernetes, Microservices.`,
-        companyInfo: `Innovative tech company focused on SaaS solutions. Values collaboration, continuous learning, and impact. Offers competitive salary and benefits. Known for a fast-paced environment and cutting-edge projects.`,
-      },
-      'job2': {
-        title: 'Senior Frontend Developer',
-        description: `Looking for an experienced Frontend Developer to join our team building cutting-edge web applications. You'll work with React, TypeScript, and modern CSS frameworks to create exceptional user experiences. Responsibilities include developing responsive UIs, optimizing performance, and collaborating with designers and backend engineers.`,
-        companyInfo: `Fast-growing startup focused on user experience and design excellence. Remote-friendly culture with emphasis on work-life balance.`,
-      }
+
+    return {
+      description: job.description,
+      companyInfo,
+      title: job.title
     };
-    
-    return MOCK_JOB_DETAILS[jobId] || null;
   } catch (error) {
     console.error('Error fetching job details:', error);
     return null;

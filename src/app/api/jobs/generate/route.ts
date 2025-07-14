@@ -73,17 +73,19 @@ export const GET = withRateLimit('ai', async (req: NextRequest): Promise<NextRes
       );
     }
     
-    // In a full implementation, you'd call a dedicated skill generation flow.
-    // For now, we return a mock or a simplified list.
-    const mockSkills = [
-        'React', 'TypeScript', 'Node.js', 'Project Management', 'Agile Methodologies',
-        'Communication', 'Problem Solving', 'Data Analysis'
-    ];
+    // Generate AI-powered skills based on job title and experience level
+    const { generateJobSkills } = await import('@/ai/flows/job-skill-generator-flow');
+    
+    const result = await generateJobSkills({
+      jobTitle: params.jobTitle,
+      experienceLevel: params.experienceLevel || 'mid-level',
+      industry: params.industry || 'technology'
+    });
 
     return NextResponse.json({
       success: true,
-      data: { skills: mockSkills },
-      message: 'Skills generated successfully'
+      data: { skills: result.skills },
+      message: 'Skills generated successfully using AI'
     });
 
   } catch (error) {

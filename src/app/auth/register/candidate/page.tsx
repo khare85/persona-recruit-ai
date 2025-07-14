@@ -65,6 +65,9 @@ export default function CandidateRegistrationPage() {
       
       const userCredential = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
+      // Wait a bit for the auth state to propagate
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const token = await userCredential.getIdToken();
       
       const profileResponse = await fetch('/api/candidates/register', {
@@ -80,8 +83,10 @@ export default function CandidateRegistrationPage() {
         })
       });
 
+      const result = await profileResponse.json();
+
       if (!profileResponse.ok) {
-        throw new Error('Failed to create candidate profile.');
+        throw new Error(result.error || 'Failed to create candidate profile.');
       }
 
       toast({
@@ -93,6 +98,7 @@ export default function CandidateRegistrationPage() {
       router.push('/candidates/onboarding/resume');
 
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
         description: error instanceof Error ? error.message : "Please try again.",

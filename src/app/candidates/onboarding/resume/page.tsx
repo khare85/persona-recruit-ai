@@ -17,8 +17,9 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-export default function ResumeUploadPage() {
+function ResumeUploadContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -230,5 +231,13 @@ export default function ResumeUploadPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ResumeUploadPage() {
+  return (
+    <ProtectedRoute requiredRole="candidate" redirectTo="/auth/login">
+      <ResumeUploadContent />
+    </ProtectedRoute>
   );
 }

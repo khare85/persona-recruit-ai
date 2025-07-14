@@ -23,11 +23,12 @@ import {
   Info
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const VIDEO_DURATION_LIMIT = 10; // seconds
 const VIDEO_COUNTDOWN = 3; // countdown before recording starts
 
-export default function VideoIntroPage() {
+function VideoIntroContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -372,5 +373,13 @@ export default function VideoIntroPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function VideoIntroPage() {
+  return (
+    <ProtectedRoute requiredRole="candidate" redirectTo="/auth/login">
+      <VideoIntroContent />
+    </ProtectedRoute>
   );
 }

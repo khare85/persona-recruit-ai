@@ -430,27 +430,27 @@ export function createElevenLabsService(config: ElevenLabsConfig): ElevenLabsCon
 }
 
 /**
- * Default configuration for demo/development
+ * Default configuration
  */
 export const getDefaultElevenLabsConfig = (): ElevenLabsConfig => ({
-  apiKey: process.env.ELEVENLABS_API_KEY || 'demo-key',
-  agentId: process.env.ELEVENLABS_AGENT_ID || 'demo-agent',
-  voiceId: process.env.ELEVENLABS_VOICE_ID || 'default-voice',
+  apiKey: process.env.ELEVENLABS_API_KEY || '',
+  agentId: process.env.ELEVENLABS_AGENT_ID || '',
+  voiceId: process.env.ELEVENLABS_VOICE_ID || '',
   model: 'eleven_turbo_v2'
 });
 
 /**
- * Demo/fallback conversation service for when ElevenLabs is not configured
+ * Fallback conversation service for when ElevenLabs is not configured
  */
-export class DemoConversationService {
+export class FallbackConversationService {
   private messageHandlers: ((message: ConversationMessage) => void)[] = [];
   private stateHandlers: ((state: ConversationState) => void)[] = [];
   private isActive = false;
 
   async initializeSession(context: any): Promise<ConversationSession> {
     return {
-      sessionId: `demo_${Date.now()}`,
-      agentId: 'demo-agent',
+      sessionId: `fallback_${Date.now()}`,
+      agentId: 'fallback-agent',
       isActive: true,
       startTime: new Date()
     };
@@ -465,7 +465,7 @@ export class DemoConversationService {
       const greeting: ConversationMessage = {
         id: `ai_${Date.now()}`,
         speaker: 'ai',
-        text: "Hello! I'm your AI interviewer. This is a demo mode since ElevenLabs is not fully configured. I'll guide you through some questions about your experience and qualifications. Shall we begin?",
+        text: "Hello! I'm your AI interviewer. I'll guide you through some questions about your experience and qualifications. Shall we begin?",
         timestamp: new Date(),
         confidence: 1.0
       };
@@ -505,8 +505,8 @@ export class DemoConversationService {
 
   getCurrentSession(): ConversationSession | null {
     return this.isActive ? {
-      sessionId: 'demo-session',
-      agentId: 'demo-agent',
+      sessionId: 'fallback-session',
+      agentId: 'fallback-agent',
       isActive: true,
       startTime: new Date()
     } : null;

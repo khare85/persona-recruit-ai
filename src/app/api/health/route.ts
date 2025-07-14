@@ -207,8 +207,8 @@ async function checkElevenLabs(): Promise<HealthCheck> {
   const startTime = Date.now();
   
   try {
-    const hasApiKey = !!(process.env.ELEVENLABS_API_KEY && process.env.ELEVENLABS_API_KEY !== 'demo-key');
-    const hasAgentId = !!(process.env.ELEVENLABS_AGENT_ID && process.env.ELEVENLABS_AGENT_ID !== 'demo-agent');
+    const hasApiKey = !!process.env.ELEVENLABS_API_KEY;
+    const hasAgentId = !!process.env.ELEVENLABS_AGENT_ID;
     
     const status = hasApiKey && hasAgentId ? 'healthy' : 'degraded';
     

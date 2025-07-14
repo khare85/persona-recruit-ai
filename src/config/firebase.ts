@@ -6,10 +6,6 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, Analytics } from 'firebase/analytics';
 
-// Get current environment
-const environment = process.env.NEXT_PUBLIC_ENVIRONMENT || 'production';
-const isDemoEnvironment = environment === 'demo';
-
 // Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,11 +19,7 @@ const firebaseConfig = {
 
 // Log environment info (only in development)
 if (process.env.NODE_ENV === 'development') {
-  console.log(`🔥 Firebase Environment: ${environment}`);
-  console.log(`📦 Project ID: ${firebaseConfig.projectId}`);
-  if (isDemoEnvironment) {
-    console.log('🎭 Running in DEMO mode with separate database');
-  }
+  console.log(`🔥 Firebase Project ID: ${firebaseConfig.projectId}`);
 }
 
 // Validate essential configuration
@@ -41,13 +33,12 @@ const missingKeys = Object.entries(requiredConfig)
   .map(([key, _]) => key);
 
 if (missingKeys.length > 0) {
-  const projectName = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai';
-  console.warn(`WARNING: ${missingKeys.map(key => `NEXT_PUBLIC_FIREBASE_${key.toUpperCase()}`).join(', ')} ${missingKeys.length === 1 ? 'is' : 'are'} missing${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''}. Client-side Firebase will not initialize correctly.`);
+  console.warn(`WARNING: ${missingKeys.map(key => `NEXT_PUBLIC_FIREBASE_${key.toUpperCase()}`).join(', ')} ${missingKeys.length === 1 ? 'is' : 'are'} missing. Client-side Firebase will not initialize correctly.`);
   if (!firebaseConfig.apiKey) {
-    console.warn(`WARNING: Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''}. Firebase services, especially Authentication, will not initialize correctly. Ensure this environment variable is set with a valid Web API Key from your${projectName !== 'persona-recruit-ai' ? ` '${projectName}'` : ''} Firebase project settings.`);
+    console.warn(`WARNING: Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing. Firebase services, especially Authentication, will not initialize correctly. Ensure this environment variable is set with a valid Web API Key from your Firebase project settings.`);
   }
   if (!firebaseConfig.projectId) {
-    console.warn(`WARNING: Firebase Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID) is missing${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''}. Firebase services will not initialize correctly. Ensure this environment variable is set${projectName !== 'persona-recruit-ai' ? ` to '${projectName}'` : ''}.`);
+    console.warn(`WARNING: Firebase Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID) is missing. Firebase services will not initialize correctly. Ensure this environment variable is set.`);
   }
 }
 
@@ -80,16 +71,12 @@ if (missingKeys.length === 0) {
     console.error('Error initializing Firebase services:', error);
   }
 } else {
-  const projectName = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'persona-recruit-ai';
-  console.error(`Firebase critical configuration${projectName !== 'persona-recruit-ai' ? ` (API Key or Project ID for '${projectName}')` : ' missing. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set.'} is missing. Initialization skipped.`);
-  console.error(`Firebase Auth initialization skipped: Firebase App was not properly initialized. This usually means NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID${projectName !== 'persona-recruit-ai' ? ` for '${projectName}'` : ''} was missing or empty.`);
+  console.error(`Firebase critical configuration (API Key or Project ID) is missing. Initialization skipped. Ensure NEXT_PUBLIC_FIREBASE_API_KEY and NEXT_PUBLIC_FIREBASE_PROJECT_ID are set.`);
+  console.error(`Firebase Auth initialization skipped: Firebase App was not properly initialized. This usually means NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID was missing or empty.`);
 }
 
 // Export initialized instances
 export { auth, db, storage, analytics };
-
-// Export environment info
-export { environment, isDemoEnvironment };
 
 // Also export the app for any custom initialization needs
 export default app;

@@ -11,7 +11,7 @@ import { databaseService } from '@/services/database.service';
 const candidateOnboardingSchema = z.object({
   firstName: z.string().min(2, 'First name is required').transform(sanitizeString),
   lastName: z.string().min(2, 'Last name is required').transform(sanitizeString),
-  location: z.string().min(2, 'Location is required').transform(sanitizeString).optional(),
+  location: z.string().transform(sanitizeString).optional().default(''),
   phone: z.string().min(10).max(20).transform(sanitizeString).optional(),
 });
 
@@ -72,6 +72,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       phone: data.phone,
       location: data.location || '',
       currentTitle: 'Professional',
+      experience: 'Entry Level' as const,
       summary: '',
       skills: [],
       profileComplete: false,

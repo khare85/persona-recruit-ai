@@ -184,9 +184,6 @@ function VideoIntroContent() {
       
       const token = await user?.getIdToken();
       if (!token) throw new Error("Authentication failed");
-
-      const arrayBuffer = await recordedBlob.arrayBuffer();
-      const base64Content = Buffer.from(arrayBuffer).toString('base64');
       
       const response = await fetch('/api/upload/video-intro', {
         method: 'POST',

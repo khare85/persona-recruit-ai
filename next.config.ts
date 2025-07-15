@@ -11,12 +11,27 @@ const nextConfig: NextConfig = {
   },
   // Allow cross-origin requests from preview environments
   ...(process.env.NODE_ENV === 'development' && {
-    allowedDevOrigins: [
-      'https://9000-firebase-studio-1749940755362.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
-      'https://firebase-studio-1749940755362.cluster-6dx7corvpngoivimwvvljgokdw.cloudworkstations.dev',
-      'http://localhost:9000',
-      'http://localhost:3000',
-    ],
+    async headers() {
+      return [
+        {
+          source: '/:path*',
+          headers: [
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+            {
+              key: 'Access-Control-Allow-Methods',
+              value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT',
+            },
+            {
+              key: 'Access-Control-Allow-Headers',
+              value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
+            },
+          ],
+        },
+      ]
+    },
   }),
   // Development-specific optimizations
   ...(process.env.NODE_ENV === 'development' && {

@@ -90,3 +90,11 @@ export const getFirebaseAdmin = (): Promise<admin.app.App> => {
   }
   return appPromise;
 };
+
+// Export commonly used services
+export const auth = {
+  verifyIdToken: async (token: string) => {
+    const app = await getFirebaseAdmin();
+    return app.auth().verifyIdToken(token);
+  }
+};

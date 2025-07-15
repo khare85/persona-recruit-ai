@@ -69,7 +69,8 @@ const nextConfig: NextConfig = {
     'firebase-admin',
     'handlebars',
     'dotprompt',
-    'genkit'
+    'genkit',
+    'bull'
   ],
   // Configure webpack for better memory management
   webpack: (config, { dev, isServer }) => {

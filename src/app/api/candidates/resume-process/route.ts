@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * POST /api/candidates/resume-process - Upload and process candidate resume with optimized AI services
  */
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handlePOST(req: NextRequest): Promise<NextResponse> {
   try {
     const formData = await req.formData();
     const file = formData.get('resume') as File;
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 /**
  * GET /api/candidates/resume-process - Get resume processing status
  */
-export async function GET(req: NextRequest): Promise<NextResponse> {
+async function handleGET(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
     const candidateId = searchParams.get('candidateId');
@@ -202,9 +202,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Apply authentication middleware
-export const POST_WITH_AUTH = withAuth(POST);
-export const GET_WITH_AUTH = withAuth(GET);
-
-// Export with middleware
-export { POST_WITH_AUTH as POST, GET_WITH_AUTH as GET };
+// Apply authentication middleware and export
+export const POST = withAuth(handlePOST);
+export const GET = withAuth(handleGET);

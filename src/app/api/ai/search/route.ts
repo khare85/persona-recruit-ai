@@ -35,7 +35,7 @@ const searchRequestSchema = z.object({
 /**
  * Semantic search - POST /api/ai/search
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = searchRequestSchema.parse(body);
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 /**
  * Batch search - POST /api/ai/search/batch
  */
-export async function PUT(request: NextRequest) {
+async function handlePUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { queries } = body;
@@ -153,7 +153,7 @@ export async function PUT(request: NextRequest) {
 /**
  * Get search statistics - GET /api/ai/search/stats
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const searchStats = optimizedVectorSearch.getSearchStats();
     const aiStats = aiOrchestrator.getProcessingStats();
@@ -175,10 +175,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Apply authentication middleware
-export const POST_WITH_AUTH = withAuth(POST);
-export const PUT_WITH_AUTH = withAuth(PUT);
-export const GET_WITH_AUTH = withAuth(GET);
-
-// Export with middleware
-export { POST_WITH_AUTH as POST, PUT_WITH_AUTH as PUT, GET_WITH_AUTH as GET };
+// Apply authentication middleware and export
+export const POST = withAuth(handlePOST);
+export const PUT = withAuth(handlePUT);
+export const GET = withAuth(handleGET);

@@ -28,7 +28,7 @@ const processRequestSchema = z.object({
 /**
  * Process candidate with AI - POST /api/ai/process-candidate
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = processRequestSchema.parse(body);
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 /**
  * Get processing status - GET /api/ai/process-candidate?jobId=xxx
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('jobId');
@@ -128,9 +128,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Apply authentication middleware
-export const POST_WITH_AUTH = withAuth(POST);
-export const GET_WITH_AUTH = withAuth(GET);
-
-// Export with middleware
-export { POST_WITH_AUTH as POST, GET_WITH_AUTH as GET };
+// Apply authentication middleware and export
+export const POST = withAuth(handlePOST);
+export const GET = withAuth(handleGET);

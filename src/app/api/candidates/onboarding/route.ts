@@ -22,7 +22,7 @@ const onboardingSchema = z.object({
 /**
  * POST /api/candidates/onboarding - Complete candidate onboarding with optimized AI services
  */
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handlePOST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 /**
  * GET /api/candidates/onboarding - Get onboarding status
  */
-export async function GET(req: NextRequest): Promise<NextResponse> {
+async function handleGET(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
     const candidateId = searchParams.get('candidateId');
@@ -255,9 +255,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Apply authentication middleware
-export const POST_WITH_AUTH = withAuth(POST);
-export const GET_WITH_AUTH = withAuth(GET);
-
-// Export with middleware
-export { POST_WITH_AUTH as POST, GET_WITH_AUTH as GET };
+// Apply authentication middleware and export
+export const POST = withAuth(handlePOST);
+export const GET = withAuth(handleGET);

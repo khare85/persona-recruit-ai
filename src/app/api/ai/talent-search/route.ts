@@ -25,7 +25,7 @@ const searchSchema = z.object({
   }).optional()
 });
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -150,8 +150,5 @@ export async function OPTIONS(request: NextRequest) {
   });
 }
 
-// Apply authentication middleware
-export const POST_WITH_AUTH = withAuth(POST);
-
-// Export with middleware
-export { POST_WITH_AUTH as POST };
+// Apply authentication middleware and export
+export const POST = withAuth(handlePOST);

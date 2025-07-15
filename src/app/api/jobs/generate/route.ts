@@ -20,7 +20,7 @@ const jobGenerationSchema = z.object({
 /**
  * Generate job description using AI
  */
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handlePOST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     const validation = jobGenerationSchema.safeParse(body);
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 /**
  * Generate skills only for a job title
  */
-export async function GET(req: NextRequest): Promise<NextResponse> {
+async function handleGET(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
     const jobTitle = searchParams.get('jobTitle');
@@ -170,7 +170,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 /**
  * Get job generation status
  */
-export async function PUT(req: NextRequest): Promise<NextResponse> {
+async function handlePUT(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
     const jobId = searchParams.get('jobId');
@@ -208,10 +208,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Apply authentication middleware
-export const POST_WITH_AUTH = withAuth(POST);
-export const GET_WITH_AUTH = withAuth(GET);
-export const PUT_WITH_AUTH = withAuth(PUT);
-
-// Export with middleware
-export { POST_WITH_AUTH as POST, GET_WITH_AUTH as GET, PUT_WITH_AUTH as PUT };
+// Apply authentication middleware and export
+export const POST = withAuth(handlePOST);
+export const GET = withAuth(handleGET);
+export const PUT = withAuth(handlePUT);

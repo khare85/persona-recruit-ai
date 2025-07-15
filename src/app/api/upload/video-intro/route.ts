@@ -1,16 +1,18 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/auth/middleware';
+import { withAuth, AuthenticatedRequest } from '@/middleware/auth';
 import { getFirebaseAdmin } from '@/lib/firebase/server';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import { videoStorageService } from '@/services/videoStorage.service';
 
 /**
  * POST /api/upload/video-intro - Upload candidate video introduction
  * This endpoint handles the final step of the onboarding process
  */
-async function handlePOST(req: NextRequest & { user?: { uid: string } }): Promise<NextResponse> {
+async function handlePOST(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const userId = req.user?.uid;
+    const userId = req.user?.id;
     
     if (!userId) {
       return NextResponse.json(
@@ -29,23 +31,24 @@ async function handlePOST(req: NextRequest & { user?: { uid: string } }): Promis
       );
     }
 
-    // For now, just mark the video as uploaded and complete onboarding
-    // In a real implementation, you would save the video to Firebase Storage
+    // Convert base64 to buffer
+    const buffer = Buffer.from(videoBlob, 'base64');
     
-    // Update candidate profile to mark video as uploaded and onboarding complete
-    const candidateRef = doc(db, 'candidates', userId);
-    await updateDoc(candidateRef, {
-      videoIntroRecorded: true,
-      onboardingComplete: true,
-      profileComplete: true,
-      lastUpdated: new Date()
+    const uploadResult = await videoStorageService.uploadVideo(buffer, 'video-intro.webm', {
+        userId,
+        type: 'intro',
+        maxSizeMB: 50,
+        generateThumbnail: true,
     });
 
-    // Also update the user document
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      profileComplete: true,
-      lastUpdated: new Date()
+
+    // Update candidate profile to mark video as uploaded and onboarding complete
+    await databaseService.updateCandidateProfile(userId, {
+        videoIntroUrl: uploadResult.url,
+        videoIntroThumbnail: uploadResult.thumbnailUrl,
+        videoIntroUploadedAt: new Date(),
+        onboardingComplete: true,
+        profileComplete: true,
     });
 
     return NextResponse.json({

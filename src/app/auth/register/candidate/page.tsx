@@ -67,8 +67,8 @@ export default function CandidateRegistrationPage() {
       
       const userCredential = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      // Wait a bit for the auth state to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait a bit for the auth state to propagate and get the token
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const token = await userCredential.getIdToken();
       
@@ -113,7 +113,8 @@ export default function CandidateRegistrationPage() {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    // The modal will handle routing to the profile page
+    // Redirect to the dashboard after successful onboarding.
+    router.push('/candidates/dashboard');
   };
 
   return (
@@ -243,7 +244,7 @@ export default function CandidateRegistrationPage() {
                     </>
                   ) : (
                     <>
-                      Create Account
+                      Create Account & Continue
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </>
                   )}
@@ -256,7 +257,10 @@ export default function CandidateRegistrationPage() {
       
       <OnboardingModal
         isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
+        onClose={() => {
+          setShowOnboarding(false);
+          router.push('/candidates/dashboard'); // Go to dashboard if they close modal
+        }}
         onComplete={handleOnboardingComplete}
       />
     </div>

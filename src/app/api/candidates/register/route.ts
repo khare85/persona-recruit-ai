@@ -13,7 +13,6 @@ const candidateOnboardingSchema = z.object({
   firstName: z.string().min(2, 'First name is required').transform(sanitizeString),
   lastName: z.string().min(2, 'Last name is required').transform(sanitizeString),
   location: z.string().transform(sanitizeString).optional().default(''),
-  phone: z.string().min(10).max(20).transform(sanitizeString).optional(),
 });
 
 /**
@@ -70,7 +69,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     // Create candidate profile document
     const profileDoc = {
       userId,
-      phone: data.phone,
+      phone: '',
       location: data.location || '',
       currentTitle: 'Professional',
       experience: 'Entry Level' as const,
@@ -101,3 +100,4 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     return handleApiError(error);
   }
 });
+

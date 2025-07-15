@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withAuth, withRole } from '@/middleware/auth';
-import { withRateLimit } from '@/middleware/security';
-import { handleApiError } from '@/lib/errors';
-import { apiLogger } from '@/lib/logger';
-import { databaseService } from '@/services/database.service';
-import { fileUploadService } from '@/lib/storage';
-import { processResumeWithDocAI } from '@/ai/flows/process-resume-document-ai-flow';
-import { generateResumeSummary } from '@/ai/flows/generate-resume-summary-flow';
-import { extractSkillsFromResume } from '@/ai/flows/resume-skill-extractor';
-import { textEmbeddingService } from '@/services/textEmbedding.service';
-import { embeddingDatabaseService } from '@/services/embeddingDatabase.service';
+import { withAuth } from '@/lib/auth/middleware';
+import { aiOrchestrator } from '@/services/ai/AIOrchestrator';
+import { aiWorkerPool } from '@/workers/AIWorkerPool';
+import { firestore } from '@/lib/firebase/client';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 const onboardingSchema = z.object({
@@ -21,186 +15,249 @@ const onboardingSchema = z.object({
   resumeFile: z.string().optional(), // Base64 encoded
   resumeMimeType: z.string().optional(),
   videoBlob: z.string().optional(), // Base64 encoded
+  priority: z.enum(['high', 'medium', 'low']).default('medium'),
+  candidateId: z.string().min(1, 'Candidate ID is required')
 });
 
 /**
- * POST /api/candidates/onboarding - Complete candidate onboarding with AI profile generation
- * This endpoint is designed to be called after a user has been created in Firebase Auth.
- * It populates their profile details.
+ * POST /api/candidates/onboarding - Complete candidate onboarding with optimized AI services
  */
-export const POST = withRateLimit('upload',
-  withAuth(
-    withRole(['candidate'], async (req: NextRequest): Promise<NextResponse> => {
-      try {
-        const userId = req.user!.id;
-        const body = await req.json();
-        
-        const validation = onboardingSchema.safeParse(body);
-        if (!validation.success) {
-          return NextResponse.json(
-            { error: 'Invalid onboarding data', details: validation.error.errors },
-            { status: 400 }
-          );
-        }
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await req.json();
+    
+    const validation = onboardingSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid onboarding data', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
 
-        const data = validation.data;
+    const {
+      firstName,
+      lastName,
+      phone,
+      location,
+      resumeFile,
+      resumeMimeType,
+      videoBlob,
+      priority,
+      candidateId
+    } = validation.data;
 
-        apiLogger.info('Candidate onboarding/profile update initiated', { 
-          userId,
-          hasResume: !!data.resumeFile,
-          hasVideo: !!data.videoBlob
+    // Get existing candidate profile
+    const candidateDoc = await getDoc(doc(firestore, 'candidates', candidateId));
+    const existingProfile = candidateDoc.exists() ? candidateDoc.data() : null;
+
+    // Prepare basic profile updates
+    const profileUpdates: Record<string, any> = {
+      updatedAt: new Date().toISOString()
+    };
+
+    if (firstName) profileUpdates.firstName = firstName;
+    if (lastName) profileUpdates.lastName = lastName;
+    if (phone) profileUpdates.phone = phone;
+    if (location) profileUpdates.location = location;
+
+    // For high priority requests, process immediately
+    if (priority === 'high') {
+      // Process resume and video if provided
+      if (resumeFile && resumeMimeType) {
+        const resumeResult = await aiOrchestrator.processResume({
+          candidateId,
+          resumeFile,
+          fileName: `${uuidv4()}.${resumeMimeType.includes('pdf') ? 'pdf' : 'docx'}`,
+          fileType: resumeMimeType
         });
 
-        // Get existing user and profile data
-        const [user, existingProfile] = await Promise.all([
-          databaseService.getUserById(userId),
-          databaseService.getCandidateProfile(userId)
-        ]);
-
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
-
-        // Initialize or update profile data
-        const profileUpdates: Record<string, any> = {};
-
-        // Update basic info if provided
-        if (data.firstName) profileUpdates.firstName = data.firstName;
-        if (data.lastName) profileUpdates.lastName = data.lastName;
-        if (data.phone) profileUpdates.phone = data.phone;
-        if (data.location) profileUpdates.location = data.location;
-        
-        if(Object.keys(profileUpdates).length > 0) {
-            await databaseService.updateUser(userId, {
-                firstName: data.firstName || user.firstName,
-                lastName: data.lastName || user.lastName
-            });
-
-            await databaseService.updateCandidateProfile(userId, {
-                phone: data.phone || existingProfile?.phone,
-                location: data.location || existingProfile?.location,
-            });
-        }
-
-        // Process resume if provided
-        let resumeUrl = existingProfile?.resumeUrl || '';
-        let extractedText = '';
-        
-        if (data.resumeFile && data.resumeMimeType) {
-          try {
-            const resumeBuffer = Buffer.from(data.resumeFile, 'base64');
-            const fileExtension = data.resumeMimeType.includes('pdf') ? 'pdf' : 'docx';
-            const uniqueFileName = `${uuidv4()}.${fileExtension}`;
-            
-            const resumeFile = new File([resumeBuffer], uniqueFileName, { type: data.resumeMimeType });
-            
-            const uploadResult = await fileUploadService.uploadFile(resumeFile, 'resume', {
-              path: `candidates/${userId}/resumes/${uniqueFileName}`,
-            });
-            
-            resumeUrl = uploadResult.url;
-            profileUpdates.resumeUrl = resumeUrl;
-            
-            apiLogger.info('Resume uploaded', { userId, resumeUrl });
-
-            const docAIResult = await processResumeWithDocAI({
-              resumeFileBase64: data.resumeFile,
-              mimeType: data.resumeMimeType
-            });
-            extractedText = docAIResult.extractedText;
-
-            if (extractedText.length > 100) {
-              const [summaryResult, skillsResult] = await Promise.all([
-                generateResumeSummary({ resumeText: extractedText }),
-                extractSkillsFromResume({ resumeText: extractedText })
-              ]);
-              
-              profileUpdates.summary = summaryResult.summary;
-              profileUpdates.skills = skillsResult.skills.slice(0, 20);
-
-              const titleMatch = extractedText.match(/(?:current\s+position|title|role)[\s:]*([^\n]+)/i);
-              if (titleMatch && titleMatch[1]) {
-                profileUpdates.currentTitle = titleMatch[1].trim().substring(0, 100);
-              }
-
-              apiLogger.info('AI profile generation completed', { 
-                userId,
-                skillsCount: profileUpdates.skills.length,
-                summaryLength: profileUpdates.summary.length
-              });
-            }
-          } catch (error) {
-            apiLogger.error('Resume processing failed', { userId, error: String(error) });
-          }
-        }
-
-        // Process video if provided
-        let videoUrl = existingProfile?.videoIntroUrl || '';
-        if (data.videoBlob) {
-          try {
-            const videoBuffer = Buffer.from(data.videoBlob, 'base64');
-            const videoFile = new File([videoBuffer], "intro.webm", { type: 'video/webm' });
-            
-            const uploadResult = await fileUploadService.uploadFile(videoFile, 'video', {
-              path: `candidates/${userId}/video-intro/${uuidv4()}.webm`,
-            });
-            
-            videoUrl = uploadResult.url;
-            profileUpdates.videoIntroUrl = videoUrl;
-
-            apiLogger.info('Video uploaded', { userId, videoUrl });
-          } catch (error) {
-            apiLogger.error('Video upload failed', { userId, error: String(error) });
-          }
-        }
-
-        // Mark profile as complete if we have essential data
-        profileUpdates.profileComplete = !!(profileUpdates.summary || existingProfile?.summary) && 
-                                        ((profileUpdates.skills?.length > 0) || (existingProfile?.skills?.length || 0) > 0);
-        
-        // Save all updates to the profile
-        await databaseService.updateCandidateProfile(userId, profileUpdates);
-        
-        // Generate and save embeddings
-        if (extractedText.length > 50) {
-          try {
-            const embedding = await textEmbeddingService.generateDocumentEmbedding(extractedText);
-            
-            await embeddingDatabaseService.saveCandidateWithEmbedding(userId, {
-              fullName: `${data.firstName || user.firstName} ${data.lastName || user.lastName}`,
-              email: user.email,
-              currentTitle: profileUpdates.currentTitle || existingProfile?.currentTitle || '',
-              extractedResumeText: extractedText,
-              resumeEmbedding: embedding,
-              skills: profileUpdates.skills || existingProfile?.skills || [],
-              experienceSummary: profileUpdates.summary || existingProfile?.summary || '',
-              resumeFileUrl: resumeUrl
-            });
-
-            apiLogger.info('Embeddings saved for vector search', { userId });
-          } catch (error) {
-            apiLogger.error('Embedding generation failed', { userId, error: String(error) });
-          }
-        }
-        
-        apiLogger.info('Candidate onboarding/update completed', { userId });
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            profileComplete: profileUpdates.profileComplete,
-            profile: profileUpdates
-          },
-          message: 'Profile updated successfully!' 
-        });
-
-      } catch (error) {
-        apiLogger.error('Onboarding failed', { 
-          userId: req.user?.id,
-          error: String(error)
-        });
-        return handleApiError(error);
+        Object.assign(profileUpdates, resumeResult);
       }
-    })
-  )
-);
+
+      if (videoBlob) {
+        const videoResult = await aiOrchestrator.processVideo({
+          candidateId,
+          videoFile: videoBlob,
+          fileName: `${uuidv4()}.webm`,
+          fileType: 'video/webm'
+        });
+
+        Object.assign(profileUpdates, videoResult);
+      }
+
+      // Generate complete profile with AI
+      const completeProfile = await aiOrchestrator.generateCompleteProfile({
+        candidateId,
+        profileData: profileUpdates,
+        existingProfile
+      });
+
+      // Update candidate profile in Firestore
+      await updateDoc(doc(firestore, 'candidates', candidateId), {
+        ...profileUpdates,
+        ...completeProfile,
+        profileComplete: true,
+        lastProcessed: new Date().toISOString()
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          profileComplete: true,
+          profile: { ...profileUpdates, ...completeProfile },
+          processedImmediately: true
+        },
+        message: 'Profile onboarding completed successfully!',
+        processedAt: new Date().toISOString()
+      });
+    }
+
+    // For medium/low priority, update basic info immediately and queue AI processing
+    if (Object.keys(profileUpdates).length > 1) { // More than just updatedAt
+      await updateDoc(doc(firestore, 'candidates', candidateId), profileUpdates);
+    }
+
+    // Queue AI processing for resume and video
+    const jobs = [];
+
+    if (resumeFile && resumeMimeType) {
+      const resumeJob = await aiWorkerPool.addJob({
+        id: `onboarding-resume-${candidateId}-${Date.now()}`,
+        type: 'resume',
+        priority,
+        data: {
+          candidateId,
+          resumeFile,
+          fileName: `${uuidv4()}.${resumeMimeType.includes('pdf') ? 'pdf' : 'docx'}`,
+          fileType: resumeMimeType
+        }
+      });
+      jobs.push(resumeJob);
+    }
+
+    if (videoBlob) {
+      const videoJob = await aiWorkerPool.addJob({
+        id: `onboarding-video-${candidateId}-${Date.now()}`,
+        type: 'video',
+        priority,
+        data: {
+          candidateId,
+          videoFile: videoBlob,
+          fileName: `${uuidv4()}.webm`,
+          fileType: 'video/webm'
+        }
+      });
+      jobs.push(videoJob);
+    }
+
+    // Queue profile completion job
+    const profileJob = await aiWorkerPool.addJob({
+      id: `onboarding-profile-${candidateId}-${Date.now()}`,
+      type: 'profile-generation',
+      priority,
+      data: {
+        candidateId,
+        profileData: profileUpdates,
+        existingProfile
+      }
+    });
+    jobs.push(profileJob);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        profileComplete: false,
+        profile: profileUpdates,
+        jobs: jobs.map(job => ({ id: job.id, status: 'queued' })),
+        processingQueued: true
+      },
+      message: 'Profile updates saved. AI processing queued for completion.'
+    });
+
+  } catch (error) {
+    console.error('Onboarding failed:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to complete onboarding',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/candidates/onboarding - Get onboarding status
+ */
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  try {
+    const { searchParams } = new URL(req.url);
+    const candidateId = searchParams.get('candidateId');
+    const jobId = searchParams.get('jobId');
+
+    if (!candidateId) {
+      return NextResponse.json(
+        { error: 'Candidate ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // If jobId provided, get job status
+    if (jobId) {
+      const jobStatus = await aiWorkerPool.getJobStatus(jobId);
+      
+      if (!jobStatus) {
+        return NextResponse.json(
+          { error: 'Job not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: jobStatus
+      });
+    }
+
+    // Get candidate profile
+    const candidateDoc = await getDoc(doc(firestore, 'candidates', candidateId));
+    
+    if (!candidateDoc.exists()) {
+      return NextResponse.json(
+        { error: 'Candidate not found' },
+        { status: 404 }
+      );
+    }
+
+    const candidateData = candidateDoc.data();
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        profileComplete: candidateData.profileComplete || false,
+        hasResume: !!candidateData.resumeUrl,
+        hasVideo: !!candidateData.videoIntroUrl,
+        hasEmbeddings: !!candidateData.embedding,
+        lastProcessed: candidateData.lastProcessed,
+        profile: candidateData
+      }
+    });
+
+  } catch (error) {
+    console.error('Failed to get onboarding status:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to get onboarding status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Apply authentication middleware
+export const POST_WITH_AUTH = withAuth(POST);
+export const GET_WITH_AUTH = withAuth(GET);
+
+// Export with middleware
+export { POST_WITH_AUTH as POST, GET_WITH_AUTH as GET };

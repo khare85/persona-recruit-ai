@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withRateLimit } from '@/middleware/security';
-import { handleApiError } from '@/lib/errors';
-import { apiLogger } from '@/lib/logger';
-import { generateJobDescription } from '@/ai/flows/job-description-generator';
-import { withAuth } from '@/middleware/auth';
+import { aiOrchestrator } from '@/services/ai/AIOrchestrator';
+import { aiWorkerPool } from '@/workers/AIWorkerPool';
+import { withAuth } from '@/lib/auth/middleware';
 
 // Validation schema for job generation request
 const jobGenerationSchema = z.object({
@@ -13,13 +11,16 @@ const jobGenerationSchema = z.object({
   company: z.string().min(1, "Company name is required"),
   department: z.string().max(100).optional(),
   location: z.string().max(100).optional(),
-  jobType: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional()
+  jobType: z.enum(['Full-time', 'Part-time', 'Contract', 'Remote']).optional(),
+  priority: z.enum(['high', 'medium', 'low']).default('medium'),
+  includeSkills: z.boolean().default(true),
+  includeRequirements: z.boolean().default(true)
 });
 
 /**
  * Generate job description using AI
  */
-export const POST = withAuth(withRateLimit('ai', async (req: NextRequest): Promise<NextResponse> => {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
     const validation = jobGenerationSchema.safeParse(body);
@@ -34,37 +35,101 @@ export const POST = withAuth(withRateLimit('ai', async (req: NextRequest): Promi
       );
     }
 
-    const input = validation.data;
+    const { 
+      jobTitle, 
+      yearsOfExperience, 
+      company, 
+      department, 
+      location, 
+      jobType, 
+      priority,
+      includeSkills,
+      includeRequirements 
+    } = validation.data;
 
-    apiLogger.info('Job generation requested', {
-      jobTitle: input.jobTitle,
-      experience: input.yearsOfExperience,
-      company: input.company,
-      userId: (req as any).user?.id
+    // For high priority requests, process immediately
+    if (priority === 'high') {
+      const jobData = {
+        title: jobTitle,
+        company,
+        experienceLevel: yearsOfExperience,
+        department,
+        location,
+        type: jobType || 'Full-time'
+      };
+
+      // Generate job description using AI orchestrator
+      const generatedJob = await aiOrchestrator.generateJobDescription(jobData);
+      
+      let skills = [];
+      let requirements = [];
+
+      if (includeSkills) {
+        skills = await aiOrchestrator.generateJobSkills(jobData);
+      }
+
+      if (includeRequirements) {
+        requirements = await aiOrchestrator.generateJobRequirements(jobData);
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...generatedJob,
+          skills,
+          requirements
+        },
+        message: 'Job description generated successfully',
+        processedAt: new Date().toISOString()
+      });
+    }
+
+    // For medium/low priority, queue for background processing
+    const job = await aiWorkerPool.addJob({
+      id: `job-gen-${Date.now()}`,
+      type: 'job-generation',
+      priority,
+      data: {
+        jobTitle,
+        yearsOfExperience,
+        company,
+        department,
+        location,
+        jobType,
+        includeSkills,
+        includeRequirements
+      }
     });
-
-    // Generate job description using the corrected AI flow
-    const generatedJob = await generateJobDescription(input);
 
     return NextResponse.json({
       success: true,
-      data: generatedJob,
-      message: 'Job description generated successfully'
+      jobId: job.id,
+      status: 'queued',
+      message: 'Job generation queued for processing'
     });
 
   } catch (error) {
-    return handleApiError(error);
+    console.error('Job generation error:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to generate job description',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
-}));
+}
 
 /**
  * Generate skills only for a job title
  */
-export const GET = withRateLimit('ai', async (req: NextRequest): Promise<NextResponse> => {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(req.url);
     const jobTitle = searchParams.get('jobTitle');
     const yearsOfExperience = searchParams.get('yearsOfExperience');
+    const department = searchParams.get('department');
+    const company = searchParams.get('company');
 
     if (!jobTitle || !yearsOfExperience) {
       return NextResponse.json(
@@ -73,22 +138,80 @@ export const GET = withRateLimit('ai', async (req: NextRequest): Promise<NextRes
       );
     }
     
-    // Generate AI-powered skills based on job title and experience level
-    const { generateJobSkills } = await import('@/ai/flows/job-skill-generator-flow');
-    
-    const result = await generateJobSkills({
-      jobTitle: params.jobTitle,
-      experienceLevel: params.experienceLevel || 'mid-level',
-      industry: params.industry || 'technology'
-    });
+    // Generate AI-powered skills using optimized orchestrator
+    const jobData = {
+      title: jobTitle,
+      experienceLevel: yearsOfExperience,
+      department,
+      company: company || 'Tech Company'
+    };
+
+    const skills = await aiOrchestrator.generateJobSkills(jobData);
 
     return NextResponse.json({
       success: true,
-      data: { skills: result.skills },
-      message: 'Skills generated successfully using AI'
+      data: { skills },
+      message: 'Skills generated successfully using AI',
+      generatedAt: new Date().toISOString()
     });
 
   } catch (error) {
-    return handleApiError(error);
+    console.error('Skills generation error:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to generate skills',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
-});
+}
+
+/**
+ * Get job generation status
+ */
+export async function PUT(req: NextRequest): Promise<NextResponse> {
+  try {
+    const { searchParams } = new URL(req.url);
+    const jobId = searchParams.get('jobId');
+
+    if (!jobId) {
+      return NextResponse.json(
+        { error: 'jobId is required' },
+        { status: 400 }
+      );
+    }
+
+    const jobStatus = await aiWorkerPool.getJobStatus(jobId);
+
+    if (!jobStatus) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: jobStatus
+    });
+
+  } catch (error) {
+    console.error('Job status error:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to get job status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Apply authentication middleware
+export const POST_WITH_AUTH = withAuth(POST);
+export const GET_WITH_AUTH = withAuth(GET);
+export const PUT_WITH_AUTH = withAuth(PUT);
+
+// Export with middleware
+export { POST_WITH_AUTH as POST, GET_WITH_AUTH as GET, PUT_WITH_AUTH as PUT };

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aiTalentSemanticSearch } from '@/ai/flows/ai-talent-semantic-search-flow';
+import { aiOrchestrator } from '@/services/ai/AIOrchestrator';
+import { optimizedVectorSearch } from '@/services/ai/OptimizedVectorSearch';
+import { withAuth } from '@/lib/auth/middleware';
 import { z } from 'zod';
 
 // Input validation schema
@@ -11,7 +13,15 @@ const searchSchema = z.object({
     availabilityInDays: z.number().min(0).max(365).optional(),
     isOpenToRemote: z.boolean().optional(),
     skills: z.array(z.string()).optional(),
-    location: z.string().optional()
+    location: z.string().optional(),
+    experience: z.string().optional(),
+    jobType: z.string().optional(),
+    availability: z.string().optional()
+  }).optional(),
+  options: z.object({
+    threshold: z.number().min(0).max(1).default(0.7),
+    includeMetadata: z.boolean().default(true),
+    useCache: z.boolean().default(true)
   }).optional()
 });
 
@@ -31,49 +41,88 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { searchQuery, resultCount, filters } = validation.data;
+    const { searchQuery, resultCount, filters = {}, options = {} } = validation.data;
 
-    // Perform semantic search
-    const searchResults = await aiTalentSemanticSearch({
-      searchQuery,
-      resultCount
+    // Generate embedding using optimized AI orchestrator
+    const queryEmbedding = await aiOrchestrator.generateEmbeddings({ 
+      query: searchQuery 
     });
 
-    // Apply post-search filters if provided
-    let filteredCandidates = searchResults.matchedCandidates;
+    // Prepare search filters for optimized vector search
+    const searchFilters = {
+      skills: filters.skills,
+      experience: filters.experience,
+      location: filters.location,
+      availability: filters.availability
+    };
+
+    // Perform optimized vector search
+    const searchResults = await optimizedVectorSearch.searchCandidates(
+      queryEmbedding,
+      {
+        limit: resultCount,
+        filters: searchFilters,
+        ...options
+      }
+    );
+
+    // Apply additional custom filters
+    let filteredCandidates = searchResults;
     
-    if (filters) {
-      filteredCandidates = filteredCandidates.filter(candidate => {
-        // Filter by availability
-        if (filters.availabilityInDays !== undefined && candidate.availability) {
-          const availabilityMatch = candidate.availability.toLowerCase().includes('immediate') ||
-                                   candidate.availability.toLowerCase().includes('available');
-          if (!availabilityMatch) return false;
+    if (filters.minExperienceYears !== undefined) {
+      filteredCandidates = filteredCandidates.filter(result => {
+        const candidate = result.candidate;
+        if (candidate.experienceYears) {
+          return candidate.experienceYears >= filters.minExperienceYears!;
         }
-        
-        // Filter by skills if provided
-        if (filters.skills && filters.skills.length > 0 && candidate.topSkills) {
-          const hasRequiredSkills = filters.skills.some(skill => 
-            candidate.topSkills?.some(candidateSkill => 
-              candidateSkill.toLowerCase().includes(skill.toLowerCase())
-            )
-          );
-          if (!hasRequiredSkills) return false;
-        }
-        
         return true;
       });
     }
 
+    if (filters.availabilityInDays !== undefined) {
+      filteredCandidates = filteredCandidates.filter(result => {
+        const candidate = result.candidate;
+        if (candidate.availability) {
+          const availabilityMatch = candidate.availability.toLowerCase().includes('immediate') ||
+                                   candidate.availability.toLowerCase().includes('available');
+          return availabilityMatch;
+        }
+        return true;
+      });
+    }
+
+    if (filters.isOpenToRemote !== undefined) {
+      filteredCandidates = filteredCandidates.filter(result => {
+        const candidate = result.candidate;
+        return candidate.isOpenToRemote === filters.isOpenToRemote;
+      });
+    }
+
+    // Generate search summary
+    const searchSummary = {
+      totalCandidates: filteredCandidates.length,
+      avgMatchScore: filteredCandidates.length > 0 
+        ? filteredCandidates.reduce((sum, result) => sum + result.score, 0) / filteredCandidates.length
+        : 0,
+      topMatchReasons: filteredCandidates.slice(0, 5).flatMap(result => result.matchReasons).slice(0, 10)
+    };
+
     return NextResponse.json({
       success: true,
       data: {
-        candidates: filteredCandidates,
-        searchSummary: searchResults.searchSummary,
+        candidates: filteredCandidates.map(result => ({
+          ...result.candidate,
+          matchScore: result.score,
+          matchReasons: result.matchReasons,
+          relevanceScore: result.relevanceScore
+        })),
+        searchSummary,
         totalResults: filteredCandidates.length,
         searchQuery,
-        appliedFilters: filters || {}
-      }
+        appliedFilters: filters,
+        cacheHit: options.useCache
+      },
+      searchedAt: new Date().toISOString()
     });
 
   } catch (error) {
@@ -100,3 +149,9 @@ export async function OPTIONS(request: NextRequest) {
     },
   });
 }
+
+// Apply authentication middleware
+export const POST_WITH_AUTH = withAuth(POST);
+
+// Export with middleware
+export { POST_WITH_AUTH as POST };

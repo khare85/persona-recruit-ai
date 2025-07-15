@@ -1,6 +1,6 @@
 
 import admin from 'firebase-admin';
-import { firestore as getFirestore } from '@/lib/firebase/server';
+import { getFirebaseAdmin } from '@/lib/firebase/server';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
 import { Company, CompanyInvitation } from '@/models/company.model';
 import { Job, JobApplication } from '@/models/job.model';
@@ -23,7 +23,8 @@ export const COLLECTIONS = {
 // Database service class
 class DatabaseService {
   private async getDb(): Promise<admin.firestore.Firestore> {
-    return getFirestore();
+    const app = await getFirebaseAdmin();
+    return app.firestore();
   }
 
   // Generic helpers
@@ -534,7 +535,7 @@ class DatabaseService {
     const { items } = await this.list<Job>(COLLECTIONS.JOBS, { 
       limit, 
       where: [{ field: 'status', operator: '==', value: 'active' }],
-      orderBy: { field: 'publishedAt', direction: 'desc' },
+      orderBy: { field: 'createdAt', direction: 'desc' },
       useCollectionGroup: false
     });
     return items;

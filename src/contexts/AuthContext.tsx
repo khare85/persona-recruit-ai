@@ -34,7 +34,7 @@ interface AuthContextType {
   signIn: (email: string, pass: string) => Promise<FirebaseUser>;
   signUp: (email: string, pass: string, fullName?: string, role?: UserRole) => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
-  getToken: () => Promise<string | null>;
+  getToken: (forceRefresh?: boolean) => Promise<string | null>;
   checkOnboardingComplete: () => boolean;
   getOnboardingRedirectPath: () => string | null;
 }
@@ -111,22 +111,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const getToken = useCallback(async (): Promise<string | null> => {
+  const getToken = useCallback(async (forceRefresh = false): Promise<string | null> => {
     try {
       if (auth && auth.currentUser) {
-        return auth.currentUser.getIdToken(true); // Force refresh
+        return auth.currentUser.getIdToken(forceRefresh);
       }
-      console.warn('getToken: auth or currentUser is null', { 
-        authExists: !!auth, 
-        currentUserExists: !!auth?.currentUser,
-        userState: !!user 
-      });
       return null;
     } catch (error) {
       console.error('getToken error:', error);
       return null;
     }
-  }, [user]);
+  }, []);
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     setLoading(true);

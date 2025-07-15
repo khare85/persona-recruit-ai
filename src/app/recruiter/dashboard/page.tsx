@@ -9,6 +9,8 @@ import { Briefcase, Users, CalendarDays, Award, Search, PlusCircle, Eye, LayoutD
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 import { format, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -36,48 +38,35 @@ interface RecruiterDashboardData {
   }[];
 }
 
-export default function RecruiterDashboardPage() {
-  const { user, loading: authLoading, getToken } = useAuth();
+function RecruiterDashboardContent() {
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<RecruiterDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchData = useCallback(async () => {
-    if (authLoading) return;
+    if (authLoading || !user) return;
+    
     setIsLoading(true);
     setError(null);
     try {
-      if (!user) {
-        setError('User not authenticated');
-        return;
-      }
-      
-      const token = await getToken();
-      const response = await fetch('/api/recruiter/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
+      const result = await authenticatedFetch('/api/recruiter/dashboard');
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading]);
+  }, [authLoading, user, authenticatedFetch]);
   
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!authLoading && user) {
+      fetchData();
+    }
+  }, [authLoading, user, fetchData]);
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <DashboardLayout>
         <Container className="flex items-center justify-center h-full">
@@ -250,4 +239,12 @@ export default function RecruiterDashboardPage() {
       </Container>
     </DashboardLayout>
   );
+}
+
+export default function RecruiterDashboardPage() {
+    return (
+        <ProtectedRoute requiredRole="recruiter" redirectTo="/auth">
+            <RecruiterDashboardContent />
+        </ProtectedRoute>
+    )
 }

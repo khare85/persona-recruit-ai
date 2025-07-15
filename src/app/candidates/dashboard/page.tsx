@@ -10,6 +10,8 @@ import { Award, Briefcase, CalendarCheck2, Gift, LayoutDashboardIcon, Settings, 
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useRouter } from 'next/navigation';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface CandidateDashboardData {
   applicationsApplied: number;
@@ -24,71 +26,38 @@ interface CandidateDashboardData {
   }>;
 }
 
-export default function CandidateDashboardPage() {
-  const { user, loading: authLoading, getToken, checkOnboardingComplete, getOnboardingRedirectPath } = useAuth();
+function CandidateDashboardContent() {
+  const { user, loading: authLoading } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
-  // Check if onboarding is complete and redirect if needed
-  useEffect(() => {
-    if (authLoading || !user) return;
-    
-    if (user.role === 'candidate' && !checkOnboardingComplete()) {
-      const redirectPath = getOnboardingRedirectPath();
-      if (redirectPath) {
-        router.replace(redirectPath);
-        return;
-      }
-    }
-  }, [user, authLoading, checkOnboardingComplete, getOnboardingRedirectPath, router]);
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchData = useCallback(async () => {
-    if (authLoading) return;
+    if (authLoading || !user) return;
+    
     setIsLoading(true);
     setError(null);
+
     try {
-      if (!user) {
-        setError('User not authenticated');
-        return;
-      }
-      
-      const token = await getToken();
-      
-      if (!token) {
-        setError('Unable to get authentication token. Please try signing in again.');
-        return;
-      }
-      
-      const response = await fetch('/api/candidates/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Dashboard API error:', { status: response.status, error: errorText });
-        throw new Error(`Dashboard API error (${response.status}): ${errorText}`);
-      }
-      
-      const result = await response.json();
+      const result = await authenticatedFetch('/api/candidates/dashboard');
       setDashboardData(result.data);
     } catch (err) {
-      console.error('Dashboard fetch error:', err);
+      console.error('Dashboard API error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading, getToken]);
-  
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [authLoading, user, authenticatedFetch]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchData();
+    }
+  }, [authLoading, user, fetchData]);
+
+  if (isLoading || authLoading) {
     return (
       <DashboardLayout>
         <Container className="flex items-center justify-center h-full">
@@ -220,4 +189,12 @@ export default function CandidateDashboardPage() {
       </Container>
     </DashboardLayout>
   );
+}
+
+export default function CandidateDashboardPage() {
+    return (
+        <ProtectedRoute requiredRole="candidate" redirectTo="/auth">
+            <CandidateDashboardContent />
+        </ProtectedRoute>
+    )
 }

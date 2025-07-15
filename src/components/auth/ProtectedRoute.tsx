@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { roleNavigation } from '@/utils/roleRedirection';
@@ -15,29 +16,40 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ 
   children, 
   requiredRole, 
-  redirectTo = '/login' 
+  redirectTo = '/auth' 
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, checkOnboardingComplete, getOnboardingRedirectPath } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push(redirectTo);
+    if (loading) return;
+
+    if (!user) {
+      router.push(redirectTo);
+      return;
+    }
+
+    // Check role access
+    if (requiredRole) {
+      const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+      if (user.role && !allowedRoles.includes(user.role)) {
+        const redirectPath = roleNavigation.getUnauthorizedRedirect(user.role);
+        router.push(redirectPath);
         return;
       }
-
-      if (requiredRole) {
-        const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-        if (user.role && !allowedRoles.includes(user.role)) {
-          // Redirect user to their own dashboard if they access a forbidden page
-          const redirectPath = roleNavigation.getUnauthorizedRedirect(user.role);
-          router.push(redirectPath);
-          return;
-        }
+    }
+    
+    // Check onboarding for candidates
+    if (user.role === 'candidate' && !checkOnboardingComplete()) {
+      const onboardingPath = getOnboardingRedirectPath();
+      if (onboardingPath && pathname !== onboardingPath) {
+        router.replace(onboardingPath);
+        return;
       }
     }
-  }, [user, loading, requiredRole, redirectTo, router]);
+
+  }, [user, loading, requiredRole, redirectTo, router, pathname, checkOnboardingComplete, getOnboardingRedirectPath]);
 
   if (loading) {
     return (
@@ -52,16 +64,24 @@ export default function ProtectedRoute({
     );
   }
 
-  if (!user) {
-    return null;
+  // If we are still here after checks and not loading, render the children
+  if (user) {
+     if (requiredRole) {
+        const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+        if (user.role && allowedRoles.includes(user.role)) {
+            // For candidates, also ensure onboarding is complete if they are trying to access a protected page
+            if (user.role === 'candidate' && !checkOnboardingComplete()) {
+                const onboardingPath = getOnboardingRedirectPath();
+                if (onboardingPath && pathname !== onboardingPath) {
+                    return null; // Don't render content while redirecting
+                }
+            }
+            return <>{children}</>;
+        }
+     } else {
+        return <>{children}</>;
+     }
   }
 
-  if (requiredRole) {
-    const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (user.role && !allowedRoles.includes(user.role)) {
-      return null;
-    }
-  }
-
-  return <>{children}</>;
+  return null; // Return null while redirecting
 }

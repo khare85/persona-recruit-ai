@@ -12,6 +12,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import DashboardGuard from '@/components/layout/DashboardGuard';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface AdminDashboardData {
   totalUsers: number;
@@ -23,48 +24,35 @@ interface AdminDashboardData {
   recentActivity: Array<{ type: string; message: string; time: string }>;
 }
 
-export default function AdminDashboardPage() {
-  const { user, loading: authLoading, getToken } = useAuth();
+function AdminDashboardContent() {
+  const { user, loading: authLoading } = useAuth();
+  const authenticatedFetch = useAuthenticatedFetch();
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (authLoading) return;
+    if (authLoading || !user) return;
+    
     setIsLoading(true);
     setError(null);
     try {
-      if (!user) {
-        setError('User not authenticated');
-        return;
-      }
-      
-      const token = await getToken();
-      const response = await fetch('/api/admin/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
+      const result = await authenticatedFetch('/api/admin/dashboard');
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, authenticatedFetch]);
   
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!authLoading && user) {
+      fetchData();
+    }
+  }, [authLoading, user, fetchData]);
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <AdminLayout>
         <Container className="flex items-center justify-center h-full">
@@ -88,7 +76,6 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <DashboardGuard requiredRole="super_admin">
       <AdminLayout>
       <Container>
         <div className="mb-8">
@@ -265,6 +252,13 @@ export default function AdminDashboardPage() {
         </div>
       </Container>
     </AdminLayout>
-    </DashboardGuard>
   );
+}
+
+export default function AdminDashboardPage() {
+    return (
+        <DashboardGuard requiredRole="super_admin">
+            <AdminDashboardContent />
+        </DashboardGuard>
+    )
 }

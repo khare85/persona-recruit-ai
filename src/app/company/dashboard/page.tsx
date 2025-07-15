@@ -9,6 +9,8 @@ import { Building, Users, Briefcase, DollarSign, Search, Settings, PlusCircle, E
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface CompanyDashboardData {
   companyName: string;
@@ -21,48 +23,36 @@ interface CompanyDashboardData {
   recentJobs: Array<{ id: string; title: string; applicants: number; views: number; }>;
 }
 
-export default function CompanyDashboardPage() {
-  const { user, loading: authLoading, getToken } = useAuth();
+function CompanyDashboardContent() {
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<CompanyDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const fetchData = useCallback(async () => {
-    if (authLoading) return;
+    if (authLoading || !user) return;
+    
     setIsLoading(true);
     setError(null);
+    
     try {
-      if (!user) {
-        setError('User not authenticated');
-        return;
-      }
-      
-      const token = await getToken();
-      const response = await fetch('/api/company/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
+      const result = await authenticatedFetch('/api/company/dashboard');
       setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading, getToken]);
+  }, [authLoading, user, authenticatedFetch]);
   
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!authLoading && user) {
+      fetchData();
+    }
+  }, [authLoading, user, fetchData]);
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <DashboardLayout>
         <Container className="flex items-center justify-center h-full">
@@ -246,4 +236,12 @@ export default function CompanyDashboardPage() {
       </Container>
     </DashboardLayout>
   );
+}
+
+export default function CompanyDashboardPage() {
+    return (
+        <ProtectedRoute requiredRole="company_admin" redirectTo="/auth">
+            <CompanyDashboardContent />
+        </ProtectedRoute>
+    )
 }

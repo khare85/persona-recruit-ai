@@ -7,6 +7,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 
 interface UseAdminDataOptions {
   endpoint: string;
@@ -14,39 +15,20 @@ interface UseAdminDataOptions {
 }
 
 export function useAdminData<T>({ endpoint, dependencies = [] }: UseAdminDataOptions) {
-  const { user, loading: authLoading, getToken } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const authenticatedFetch = useAuthenticatedFetch();
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    // Only proceed if authentication is no longer loading
-    if (authLoading) return;
+    if (authLoading || !user) return;
     
     setIsLoading(true);
     setError(null);
-    
-    // If not authenticated, set error and stop
-    if (!user) {
-      setError('User not authenticated. Please log in.');
-      setIsLoading(false);
-      return;
-    }
 
     try {
-      const token = await getToken();
-      const response = await fetch(endpoint, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
+      const result = await authenticatedFetch(endpoint);
       setData(result.data || result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');

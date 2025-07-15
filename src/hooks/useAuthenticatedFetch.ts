@@ -7,12 +7,17 @@ interface FetchOptions extends Omit<RequestInit, 'headers'> {
 }
 
 export function useAuthenticatedFetch() {
-  const { getToken } = useAuth();
+  const { getToken, user } = useAuth();
 
   const authenticatedFetch = useCallback(async (url: string, options: FetchOptions = {}) => {
+    // Ensure user is authenticated before attempting to get token
+    if (!user) {
+      throw new Error('User not authenticated. Please log in.');
+    }
+    
     const token = await getToken();
     if (!token) {
-      throw new Error('User not authenticated. Please log in.');
+      throw new Error('Authentication token is not available.');
     }
 
     const headers = {
@@ -38,7 +43,7 @@ export function useAuthenticatedFetch() {
     }
     return response.text().then(text => text ? JSON.parse(text) : {});
 
-  }, [getToken]);
+  }, [getToken, user]);
 
   return authenticatedFetch;
 }

@@ -1,14 +1,15 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPageRedirect() {
   const router = useRouter();
   
-  if (typeof window !== 'undefined') {
+  useEffect(() => {
     router.replace('/auth');
-  }
+  }, [router]);
 
   return null;
 }

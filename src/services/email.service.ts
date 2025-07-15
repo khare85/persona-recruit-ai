@@ -383,7 +383,7 @@ class EmailService {
     } else if (smtpConfig.host && smtpConfig.auth.user) {
       return new SMTPProvider(smtpConfig);
     } else {
-      emailLogger.warn('No email provider configured, using development provider');
+      emailLogger.info('No email provider configured, using development provider for local emails');
       return new DevEmailProvider();
     }
   }

@@ -13,7 +13,7 @@ const adminAuth = getAuth();
  * Cloud Function that triggers when a new user is created
  * Automatically creates a candidate profile for users with role 'candidate'
  */
-export const onUserCreate = auth.user().onCreate(async (user) => {
+export const onUserCreate = auth.user().onCreate(async (user: any) => {
   try {
     console.log('New user created:', user.uid);
     
@@ -69,7 +69,7 @@ export const onUserCreate = auth.user().onCreate(async (user) => {
 /**
  * Callable function to set user role and create appropriate profile
  */
-export const setUserRole = onCall(async (request) => {
+export const setUserRole = onCall(async (request: any) => {
   try {
     const { uid, role } = request.data;
     

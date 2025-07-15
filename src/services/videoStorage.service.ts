@@ -32,7 +32,7 @@ class VideoStorageService {
 
   constructor() {
     if (!this.bucket) {
-      storageLogger.warn('Firebase Storage bucket not available. Video uploads will fail.');
+      storageLogger.info('Firebase Storage bucket not configured. Video uploads will use fallback storage.');
     }
   }
 

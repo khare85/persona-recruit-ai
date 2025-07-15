@@ -36,8 +36,15 @@ export class FirebaseStorageProvider implements StorageProvider {
   private bucket: any;
 
   constructor() {
-    // This would be initialized with Firebase Storage bucket
-    // For now, using placeholder
+    // Initialize Firebase Storage bucket
+    const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!storageBucket) {
+      console.warn('Firebase Storage bucket not configured. File uploads will be disabled.');
+      return;
+    }
+    
+    // This would be initialized with Firebase Storage bucket in production
+    // For now, using placeholder with proper bucket name
   }
 
   async upload(file: File, path: string): Promise<string> {

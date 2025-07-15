@@ -106,3 +106,23 @@ env:
   # Firebase Service Account from Secret Manager
   - variable: GOOGLE_APPLICATION_CREDENTIALS_JSON
     secret: firebase-service-account
+  
+  # Email Configuration
+  - variable: FROM_EMAIL
+    value: "noreply@ai-talent-stream.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  - variable: COMPANY_NAME
+    value: "TalentAI"
+    availability:
+      - BUILD
+      - RUNTIME
+  
+  # Email provider configuration (using DevEmailProvider for now)
+  # Add these secrets when email provider is configured:
+  # - variable: SENDGRID_API_KEY
+  #   secret: sendgrid-api-key
+  # - variable: RESEND_API_KEY
+  #   secret: resend-api-key

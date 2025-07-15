@@ -4,7 +4,7 @@ runConfig:
   minInstances: 0
   maxInstances: 50
   concurrency: 80
-  cpu: 2
+  cpu: 4
   memoryMiB: 16384
   timeoutSeconds: 3600
 
@@ -68,7 +68,7 @@ env:
   
   # App URL
   - variable: NEXT_PUBLIC_APP_URL
-    value: "https://ai-talent-stream--ai-talent-stream.us-central1.hosted.app"
+    value: "https://studio--ai-talent-stream.us-central1.hosted.app"
     availability:
       - BUILD
       - RUNTIME

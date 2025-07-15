@@ -24,6 +24,8 @@ export interface User extends FirebaseUser {
   role: UserRole;
   fullName?: string;
   companyId?: string;
+  profileComplete?: boolean;
+  onboardingStep?: 'resume' | 'video' | 'complete';
 }
 
 interface AuthContextType {
@@ -33,6 +35,8 @@ interface AuthContextType {
   signUp: (email: string, pass: string, fullName?: string, role?: UserRole) => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
+  checkOnboardingComplete: () => boolean;
+  getOnboardingRedirectPath: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,15 +57,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const companyId = (idTokenResult.claims.companyId as string) || undefined;
           
           let fullName = firebaseUser.displayName || '';
+          let profileComplete = false;
+          let onboardingStep: 'resume' | 'video' | 'complete' = 'resume';
           
           // Fallback to Firestore if claims are not immediately available or name is missing
-          if (!fullName) {
+          if (!fullName || role === 'candidate') {
               try {
                   const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
                   if (userDoc.exists()) {
                       const userData = userDoc.data();
                       if (!fullName) {
                         fullName = userData.fullName || `${userData.firstName} ${userData.lastName}`.trim() || '';
+                      }
+                      
+                      // Check onboarding completion for candidates
+                      if (role === 'candidate') {
+                        profileComplete = userData.profileComplete || false;
+                        
+                        // Determine onboarding step
+                        if (userData.resumeUploaded && userData.videoIntroRecorded) {
+                          onboardingStep = 'complete';
+                        } else if (userData.resumeUploaded) {
+                          onboardingStep = 'video';
+                        } else {
+                          onboardingStep = 'resume';
+                        }
                       }
                   }
               } catch (firestoreError) {
@@ -73,7 +93,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...firebaseUser,
             role,
             fullName,
-            companyId
+            companyId,
+            profileComplete,
+            onboardingStep
           } as User);
         } catch (error) {
           console.error("Error fetching user data/claims:", error);
@@ -164,8 +186,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const checkOnboardingComplete = useCallback((): boolean => {
+    if (!user || user.role !== 'candidate') return true;
+    return user.profileComplete || false;
+  }, [user]);
+
+  const getOnboardingRedirectPath = useCallback((): string | null => {
+    if (!user || user.role !== 'candidate' || checkOnboardingComplete()) return null;
+    
+    switch (user.onboardingStep) {
+      case 'resume':
+        return '/candidates/onboarding/resume';
+      case 'video':
+        return '/candidates/onboarding/video-intro';
+      default:
+        return '/candidates/onboarding/resume';
+    }
+  }, [user, checkOnboardingComplete]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, getToken }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, getToken, checkOnboardingComplete, getOnboardingRedirectPath }}>
       {children}
     </AuthContext.Provider>
   );

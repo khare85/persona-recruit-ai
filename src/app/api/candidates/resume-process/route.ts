@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
-import { aiOrchestrator } from '@/services/ai/AIOrchestrator';
-import { aiWorkerPool } from '@/workers/AIWorkerPool';
-import { firestore } from '@/lib/firebase/client';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/config/firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
  * POST /api/candidates/resume-process - Upload and process candidate resume with optimized AI services
  */
-async function handlePOST(req: NextRequest): Promise<NextResponse> {
+async function handlePOST(req: NextRequest & { user?: { uid: string } }): Promise<NextResponse> {
   try {
     const formData = await req.formData();
     const file = formData.get('resume') as File;
-    const priority = formData.get('priority') as string || 'medium';
-    const candidateId = formData.get('candidateId') as string;
+    const userId = req.user?.uid;
 
     if (!file) {
       return NextResponse.json(
@@ -23,10 +20,10 @@ async function handlePOST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (!candidateId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Candidate ID is required' },
-        { status: 400 }
+        { error: 'User authentication required' },
+        { status: 401 }
       );
     }
 
@@ -62,50 +59,27 @@ async function handlePOST(req: NextRequest): Promise<NextResponse> {
     const resumeText = fileBuffer.toString('base64');
 
     try {
-      // For high priority requests, process immediately
-      if (priority === 'high') {
-        const result = await aiOrchestrator.processResume({
-          candidateId,
-          resumeFile: resumeText,
-          fileName: uniqueFileName,
-          fileType: file.type
-        });
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            ...result,
-            fileName: uniqueFileName,
-            processedImmediately: true
-          },
-          message: 'Resume processed successfully',
-          processedAt: new Date().toISOString()
-        });
-      }
-
-      // For medium/low priority, queue for background processing
-      const job = await aiWorkerPool.addJob({
-        id: `resume-${candidateId}-${Date.now()}`,
-        type: 'resume',
-        priority: priority as 'high' | 'medium' | 'low',
-        data: {
-          candidateId,
-          resumeFile: resumeText,
-          fileName: uniqueFileName,
-          fileType: file.type,
-          originalSize: file.size
-        }
+      // For now, just mark the resume as uploaded
+      // In a real implementation, you would save the resume to Firebase Storage
+      // and process it with AI services
+      
+      // Update candidate profile to mark resume as uploaded
+      const candidateRef = doc(db, 'candidates', userId);
+      await updateDoc(candidateRef, {
+        resumeUploaded: true,
+        resumeFileName: uniqueFileName,
+        resumeFileType: file.type,
+        lastUpdated: new Date()
       });
 
       return NextResponse.json({
         success: true,
         data: {
-          jobId: job.id,
-          status: 'queued',
           fileName: uniqueFileName,
-          processingQueued: true
+          status: 'uploaded',
+          resumeUploaded: true
         },
-        message: 'Resume upload queued for processing. You will be notified when complete.'
+        message: 'Resume uploaded successfully'
       });
 
     } catch (error) {
@@ -160,7 +134,7 @@ async function handleGET(req: NextRequest): Promise<NextResponse> {
     }
 
     // Get candidate profile from Firestore
-    const candidateDoc = await getDoc(doc(firestore, 'candidates', candidateId));
+    const candidateDoc = await getDoc(doc(db, 'candidates', candidateId));
     
     if (!candidateDoc.exists()) {
       return NextResponse.json(

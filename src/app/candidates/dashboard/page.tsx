@@ -9,6 +9,7 @@ import { Container } from '@/components/shared/Container';
 import { Award, Briefcase, CalendarCheck2, Gift, LayoutDashboardIcon, Settings, Zap, FolderOpen, CalendarClock, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { useRouter } from 'next/navigation';
 
 interface CandidateDashboardData {
   applicationsApplied: number;
@@ -24,10 +25,24 @@ interface CandidateDashboardData {
 }
 
 export default function CandidateDashboardPage() {
-  const { user, loading: authLoading, getToken } = useAuth();
+  const { user, loading: authLoading, getToken, checkOnboardingComplete, getOnboardingRedirectPath } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Check if onboarding is complete and redirect if needed
+  useEffect(() => {
+    if (authLoading || !user) return;
+    
+    if (user.role === 'candidate' && !checkOnboardingComplete()) {
+      const redirectPath = getOnboardingRedirectPath();
+      if (redirectPath) {
+        router.replace(redirectPath);
+        return;
+      }
+    }
+  }, [user, authLoading, checkOnboardingComplete, getOnboardingRedirectPath, router]);
 
   const fetchData = useCallback(async () => {
     if (authLoading) return;

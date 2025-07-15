@@ -1,96 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databaseService } from '@/services/database.service';
-import { handleApiError } from '@/lib/errors';
-import { withAuth } from '@/middleware/auth';
-import { apiLogger } from '@/lib/logger';
+import { withAuth } from '@/lib/auth/middleware';
+import { db } from '@/config/firebase';
+import { collection, getDocs, addDoc, query, where, orderBy } from 'firebase/firestore';
 
-// Mock interviews database
-const interviews = [
-  {
-    id: 'IV-001',
-    applicationId: 'APP-001',
-    candidateId: '1',
-    candidateName: 'Sarah Johnson',
-    candidateEmail: 'sarah.johnson@email.com',
-    candidateAvatar: '/avatars/sarah.jpg',
-    jobId: '1',
-    jobTitle: 'Senior Frontend Developer',
-    companyId: '1',
-    companyName: 'TechCorp Inc.',
-    interviewerId: 'INT-001',
-    interviewerName: 'Alex Rodriguez',
-    interviewerEmail: 'alex.rodriguez@techcorp.com',
-    scheduledDate: '2024-06-25T14:00:00Z',
-    duration: 60,
-    type: 'technical',
-    format: 'in-person',
-    location: 'Conference Room A, Floor 3',
-    status: 'scheduled',
-    meetingLink: null,
-    notes: 'Focus on React expertise and system design',
-    preparation: [
-      'Review candidate resume',
-      'Prepare technical questions',
-      'Set up coding environment'
-    ],
-    aiInterviewData: {
-      completed: true,
-      score: 87,
-      videoUrl: '/api/interview/video/1',
-      transcript: 'Interview transcript...',
-      analysis: 'Strong technical skills...'
-    },
-    feedback: null,
-    recording: null,
-    createdAt: '2024-06-22T10:00:00Z',
-    updatedAt: '2024-06-22T10:00:00Z',
-    createdBy: 'recruiter@techcorp.com'
-  },
-  {
-    id: 'IV-002',
-    applicationId: 'APP-002',
-    candidateId: '2',
-    candidateName: 'Marcus Chen',
-    candidateEmail: 'marcus.chen@email.com',
-    candidateAvatar: '/avatars/marcus.jpg',
-    jobId: '2',
-    jobTitle: 'DevOps Engineer',
-    companyId: '1',
-    companyName: 'TechCorp Inc.',
-    interviewerId: 'INT-002',
-    interviewerName: 'Maria Garcia',
-    interviewerEmail: 'maria.garcia@techcorp.com',
-    scheduledDate: '2024-06-26T16:30:00Z',
-    duration: 45,
-    type: 'behavioral',
-    format: 'virtual',
-    location: 'Zoom Meeting',
-    status: 'scheduled',
-    meetingLink: 'https://zoom.us/j/123456789',
-    notes: 'Assess leadership and team collaboration skills',
-    preparation: [
-      'Review AI interview results',
-      'Prepare behavioral questions',
-      'Check Zoom setup'
-    ],
-    aiInterviewData: {
-      completed: true,
-      score: 92,
-      videoUrl: '/api/interview/video/2',
-      transcript: 'Excellent responses...',
-      analysis: 'Strong communication skills...'
-    },
-    feedback: null,
-    recording: null,
-    createdAt: '2024-06-22T11:00:00Z',
-    updatedAt: '2024-06-22T11:00:00Z',
-    createdBy: 'recruiter@techcorp.com'
-  }
-];
-
-export const GET = withAuth(async (request: NextRequest) => {
+/**
+ * GET /api/interviews - Get interviews with filtering and pagination
+ */
+async function handleGET(req: NextRequest & { user?: { uid: string } }): Promise<NextResponse> {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = req.nextUrl.searchParams;
     const candidateId = searchParams.get('candidateId');
     const interviewerId = searchParams.get('interviewerId');
     const jobId = searchParams.get('jobId');
@@ -99,50 +17,42 @@ export const GET = withAuth(async (request: NextRequest) => {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    apiLogger.info('Fetching interviews', { candidateId, interviewerId, jobId, status, companyId });
+    // Build Firestore query
+    let interviewsQuery = query(
+      collection(db, 'interviews'),
+      orderBy('scheduledDate', 'desc')
+    );
 
-    // Build filters object for database service
-    const filters: any = {};
-    if (candidateId) filters.candidateId = candidateId;
-    if (interviewerId) filters.interviewerId = interviewerId;
-    if (jobId) filters.jobId = jobId;
-    if (status) filters.status = status;
-    if (companyId) filters.companyId = companyId;
+    // Apply filters
+    if (candidateId) {
+      interviewsQuery = query(interviewsQuery, where('candidateId', '==', candidateId));
+    }
+    if (interviewerId) {
+      interviewsQuery = query(interviewsQuery, where('interviewerId', '==', interviewerId));
+    }
+    if (jobId) {
+      interviewsQuery = query(interviewsQuery, where('jobId', '==', jobId));
+    }
+    if (status) {
+      interviewsQuery = query(interviewsQuery, where('status', '==', status));
+    }
+    if (companyId) {
+      interviewsQuery = query(interviewsQuery, where('companyId', '==', companyId));
+    }
 
-    // Fetch from database
-    const interviews = await databaseService.getInterviews(filters);
-
-    // Sort by scheduled date
-    interviews.sort((a, b) => {
-      const dateA = new Date(a.scheduledFor || a.createdAt).getTime();
-      const dateB = new Date(b.scheduledFor || b.createdAt).getTime();
-      return dateA - dateB;
-    });
+    const querySnapshot = await getDocs(interviewsQuery);
+    const interviews = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
     // Paginate
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedInterviews = interviews.slice(startIndex, endIndex);
 
-    // Enrich interview data with job and candidate info if needed
-    const enrichedInterviews = await Promise.all(
-      paginatedInterviews.map(async (interview) => {
-        const job = interview.jobId ? await databaseService.getJobById(interview.jobId) : null;
-        const candidate = interview.candidateId ? await databaseService.getUserById(interview.candidateId) : null;
-        const company = job ? await databaseService.getCompanyById(job.companyId) : null;
-        
-        return {
-          ...interview,
-          jobTitle: job?.title || 'Unknown Position',
-          companyName: company?.name || 'Unknown Company',
-          candidateName: candidate ? `${candidate.firstName} ${candidate.lastName}` : 'Unknown Candidate',
-          candidateEmail: candidate?.email || 'unknown@example.com'
-        };
-      })
-    );
-
     return NextResponse.json({
-      data: enrichedInterviews,
+      data: paginatedInterviews,
       pagination: {
         page,
         limit,
@@ -154,119 +64,81 @@ export const GET = withAuth(async (request: NextRequest) => {
     });
 
   } catch (error) {
-    return handleApiError(error);
-  }
-});
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    
-    const {
-      applicationId,
-      candidateId,
-      jobId,
-      interviewerId,
-      scheduledDate,
-      duration,
-      type,
-      format,
-      location,
-      meetingLink,
-      notes,
-      preparation
-    } = body;
-
-    // Validate required fields
-    if (!candidateId || !jobId || !interviewerId || !scheduledDate) {
-      return NextResponse.json(
-        { error: 'Candidate ID, Job ID, Interviewer ID, and scheduled date are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate interview date is in the future
-    if (new Date(scheduledDate) <= new Date()) {
-      return NextResponse.json(
-        { error: 'Interview must be scheduled for a future date' },
-        { status: 400 }
-      );
-    }
-
-    // Check for interviewer availability (simplified check)
-    const conflictingInterview = interviews.find(interview => {
-      const existingStart = new Date(interview.scheduledDate);
-      const existingEnd = new Date(existingStart.getTime() + interview.duration * 60000);
-      const newStart = new Date(scheduledDate);
-      const newEnd = new Date(newStart.getTime() + (duration || 60) * 60000);
-      
-      return interview.interviewerId === interviewerId &&
-             interview.status === 'scheduled' &&
-             ((newStart >= existingStart && newStart < existingEnd) ||
-              (newEnd > existingStart && newEnd <= existingEnd));
-    });
-
-    if (conflictingInterview) {
-      return NextResponse.json(
-        { error: 'Interviewer is not available at the selected time' },
-        { status: 409 }
-      );
-    }
-
-    // Create new interview
-    const newInterview = {
-      id: `IV-${String(interviews.length + 1).padStart(3, '0')}`,
-      applicationId: applicationId || null,
-      candidateId,
-      candidateName: 'Demo Candidate', // In production, fetch from candidate data
-      candidateEmail: 'demo@example.com',
-      candidateAvatar: '/avatars/default.jpg',
-      jobId,
-      jobTitle: 'Demo Job', // In production, fetch from job data
-      companyId: '1', // In production, get from job data
-      companyName: 'Demo Company',
-      interviewerId,
-      interviewerName: 'Demo Interviewer', // In production, fetch from interviewer data
-      interviewerEmail: 'interviewer@demo.com',
-      scheduledDate,
-      duration: duration || 60,
-      type: type || 'technical',
-      format: format || 'in-person',
-      location: location || '',
-      status: 'scheduled',
-      meetingLink: meetingLink || null,
-      notes: notes || '',
-      preparation: preparation || [],
-      aiInterviewData: {
-        completed: false,
-        score: null,
-        videoUrl: null,
-        transcript: null,
-        analysis: null
-      },
-      feedback: null,
-      recording: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'demo@example.com' // In production, get from auth context
-    };
-
-    // Save to database
-    interviews.push(newInterview);
-
-    // In production, send notifications to candidate and interviewer
-    console.log('Interview scheduled:', newInterview);
-
-    return NextResponse.json({
-      message: 'Interview scheduled successfully',
-      interview: newInterview
-    }, { status: 201 });
-
-  } catch (error) {
-    console.error('Error scheduling interview:', error);
+    console.error('Failed to fetch interviews:', error);
     return NextResponse.json(
-      { error: 'Failed to schedule interview' },
+      { error: 'Failed to fetch interviews' },
       { status: 500 }
     );
   }
 }
+
+/**
+ * POST /api/interviews - Create a new interview
+ */
+async function handlePOST(req: NextRequest & { user?: { uid: string } }): Promise<NextResponse> {
+  try {
+    const body = await req.json();
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Validate required fields
+    const requiredFields = ['candidateId', 'jobId', 'interviewerId', 'scheduledDate', 'duration'];
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json(
+          { error: `${field} is required` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create interview document
+    const interviewData = {
+      candidateId: body.candidateId,
+      jobId: body.jobId,
+      interviewerId: body.interviewerId,
+      scheduledDate: body.scheduledDate,
+      duration: body.duration,
+      type: body.type || 'general',
+      format: body.format || 'virtual',
+      location: body.location || '',
+      status: 'scheduled',
+      meetingLink: body.meetingLink || null,
+      notes: body.notes || '',
+      preparation: body.preparation || [],
+      feedback: null,
+      recording: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: userId
+    };
+
+    const docRef = await addDoc(collection(db, 'interviews'), interviewData);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: docRef.id,
+        ...interviewData
+      },
+      message: 'Interview scheduled successfully'
+    });
+
+  } catch (error) {
+    console.error('Failed to create interview:', error);
+    return NextResponse.json(
+      { error: 'Failed to create interview' },
+      { status: 500 }
+    );
+  }
+}
+
+// Apply authentication middleware and export
+export const GET = withAuth(handleGET);
+export const POST = withAuth(handlePOST);

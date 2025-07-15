@@ -134,7 +134,7 @@ export function Navbar() {
           </nav>
           
           <div className="flex items-center space-x-4">
-            {loading ? null : user ? (
+            {user ? (
               <UserNav />
             ) : (
               <>

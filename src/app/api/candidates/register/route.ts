@@ -80,6 +80,9 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       profileComplete: false,
       availableForWork: true,
       availability: 'immediate' as const,
+      resumeUploaded: false,
+      videoIntroRecorded: false,
+      onboardingComplete: false,
     };
     await databaseService.createCandidateProfile(profileDoc);
 

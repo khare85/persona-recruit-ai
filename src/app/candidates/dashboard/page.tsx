@@ -12,6 +12,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useRouter } from 'next/navigation';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 
 interface CandidateDashboardData {
   applicationsApplied: number;
@@ -27,7 +28,7 @@ interface CandidateDashboardData {
 }
 
 function CandidateDashboardContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, showOnboardingModal, setShowOnboardingModal, refreshUser } = useAuth();
   const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +57,15 @@ function CandidateDashboardContent() {
       fetchData();
     }
   }, [authLoading, user, fetchData]);
+  
+  const handleOnboardingComplete = async () => {
+    setShowOnboardingModal(false);
+    await refreshUser(); // Refresh user data to get profileComplete status
+    toast({
+      title: "Profile Complete!",
+      description: "You can now apply for jobs.",
+    });
+  };
 
   if (isLoading || authLoading) {
     return (
@@ -90,6 +100,11 @@ function CandidateDashboardContent() {
 
   return (
     <DashboardLayout>
+       <OnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onComplete={handleOnboardingComplete}
+      />
       <Container>
         <div className="mb-8">
           <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">

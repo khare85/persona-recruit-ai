@@ -40,14 +40,12 @@ const candidateRegistrationSchema = z.object({
 type CandidateRegistrationData = z.infer<typeof candidateRegistrationSchema>;
 
 export default function CandidateRegistrationPage() {
-  const { signUp } = useAuth();
+  const { signUp, setShowOnboardingModal, setCurrentUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const authenticatedFetch = useAuthenticatedFetch();
 
   const form = useForm<CandidateRegistrationData>({
     resolver: zodResolver(candidateRegistrationSchema),
@@ -65,13 +63,10 @@ export default function CandidateRegistrationPage() {
     try {
       setIsRegistering(true);
       
-      const userCredential = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
+      const firebaseUser = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
       
-      // Wait a bit for the auth state to propagate and get the token
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const token = await userCredential.getIdToken();
-      
+      // Manually trigger profile creation API
+      const token = await firebaseUser.getIdToken();
       const profileResponse = await fetch('/api/candidates/register', {
         method: 'POST',
         headers: {
@@ -90,14 +85,22 @@ export default function CandidateRegistrationPage() {
       if (!profileResponse.ok) {
         throw new Error(result.error || 'Failed to create candidate profile.');
       }
+      
+      // Update user in context with onboarding info
+      setCurrentUser(prev => prev ? ({
+        ...prev,
+        profileComplete: false,
+        onboardingStep: 'resume',
+      }) : null);
+
 
       toast({
         title: "🎉 Account Created!",
-        description: "Welcome! Let's complete your profile.",
+        description: "Welcome! Let's complete your profile to get started.",
       });
-
-      // Show onboarding modal instead of redirecting
-      setShowOnboarding(true);
+      
+      setShowOnboardingModal(true); // Trigger the modal from the context
+      router.push('/candidates/dashboard'); // Redirect to dashboard where modal will show
 
     } catch (error) {
       console.error('Registration error:', error);
@@ -111,12 +114,6 @@ export default function CandidateRegistrationPage() {
     }
   };
 
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    // Redirect to the dashboard after successful onboarding.
-    router.push('/candidates/dashboard');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
@@ -126,7 +123,7 @@ export default function CandidateRegistrationPage() {
           </div>
           <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>
-            Step 1 of 3: Set up your account to get started
+            Join our talent network to find your next opportunity.
           </CardDescription>
         </CardHeader>
         
@@ -254,15 +251,6 @@ export default function CandidateRegistrationPage() {
           </Form>
         </CardContent>
       </Card>
-      
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onClose={() => {
-          setShowOnboarding(false);
-          router.push('/candidates/dashboard'); // Go to dashboard if they close modal
-        }}
-        onComplete={handleOnboardingComplete}
-      />
     </div>
   );
 }

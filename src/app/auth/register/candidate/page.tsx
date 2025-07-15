@@ -21,6 +21,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 
 const candidateRegistrationSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -45,6 +46,7 @@ export default function CandidateRegistrationPage() {
   const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const authenticatedFetch = useAuthenticatedFetch();
 
   const form = useForm<CandidateRegistrationData>({
@@ -91,11 +93,11 @@ export default function CandidateRegistrationPage() {
 
       toast({
         title: "🎉 Account Created!",
-        description: "Welcome! Let's build your profile.",
+        description: "Welcome! Let's complete your profile.",
       });
 
-      // Redirect to the first step of onboarding
-      router.push('/candidates/onboarding/resume');
+      // Show onboarding modal instead of redirecting
+      setShowOnboarding(true);
 
     } catch (error) {
       console.error('Registration error:', error);
@@ -107,6 +109,11 @@ export default function CandidateRegistrationPage() {
     } finally {
       setIsRegistering(false);
     }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    // The modal will handle routing to the profile page
   };
 
   return (
@@ -246,6 +253,12 @@ export default function CandidateRegistrationPage() {
           </Form>
         </CardContent>
       </Card>
+      
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }

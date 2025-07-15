@@ -8,8 +8,8 @@ export default function OnboardingRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the first step of the onboarding flow
-    router.replace('/candidates/onboarding/resume');
+    // Redirect to the dashboard - onboarding is now handled via modal
+    router.replace('/candidates/dashboard');
   }, [router]);
 
   return null;

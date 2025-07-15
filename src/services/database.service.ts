@@ -1,6 +1,6 @@
 
 import admin from 'firebase-admin';
-import { getFirebaseAdmin } from '@/lib/firebase/server';
+import { firestore as getFirestore } from '@/lib/firebase/server';
 import { User, CandidateProfile, RecruiterProfile, InterviewerProfile, CompanyAdmin } from '@/models/user.model';
 import { Company, CompanyInvitation } from '@/models/company.model';
 import { Job, JobApplication } from '@/models/job.model';
@@ -22,46 +22,13 @@ export const COLLECTIONS = {
 
 // Database service class
 class DatabaseService {
-  private dbPromise: Promise<admin.firestore.Firestore>;
-  private db: admin.firestore.Firestore | null = null;
-  private isInitializing = false;
-
-  constructor() {
-    this.dbPromise = this.initializeDb();
-  }
-  
-  private async initializeDb(): Promise<admin.firestore.Firestore> {
-    if (this.db) return this.db;
-    if (this.isInitializing) return this.dbPromise;
-
-    this.isInitializing = true;
-    try {
-      const app = await getFirebaseAdmin();
-      this.db = admin.firestore(app);
-      console.log('[FirestoreService] Firestore instance acquired successfully.');
-      this.isInitializing = false;
-      return this.db;
-    } catch (error) {
-        this.isInitializing = false;
-        console.error('[FirestoreService] Critical error getting Firebase Admin instance. Firestore operations will fail.', error);
-        throw new Error('Failed to initialize Firestore database connection.');
-    }
-  }
-
-  // Helper to ensure DB is available before every operation
-  private async ensureDb(): Promise<admin.firestore.Firestore> {
-    if (!this.db) {
-      this.db = await this.dbPromise;
-    }
-    if (!this.db) {
-       throw new Error('Firestore database not available. Check Firebase configuration.');
-    }
-    return this.db;
+  private async getDb(): Promise<admin.firestore.Firestore> {
+    return getFirestore();
   }
 
   // Generic helpers
   private async create<T>(collection: string, data: T, id?: string): Promise<string> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     
     const docRef = id ? db.collection(collection).doc(id) : db.collection(collection).doc();
@@ -78,7 +45,7 @@ class DatabaseService {
   }
 
   private async update<T>(collection: string, id: string, data: Partial<T>): Promise<void> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     await db.collection(collection).doc(id).update({
       ...data,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -86,7 +53,7 @@ class DatabaseService {
   }
 
   private async get<T>(collection: string, id: string): Promise<T | null> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const doc = await db.collection(collection).doc(id).get();
     if (!doc.exists || doc.data()?.deletedAt) return null;
     return { id: doc.id, ...doc.data() } as T;
@@ -102,13 +69,13 @@ class DatabaseService {
   }
   
   async count(collection: string, where: any): Promise<number> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(collection).where(where).count().get();
     return snapshot.data().count;
   }
 
   private async delete(collection: string, id: string, hard = false): Promise<void> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     if (hard) {
       await db.collection(collection).doc(id).delete();
     } else {
@@ -127,7 +94,7 @@ class DatabaseService {
       useCollectionGroup?: boolean;
     }
   ): Promise<{ items: T[]; total: number; hasMore: boolean }> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     let query: any = options?.useCollectionGroup 
       ? db.collectionGroup(collection)
       : db.collection(collection);
@@ -177,7 +144,7 @@ class DatabaseService {
   // User Management
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'fullName'>): Promise<string> {
     try {
-      const db = await this.ensureDb();
+      const db = await this.getDb();
       const plainPassword = userData.passwordHash;
       
       let authUser;
@@ -247,7 +214,7 @@ class DatabaseService {
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.USERS)
       .where('email', '==', email)
       .limit(1)
@@ -266,7 +233,7 @@ class DatabaseService {
   }
 
   async getUserByResetToken(resetToken: string): Promise<User | null> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.USERS)
       .where('resetToken', '==', resetToken)
       .where('deletedAt', '==', null)
@@ -390,7 +357,7 @@ class DatabaseService {
   }
   
   async getCompanyAdmins(companyId: string): Promise<User[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.USERS)
         .where('companyId', '==', companyId)
         .where('role', '==', 'company_admin')
@@ -401,7 +368,7 @@ class DatabaseService {
   }
 
   async getCompanyRecruiters(companyId: string): Promise<User[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.USERS)
         .where('companyId', '==', companyId)
         .where('role', '==', 'recruiter')
@@ -417,7 +384,7 @@ class DatabaseService {
 
   async getCompaniesByIds(ids: string[]): Promise<Company[]> {
     if (ids.length === 0) return [];
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.COMPANIES)
         .where(admin.firestore.FieldPath.documentId(), 'in', ids)
         .get();
@@ -454,7 +421,7 @@ class DatabaseService {
   }
 
   async getCompanyByDomain(domain: string): Promise<Company | null> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.COMPANIES)
       .where('domain', '==', domain)
       .where('deletedAt', '==', null)
@@ -467,7 +434,7 @@ class DatabaseService {
   }
 
   async getCompanyUserCount(companyId: string): Promise<number> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.USERS)
       .where('companyId', '==', companyId)
       .where('deletedAt', '==', null)
@@ -478,7 +445,7 @@ class DatabaseService {
   }
 
   async getCompanyActiveJobsCount(companyId: string): Promise<number> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.JOBS)
       .where('companyId', '==', companyId)
       .where('status', '==', 'active')
@@ -506,7 +473,7 @@ class DatabaseService {
   }
 
   async getInvitationByToken(token: string): Promise<CompanyInvitation | null> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.COMPANY_INVITATIONS)
       .where('invitationToken', '==', token)
       .where('status', '==', 'pending')
@@ -523,7 +490,7 @@ class DatabaseService {
   }
 
   async getCompanyInvitations(companyId: string, status?: string): Promise<CompanyInvitation[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     let query: any = db.collection(COLLECTIONS.COMPANY_INVITATIONS)
       .where('companyId', '==', companyId);
     
@@ -647,7 +614,7 @@ class DatabaseService {
   }
 
   async getCandidateApplications(candidateId: string): Promise<JobApplication[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('candidateId', '==', candidateId)
       .where('deletedAt', '==', null)
@@ -661,7 +628,7 @@ class DatabaseService {
   }
 
   async getJobApplications(jobId: string, status?: string): Promise<JobApplication[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     let query: any = db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('jobId', '==', jobId)
       .where('deletedAt', '==', null);
@@ -679,7 +646,7 @@ class DatabaseService {
 
   async getApplicationsForJobs(jobIds: string[]): Promise<JobApplication[]> {
     if (jobIds.length === 0) return [];
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     
     const chunks = [];
     for (let i = 0; i < jobIds.length; i += 30) {
@@ -706,7 +673,7 @@ class DatabaseService {
 
   async getInterviewsForJobs(jobIds: string[]): Promise<any[]> {
     if (jobIds.length === 0) return [];
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     
     const chunks = [];
     for (let i = 0; i < jobIds.length; i += 30) {
@@ -732,7 +699,7 @@ class DatabaseService {
   }
 
   async getJobApplicationByCandidate(jobId: string, candidateId: string): Promise<any> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     const snapshot = await db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('jobId', '==', jobId)
       .where('candidateId', '==', candidateId)
@@ -746,7 +713,7 @@ class DatabaseService {
   }
 
   async getCompanyApplications(options: { companyId: string; status?: string; limit?: number; offset?: number }): Promise<JobApplication[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     let query = db.collection(COLLECTIONS.JOB_APPLICATIONS)
       .where('companyId', '==', options.companyId)
       .where('deletedAt', '==', null);
@@ -793,7 +760,7 @@ class DatabaseService {
   }
 
   async getInterviews(filters: any = {}): Promise<any[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     let query = db.collection(COLLECTIONS.INTERVIEWS)
       .where('deletedAt', '==', null);
     
@@ -825,7 +792,7 @@ class DatabaseService {
   }
 
   async getInterviewerSchedule(interviewerId: string, startTime: Date, endTime: Date, excludeInterviewId?: string): Promise<any[]> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     let query = db.collection(COLLECTIONS.INTERVIEWS)
       .where('interviewerId', '==', interviewerId)
       .where('scheduledFor', '>=', startTime.toISOString())
@@ -843,7 +810,7 @@ class DatabaseService {
   }
   
   async getSystemAnalytics(): Promise<any> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     
     const [
       companiesSnapshot,
@@ -871,7 +838,7 @@ class DatabaseService {
   }
   
   async getCompanyAnalytics(companyId: string): Promise<any> {
-    const db = await this.ensureDb();
+    const db = await this.getDb();
     
     const [
       jobsSnapshot,
@@ -930,12 +897,48 @@ class DatabaseService {
     return this.delete(COLLECTIONS.JOBS, id);
   }
 
-  async updateApplication(id: string, data: Partial<JobApplication>): Promise<void> {
+  async updateJobApplication(id: string, data: Partial<JobApplication>): Promise<void> {
     return this.update(COLLECTIONS.JOB_APPLICATIONS, id, data);
   }
   
   async createAuditLog(logData: Omit<any, 'id'>): Promise<string> {
     return this.create(COLLECTIONS.AUDIT_LOGS, logData);
+  }
+
+  async deleteNotification(notificationId: string) {
+    // Placeholder
+  }
+
+  async getNotificationsCount(userId: string, options: any) {
+    return 0; // Placeholder
+  }
+
+  async getUnreadNotificationsCount(userId: string) {
+    return 0; // Placeholder
+  }
+
+  async getUserNotifications(userId: string, options: any) {
+    return []; // Placeholder
+  }
+
+  async updateNotification(notificationId: string, updates: any) {
+    // Placeholder
+  }
+  
+  async updateUserNotifications(userId: string, updates: any) {
+    // Placeholder
+  }
+
+  async getNotificationPreferences(userId: string) {
+    return null; // Placeholder
+  }
+
+  async updateNotificationPreferences(userId: string, preferences: any) {
+    // Placeholder
+  }
+
+  async createNotification(notification: any) {
+    return 'notif-id'; // Placeholder
   }
 }
 

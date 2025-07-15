@@ -6,7 +6,7 @@ import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
 import { databaseService } from '@/services/database.service';
-import { getFirebaseAdmin } from '@/lib/firebase/server';
+import { auth as adminAuth } from '@/lib/firebase/server';
 
 
 const candidateOnboardingSchema = z.object({
@@ -23,7 +23,6 @@ const candidateOnboardingSchema = z.object({
  */
 export const POST = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const adminAuth = (await getFirebaseAdmin()).auth();
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     

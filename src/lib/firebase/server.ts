@@ -1,36 +1,35 @@
 
 import admin from 'firebase-admin';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import { apiLogger } from '@/lib/logger';
 
 let appPromise: Promise<admin.app.App> | null = null;
 
 const initializeFirebaseAdmin = async (): Promise<admin.app.App> => {
-  if (admin.apps.length > 0) {
-    console.log('[FirebaseAdmin] Using existing Firebase Admin app instance.');
-    return admin.app();
+  if (admin.apps.length > 0 && admin.apps[0]) {
+    return admin.apps[0];
   }
 
   console.log('[FirebaseAdmin] Initializing new Firebase Admin app instance...');
   
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-talent-stream';
-    const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'ai-talent-stream.firebasestorage.app';
-    
-    // Try different credential sources in order of preference
-    let app: admin.app.App;
-    
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+    if (!projectId) {
+        throw new Error("Firebase Project ID is not configured in environment variables (FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_PROJECT_ID).");
+    }
+
     // 1. Check for service account JSON in environment
     const serviceAccountJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
     if (serviceAccountJson) {
       console.log('[FirebaseAdmin] Using service account from GOOGLE_APPLICATION_CREDENTIALS_JSON');
       const serviceAccount = JSON.parse(serviceAccountJson);
-      app = admin.initializeApp({
+      return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         projectId,
         storageBucket
       });
-      console.log('[FirebaseAdmin] Initialized successfully with Service Account JSON.');
-      return app;
     }
     
     // 2. Try to get service account from Secret Manager
@@ -48,39 +47,38 @@ const initializeFirebaseAdmin = async (): Promise<admin.app.App> => {
         try {
           serviceAccount = JSON.parse(secretValue);
         } catch {
-          // Try base64 decoding
           const decoded = Buffer.from(secretValue, 'base64').toString('utf8');
           serviceAccount = JSON.parse(decoded);
         }
         
         console.log('[FirebaseAdmin] Using service account from Secret Manager');
-        app = admin.initializeApp({
+        return admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
           projectId,
           storageBucket
         });
-        console.log('[FirebaseAdmin] Initialized successfully with Secret Manager service account.');
-        return app;
       }
-    } catch (secretError) {
-      console.warn('[FirebaseAdmin] Could not retrieve service account from Secret Manager:', secretError);
+    } catch (secretError: any) {
+        if(secretError.code !== 5) { // 5 = NOT_FOUND, which is an expected case.
+            console.warn('[FirebaseAdmin] Could not retrieve service account from Secret Manager:', secretError.message);
+        }
     }
     
     // 3. Try Application Default Credentials (for Cloud Run, etc.)
     console.log('[FirebaseAdmin] Attempting to initialize with Application Default Credentials.');
-    app = admin.initializeApp({
+    return admin.initializeApp({
       projectId,
       storageBucket
     });
-    console.log('[FirebaseAdmin] Initialized successfully with Application Default Credentials.');
-    return app;
     
   } catch (error) {
-    console.error('[FirebaseAdmin] CRITICAL: Initialization failed:', error);
-    console.error(`  - GOOGLE_APPLICATION_CREDENTIALS_JSON is ${process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON ? 'set' : 'not set'}`);
-    console.error(`  - FIREBASE_SERVICE_ACCOUNT_SECRET: ${process.env.FIREBASE_SERVICE_ACCOUNT_SECRET || 'firebase-service-account'}`);
-    console.error(`  - Project ID: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
-    throw new Error(`Firebase Admin initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('[FirebaseAdmin] CRITICAL: Firebase Admin initialization failed.', {
+      errorMessage: error instanceof Error ? error.message : String(error),
+      hasServiceAccountJson: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
+      secretName: process.env.FIREBASE_SERVICE_ACCOUNT_SECRET || 'firebase-service-account',
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    });
+    throw error;
   }
 };
 
@@ -91,10 +89,33 @@ export const getFirebaseAdmin = (): Promise<admin.app.App> => {
   return appPromise;
 };
 
-// Export commonly used services
+// Export commonly used services that depend on the admin app
 export const auth = {
   verifyIdToken: async (token: string) => {
     const app = await getFirebaseAdmin();
     return app.auth().verifyIdToken(token);
+  },
+  setCustomUserClaims: async (uid: string, claims: object | null) => {
+    const app = await getFirebaseAdmin();
+    return app.auth().setCustomUserClaims(uid, claims);
+  },
+  getUserByEmail: async (email: string) => {
+    const app = await getFirebaseAdmin();
+    return app.auth().getUserByEmail(email);
+  },
+  createUser: async (properties: admin.auth.CreateRequest) => {
+    const app = await getFirebaseAdmin();
+    return app.auth().createUser(properties);
+  },
+  createCustomToken: async (uid: string, developerClaims?: object) => {
+    const app = await getFirebaseAdmin();
+    return app.auth().createCustomToken(uid, developerClaims);
+  }
+};
+
+export const firestore = {
+  getDb: async () => {
+    const app = await getFirebaseAdmin();
+    return app.firestore();
   }
 };

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/auth/middleware';
@@ -22,7 +23,7 @@ const onboardingSchema = z.object({
 /**
  * POST /api/candidates/onboarding - Complete candidate onboarding with optimized AI services
  */
-async function handlePOST(req: NextRequest): Promise<NextResponse> {
+async function handlePOST(req: NextRequest & { user?: { uid: string } }): Promise<NextResponse> {
   try {
     const body = await req.json();
     

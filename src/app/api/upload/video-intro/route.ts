@@ -1,9 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/middleware/auth';
-import { getFirebaseAdmin } from '@/lib/firebase/server';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { databaseService } from '@/services/database.service';
 import { videoStorageService } from '@/services/videoStorage.service';
 
 /**

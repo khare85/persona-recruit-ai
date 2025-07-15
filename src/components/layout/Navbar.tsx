@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   MessageSquare,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  CalendarDays
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {

@@ -10,7 +10,6 @@ import {
   DollarSign, 
   TrendingUp, 
   Building, 
-  Users, 
   AlertCircle
 } from 'lucide-react';
 

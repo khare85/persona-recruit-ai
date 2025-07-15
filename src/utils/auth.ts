@@ -123,19 +123,6 @@ export function hasPermission(user: UserInfo, permission: string): boolean {
   return userPermissions.includes(permission);
 }
 
-/**
- * Mock user data for development/testing
- */
-export function getMockUser(role: string = 'admin'): UserInfo {
-  return {
-    id: 'mock-user-id',
-    email: 'test@example.com',
-    role: role as any,
-    companyId: 'mock-company-id',
-    firstName: 'Test',
-    lastName: 'User'
-  };
-}
 
 /**
  * Get current user from request (for use in API routes)

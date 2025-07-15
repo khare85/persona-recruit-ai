@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Building, 
   Search, 
-  Filter, 
   Plus, 
   MoreHorizontal, 
   Eye, 
@@ -20,7 +19,6 @@ import {
   Trash2, 
   Ban, 
   CheckCircle,
-  AlertCircle,
   Clock,
   Users,
   Briefcase,
@@ -30,7 +28,6 @@ import {
   Upload,
   Star,
   MapPin,
-  Calendar
 } from 'lucide-react';
 import {
   DropdownMenu,

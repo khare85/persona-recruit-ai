@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -47,7 +47,7 @@ interface NotificationPreferences {
   updatedAt: string;
 }
 
-export function NotificationPreferences() {
+export const NotificationPreferences = React.memo(function NotificationPreferences() {
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -448,4 +448,4 @@ export function NotificationPreferences() {
       </Card>
     </div>
   );
-}
+});

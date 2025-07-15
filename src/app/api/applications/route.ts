@@ -4,71 +4,7 @@ import { handleApiError } from '@/lib/errors';
 import { withAuth } from '@/middleware/auth';
 import { apiLogger } from '@/lib/logger';
 
-// Mock applications database - DEPRECATED: Only kept for reference, not used in API
-const mockApplications = [
-  {
-    id: 'APP-001',
-    candidateId: '1',
-    candidateName: 'Sarah Johnson',
-    candidateEmail: 'sarah.johnson@email.com',
-    jobId: '1',
-    jobTitle: 'Senior Frontend Developer',
-    companyId: '1',
-    companyName: 'TechCorp Inc.',
-    status: 'under_review',
-    appliedAt: '2024-06-20T10:00:00Z',
-    lastUpdated: '2024-06-21T14:30:00Z',
-    resumeUrl: '/api/files/resume_1',
-    coverLetter: 'I am excited to apply for this position...',
-    aiScore: 87,
-    aiAnalysis: {
-      skillsMatch: 92,
-      experienceMatch: 85,
-      culturalFit: 88,
-      overallScore: 87,
-      strengths: ['React expertise', 'Strong portfolio', 'Team leadership'],
-      concerns: ['Limited backend experience']
-    },
-    timeline: [
-      { date: '2024-06-20T10:00:00Z', event: 'Application submitted', status: 'applied' },
-      { date: '2024-06-21T14:30:00Z', event: 'Application under review', status: 'under_review' }
-    ],
-    interviewScheduled: false,
-    feedback: []
-  },
-  {
-    id: 'APP-002',
-    candidateId: '2', 
-    candidateName: 'Marcus Chen',
-    candidateEmail: 'marcus.chen@email.com',
-    jobId: '2',
-    jobTitle: 'DevOps Engineer',
-    companyId: '1',
-    companyName: 'TechCorp Inc.',
-    status: 'interview_scheduled',
-    appliedAt: '2024-06-19T15:00:00Z',
-    lastUpdated: '2024-06-22T09:00:00Z',
-    resumeUrl: '/api/files/resume_2',
-    coverLetter: 'My experience in cloud infrastructure...',
-    aiScore: 92,
-    aiAnalysis: {
-      skillsMatch: 95,
-      experienceMatch: 90,
-      culturalFit: 91,
-      overallScore: 92,
-      strengths: ['Kubernetes expertise', 'CI/CD experience', 'Strong problem solving'],
-      concerns: ['None significant']
-    },
-    timeline: [
-      { date: '2024-06-19T15:00:00Z', event: 'Application submitted', status: 'applied' },
-      { date: '2024-06-20T11:00:00Z', event: 'Application reviewed', status: 'under_review' },
-      { date: '2024-06-22T09:00:00Z', event: 'Interview scheduled', status: 'interview_scheduled' }
-    ],
-    interviewScheduled: true,
-    interviewDate: '2024-06-25T14:00:00Z',
-    feedback: []
-  }
-];
+// Note: All application data now comes from the database service
 
 export const GET = withAuth(async (request: NextRequest) => {
   try {

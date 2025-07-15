@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAdminData, AdminPageWrapper } from '@/utils/adminPageTemplate';
 import { Button } from '@/components/ui/button';
@@ -23,8 +22,6 @@ import {
   Clock,
   Users,
   Briefcase,
-  DollarSign,
-  TrendingUp,
   Loader2
 } from 'lucide-react';
 import {
@@ -78,7 +75,7 @@ interface CompanyStats {
 }
 
 export default function AdminCompaniesPage() {
-  const router = useRouter();
+  // const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);

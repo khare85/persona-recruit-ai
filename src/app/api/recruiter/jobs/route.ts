@@ -114,3 +114,62 @@ export const PUT = withAuth(
     }
   })
 );
+
+/**
+ * POST /api/recruiter/jobs - Duplicate a job
+ */
+export const POST = withAuth(
+  withRole(['recruiter'], async (req: NextRequest): Promise<NextResponse> => {
+    try {
+      const recruiterId = req.user!.id;
+      const { jobId } = await req.json();
+
+      if (!jobId) {
+        return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
+      }
+
+      apiLogger.info('Duplicating job', { recruiterId, jobId });
+
+      // Verify recruiter has access to this job
+      const originalJob = await databaseService.getJobById(jobId);
+      if (!originalJob || originalJob.recruiterId !== recruiterId) {
+        return NextResponse.json({ 
+          error: 'Unauthorized access to job' 
+        }, { status: 403 });
+      }
+
+      // Create a duplicate job with modifications
+      const duplicatedJobData = {
+        ...originalJob,
+        title: `${originalJob.title} (Copy)`,
+        status: 'draft' as const,
+        stats: {
+          views: 0,
+          applications: 0,
+          interviews: 0,
+          offers: 0
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        publishedAt: undefined,
+        closedAt: undefined,
+        deletedAt: undefined
+      };
+
+      // Remove fields that shouldn't be duplicated
+      delete duplicatedJobData.id;
+
+      const newJobId = await databaseService.createJob(duplicatedJobData);
+      const newJob = await databaseService.getJobById(newJobId);
+
+      return NextResponse.json({
+        success: true,
+        data: newJob,
+        message: 'Job duplicated successfully'
+      });
+
+    } catch (error) {
+      return handleApiError(error);
+    }
+  })
+);

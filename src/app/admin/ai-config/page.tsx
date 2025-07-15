@@ -5,21 +5,16 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Container } from '@/components/shared/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Activity, 
-  Cpu,
-  Settings,
   Zap,
   Brain,
   Save,
   RefreshCw,
-  AlertCircle,
   CheckCircle,
   TrendingUp
 } from 'lucide-react';
@@ -45,7 +40,7 @@ interface AIConfig {
 
 export default function AdminAIConfigPage() {
   const [config, setConfig] = useState<AIConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -106,7 +101,7 @@ export default function AdminAIConfigPage() {
     });
   };
 
-  const updateModel = (model: keyof AIConfig['models'], field: string, value: any) => {
+  const updateModel = (model: keyof AIConfig['models'], field: string, value: unknown) => {
     if (!config) return;
     setConfig({
       ...config,

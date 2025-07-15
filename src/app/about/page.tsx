@@ -4,14 +4,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Users,
   Target,
   Globe,
   Heart,
-  Lightbulb,
   Shield,
   TrendingUp,
   Brain,
@@ -96,8 +95,8 @@ export default function AboutPage() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-            We're on a mission to revolutionize how companies discover, engage, and hire exceptional talent. 
-            By combining advanced AI with human insight, we're making recruitment faster, fairer, and more effective.
+            We&apos;re on a mission to revolutionize how companies discover, engage, and hire exceptional talent. 
+            By combining advanced AI with human insight, we&apos;re making recruitment faster, fairer, and more effective.
           </p>
         </div>
       </section>
@@ -137,7 +136,7 @@ export default function AboutPage() {
                   became the foundation of Persona Recruit AI.
                 </p>
                 <p>
-                  Today, we're proud to serve thousands of companies worldwide, from fast-growing startups to 
+                  Today, we&apos;re proud to serve thousands of companies worldwide, from fast-growing startups to 
                   Fortune 500 enterprises, helping them build diverse, high-performing teams.
                 </p>
               </div>
@@ -220,7 +219,7 @@ export default function AboutPage() {
               <Target className="h-16 w-16 mx-auto mb-6 text-green-100" />
               <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
               <p className="text-xl text-green-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-                To democratize access to opportunity by creating the world's most intelligent, 
+                To democratize access to opportunity by creating the world&apos;s most intelligent, 
                 fair, and efficient recruitment platform. We believe everyone deserves a chance 
                 to find meaningful work, and every company deserves access to exceptional talent.
               </p>
@@ -251,8 +250,8 @@ export default function AboutPage() {
             <CardContent className="p-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Join Us?</h2>
               <p className="text-lg text-gray-600 mb-8">
-                Whether you're looking to transform your hiring process or join our team, 
-                we'd love to hear from you.
+                Whether you&apos;re looking to transform your hiring process or join our team, 
+                we&apos;d love to hear from you.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/auth">

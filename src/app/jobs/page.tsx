@@ -14,6 +14,20 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
+// Interface for job data structure used in this component
+interface MockJob {
+  id: string;
+  title: string;
+  companyName: string;
+  location: string;
+  jobType: string;
+  description: string;
+  requirements: string[];
+  salaryRange: string;
+  postedDate: string;
+  applicationCount: number;
+}
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<MockJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);

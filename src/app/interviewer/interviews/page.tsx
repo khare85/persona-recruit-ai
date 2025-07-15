@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Container } from '@/components/shared/Container';
 import { Button } from '@/components/ui/button';
@@ -35,125 +36,115 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Mock interview history data
-const interviewHistory = [
-  {
-    id: 'IV-001',
-    candidateName: 'Sarah Johnson',
-    candidateAvatar: '/avatars/sarah.jpg',
-    position: 'Senior Frontend Developer',
-    company: 'TechCorp Inc.',
-    interviewDate: '2024-06-21T10:00:00Z',
-    duration: 60,
-    type: 'Technical Interview',
-    format: 'In-Person',
-    location: 'Conference Room A',
-    status: 'completed',
-    myRating: 5,
-    recommendation: 'Strong Hire',
-    aiScore: 87,
-    candidateRating: 4.8,
-    feedbackSubmitted: true,
-    notes: 'Excellent React knowledge and system design skills',
-    strengths: ['Technical expertise', 'Clear communication', 'Problem solving'],
-    improvements: ['Could improve on edge case handling'],
-    outcome: 'hired'
-  },
-  {
-    id: 'IV-002',
-    candidateName: 'Marcus Chen',
-    candidateAvatar: '/avatars/marcus.jpg',
-    position: 'DevOps Engineer',
-    company: 'CloudScale Solutions',
-    interviewDate: '2024-06-20T14:30:00Z',
-    duration: 45,
-    type: 'Behavioral Interview',
-    format: 'Virtual',
-    location: 'Zoom Meeting',
-    status: 'completed',
-    myRating: 4,
-    recommendation: 'Hire',
-    aiScore: 92,
-    candidateRating: 4.6,
-    feedbackSubmitted: true,
-    notes: 'Strong leadership potential and team collaboration skills',
-    strengths: ['Leadership', 'Communication', 'Technical depth'],
-    improvements: ['More specific examples would be helpful'],
-    outcome: 'hired'
-  },
-  {
-    id: 'IV-003',
-    candidateName: 'Emily Rodriguez',
-    candidateAvatar: '/avatars/emily.jpg',
-    position: 'UX Designer',
-    company: 'DesignFirst Studio',
-    interviewDate: '2024-06-19T11:00:00Z',
-    duration: 50,
-    type: 'Portfolio Review',
-    format: 'In-Person',
-    location: 'Design Studio',
-    status: 'completed',
-    myRating: 3,
-    recommendation: 'Hire with Reservations',
-    aiScore: null,
-    candidateRating: 4.2,
-    feedbackSubmitted: true,
-    notes: 'Creative portfolio but needs more experience with user research',
-    strengths: ['Creative thinking', 'Design skills', 'Portfolio quality'],
-    improvements: ['User research methodology', 'Data-driven design'],
-    outcome: 'declined'
-  },
-  {
-    id: 'IV-004',
-    candidateName: 'David Kim',
-    candidateAvatar: '/avatars/david.jpg',
-    position: 'Data Scientist',
-    company: 'DataDriven Analytics',
-    interviewDate: '2024-06-18T15:00:00Z',
-    duration: 60,
-    type: 'Technical + Case Study',
-    format: 'Hybrid',
-    location: 'Conference Room C',
-    status: 'completed',
-    myRating: 5,
-    recommendation: 'Strong Hire',
-    aiScore: 94,
-    candidateRating: 4.9,
-    feedbackSubmitted: true,
-    notes: 'Outstanding ML expertise and practical problem-solving approach',
-    strengths: ['ML expertise', 'Business acumen', 'Code quality'],
-    improvements: ['None significant'],
-    outcome: 'hired'
-  },
-  {
-    id: 'IV-005',
-    candidateName: 'Jennifer Walsh',
-    candidateAvatar: '/avatars/jennifer.jpg',
-    position: 'Product Manager',
-    company: 'NextGen Robotics',
-    interviewDate: '2024-06-17T09:30:00Z',
-    duration: 45,
-    type: 'Final Round',
-    format: 'Virtual',
-    location: 'Microsoft Teams',
-    status: 'completed',
-    myRating: 4,
-    recommendation: 'Hire',
-    aiScore: 89,
-    candidateRating: 4.5,
-    feedbackSubmitted: true,
-    notes: 'Good strategic thinking with solid product vision',
-    strengths: ['Product strategy', 'Stakeholder management', 'Vision'],
-    improvements: ['Technical depth could be stronger'],
-    outcome: 'hired'
-  }
-];
+// Interview data interface
+interface Interview {
+  id: string;
+  candidateName: string;
+  candidateAvatar: string;
+  candidateEmail?: string;
+  position: string;
+  jobTitle?: string;
+  company: string;
+  companyName?: string;
+  interviewDate: string;
+  scheduledFor?: string;
+  duration: number;
+  type: string;
+  format: string;
+  location: string;
+  status: string;
+  myRating: number;
+  rating?: number;
+  recommendation: string;
+  aiScore: number | null;
+  candidateRating: number;
+  feedbackSubmitted: boolean;
+  notes: string;
+  strengths: string[];
+  improvements: string[];
+  outcome: string;
+}
+
+interface InterviewStats {
+  total: number;
+  averageRating: number;
+  averageCandidateRating: number;
+  hireRate: number;
+}
 
 export default function InterviewerInterviewsPage() {
+  const { getToken, user, loading: authLoading } = useAuth();
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [recommendationFilter, setRecommendationFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
+
+  const fetchInterviews = useCallback(async () => {
+    if (authLoading || !user) return;
+    
+    setIsLoading(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.error('No auth token found');
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch interviews for the current interviewer
+      const response = await fetch(`/api/interviews?interviewerId=${user.id}&status=completed`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const interviewData = result.data || [];
+        
+        // Map API data to component interface
+        const mappedInterviews = interviewData.map((interview: any) => ({
+          id: interview.id,
+          candidateName: interview.candidateName || 'Unknown Candidate',
+          candidateAvatar: interview.candidateAvatar || '/avatars/default.jpg',
+          candidateEmail: interview.candidateEmail,
+          position: interview.jobTitle || 'Unknown Position',
+          jobTitle: interview.jobTitle,
+          company: interview.companyName || 'Unknown Company', 
+          companyName: interview.companyName,
+          interviewDate: interview.scheduledFor || interview.createdAt,
+          scheduledFor: interview.scheduledFor,
+          duration: interview.duration || 60,
+          type: interview.type || 'Interview',
+          format: interview.format || 'Virtual',
+          location: interview.location || 'Not specified',
+          status: interview.status,
+          myRating: interview.rating || 0,
+          rating: interview.rating,
+          recommendation: interview.recommendation || 'Pending',
+          aiScore: interview.aiScore || null,
+          candidateRating: interview.candidateRating || 0,
+          feedbackSubmitted: !!interview.feedback,
+          notes: interview.notes || '',
+          strengths: interview.strengths || [],
+          improvements: interview.improvements || [],
+          outcome: interview.outcome || 'pending'
+        }));
+
+        setInterviews(mappedInterviews);
+      }
+    } catch (error) {
+      console.error('Error fetching interviews:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getToken, user, authLoading]);
+
+  useEffect(() => {
+    fetchInterviews();
+  }, [fetchInterviews]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -199,7 +190,7 @@ export default function InterviewerInterviewsPage() {
     ));
   };
 
-  const filteredInterviews = interviewHistory.filter(interview => {
+  const filteredInterviews = interviews.filter(interview => {
     const matchesSearch = interview.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          interview.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          interview.company.toLowerCase().includes(searchTerm.toLowerCase());
@@ -210,10 +201,16 @@ export default function InterviewerInterviewsPage() {
   });
 
   // Calculate statistics
-  const totalInterviews = interviewHistory.length;
-  const averageRating = (interviewHistory.reduce((sum, interview) => sum + interview.myRating, 0) / totalInterviews).toFixed(1);
-  const averageCandidateRating = (interviewHistory.reduce((sum, interview) => sum + interview.candidateRating, 0) / totalInterviews).toFixed(1);
-  const hireRate = Math.round((interviewHistory.filter(i => i.outcome === 'hired').length / totalInterviews) * 100);
+  const totalInterviews = interviews.length;
+  const averageRating = totalInterviews > 0 
+    ? (interviews.reduce((sum, interview) => sum + interview.myRating, 0) / totalInterviews).toFixed(1)
+    : '0.0';
+  const averageCandidateRating = totalInterviews > 0
+    ? (interviews.reduce((sum, interview) => sum + interview.candidateRating, 0) / totalInterviews).toFixed(1)
+    : '0.0';
+  const hireRate = totalInterviews > 0
+    ? Math.round((interviews.filter(i => i.outcome === 'hired').length / totalInterviews) * 100)
+    : 0;
 
   return (
     <DashboardLayout>
@@ -351,7 +348,28 @@ export default function InterviewerInterviewsPage() {
           </TabsList>
 
           <TabsContent value="list" className="space-y-4">
-            {filteredInterviews.map((interview) => (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading interviews...</p>
+                </div>
+              </div>
+            ) : filteredInterviews.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No interviews found</h3>
+                  <p className="text-muted-foreground">
+                    {interviews.length === 0 
+                      ? "You haven't conducted any interviews yet."
+                      : "No interviews match your current search criteria."
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredInterviews.map((interview) => (
               <Card key={interview.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
@@ -447,16 +465,7 @@ export default function InterviewerInterviewsPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-            
-            {filteredInterviews.length === 0 && (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No interviews found</h3>
-                  <p className="text-muted-foreground">No interviews match your current search criteria.</p>
-                </CardContent>
-              </Card>
+            ))
             )}
           </TabsContent>
 

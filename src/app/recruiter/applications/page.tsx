@@ -129,14 +129,21 @@ export default function RecruiterApplicationsPage() {
 
   const handleStatusChange = async (applicationId: string, newStatus: string) => {
     try {
-      // In real implementation, would call API
-      setApplications(apps => 
-        apps.map(app => 
-          app.id === applicationId 
-            ? { ...app, status: newStatus, lastActivity: new Date().toISOString() }
-            : app
-        )
-      );
+      const result = await authenticatedFetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (result.success) {
+        // Update local state with the updated application
+        setApplications(apps => 
+          apps.map(app => 
+            app.id === applicationId 
+              ? { ...app, status: newStatus, lastActivity: new Date().toISOString() }
+              : app
+          )
+        );
+      }
     } catch (error) {
       console.error('Error updating application status:', error);
     }
@@ -162,18 +169,38 @@ export default function RecruiterApplicationsPage() {
 
   const handleBulkAction = async (action: string) => {
     try {
-      console.log(`Bulk action: ${action} on applications:`, Array.from(selectedApplications));
-      // In real implementation, would call API
-      if (action === 'reject') {
+      const applicationIds = Array.from(selectedApplications);
+      let status: string;
+      
+      switch (action) {
+        case 'review':
+          status = 'reviewed';
+          break;
+        case 'reject':
+          status = 'rejected';
+          break;
+        default:
+          console.error('Unknown bulk action:', action);
+          return;
+      }
+
+      // Use the bulk update endpoint
+      const result = await authenticatedFetch('/api/recruiter/applications', {
+        method: 'PUT',
+        body: JSON.stringify({ applicationIds, status })
+      });
+
+      if (result.success) {
+        // Update local state for all selected applications
         setApplications(apps => 
           apps.map(app => 
             selectedApplications.has(app.id) 
-              ? { ...app, status: 'rejected', lastActivity: new Date().toISOString() }
+              ? { ...app, status, lastActivity: new Date().toISOString() }
               : app
           )
         );
+        setSelectedApplications(new Set());
       }
-      setSelectedApplications(new Set());
     } catch (error) {
       console.error('Error performing bulk action:', error);
     }

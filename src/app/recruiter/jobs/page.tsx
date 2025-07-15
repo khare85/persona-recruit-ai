@@ -139,14 +139,33 @@ export default function RecruiterJobsPage() {
 
   const handleStatusChange = async (jobId: string, newStatus: string) => {
     try {
-      // In real implementation, would call API
-      setJobs(jobs => 
-        jobs.map(job => 
-          job.id === jobId 
-            ? { ...job, status: newStatus as Job['status'] }
-            : job
-        )
-      );
+      const token = await getToken();
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('/api/recruiter/jobs', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ jobId, status: newStatus })
+      });
+
+      if (response.ok) {
+        // Update local state after successful API call
+        setJobs(jobs => 
+          jobs.map(job => 
+            job.id === jobId 
+              ? { ...job, status: newStatus as Job['status'] }
+              : job
+          )
+        );
+      } else {
+        console.error('Failed to update job status');
+      }
     } catch (error) {
       console.error('Error updating job status:', error);
     }
@@ -154,19 +173,51 @@ export default function RecruiterJobsPage() {
 
   const duplicateJob = async (jobId: string) => {
     try {
-      const originalJob = jobs.find(j => j.id === jobId);
-      if (originalJob) {
-        const duplicatedJob: Job = {
-          ...originalJob,
-          id: `${jobId}_copy`,
-          title: `${originalJob.title} (Copy)`,
-          status: 'draft',
-          applications: 0,
-          views: 0,
-          hires: 0,
-          postedAt: new Date().toISOString()
+      const token = await getToken();
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('/api/recruiter/jobs', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ jobId })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const duplicatedJob = result.data;
+        
+        // Map the API response to match our local Job interface
+        const mappedJob: Job = {
+          id: duplicatedJob.id,
+          title: duplicatedJob.title,
+          department: duplicatedJob.department,
+          location: duplicatedJob.location,
+          employmentType: duplicatedJob.type,
+          salaryRange: duplicatedJob.salary || 'Not specified',
+          status: duplicatedJob.status,
+          applications: duplicatedJob.stats.applications || 0,
+          views: duplicatedJob.stats.views || 0,
+          hires: duplicatedJob.stats.offers || 0,
+          postedAt: duplicatedJob.createdAt,
+          deadline: duplicatedJob.applicationDeadline,
+          description: duplicatedJob.description,
+          requirements: duplicatedJob.qualifications || [],
+          benefits: duplicatedJob.benefits || []
         };
-        setJobs([duplicatedJob, ...jobs]);
+
+        // Add the new job to the local state
+        setJobs([mappedJob, ...jobs]);
+        
+        // Refresh the job list to get updated stats
+        fetchJobs();
+      } else {
+        console.error('Failed to duplicate job');
       }
     } catch (error) {
       console.error('Error duplicating job:', error);

@@ -3,8 +3,7 @@
 
 import { useState } from 'react';
 import { AdminPageWrapper, useAdminData } from '@/utils/adminPageTemplate';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -13,9 +12,8 @@ import { PerformanceOverview } from '@/components/ai-analytics/PerformanceOvervi
 import { BiasMonitoring } from '@/components/ai-analytics/BiasMonitoring';
 import { FairnessMetrics } from '@/components/ai-analytics/FairnessMetrics';
 import { AlertsPanel } from '@/components/ai-analytics/AlertsPanel';
-import { ExportControls } from '@/components/ai-analytics/ExportControls';
 import { TimeRangeSelector } from '@/components/ai-analytics/TimeRangeSelector';
-import { AlertTriangle, Activity, Shield, TrendingUp } from 'lucide-react';
+import { AlertTriangle, TrendingUp } from 'lucide-react';
 
 export default function AIAnalyticsPage() {
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -45,7 +43,7 @@ export default function AIAnalyticsPage() {
     }));
   };
 
-  const handleFilterChange = (key: keyof AnalyticsFilters, value: any) => {
+  const handleFilterChange = (key: keyof AnalyticsFilters, value: unknown) => {
     setFilters(prev => ({
       ...prev,
       [key]: value

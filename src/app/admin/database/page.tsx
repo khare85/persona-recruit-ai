@@ -15,10 +15,8 @@ import {
   RefreshCw,
   Download,
   Upload,
-  Server,
   Clock,
-  CheckCircle,
-  AlertTriangle
+  CheckCircle
 } from 'lucide-react';
 
 interface DatabaseStats {
@@ -40,7 +38,7 @@ interface DatabaseStats {
 
 export default function AdminDatabasePage() {
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchDatabaseStats();

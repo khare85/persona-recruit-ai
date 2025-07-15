@@ -634,50 +634,127 @@ class NotificationService {
     };
   }
 
-  // Database interaction methods (would be implemented with your database service)
+  // Database interaction methods
   private async saveNotification(notification: Omit<Notification, 'id'>): Promise<string> {
-    // Implementation would save to your database
-    // For now, return a mock ID
-    return `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      const notificationId = await databaseService.createNotification(notification);
+      return notificationId;
+    } catch (error) {
+      notificationLogger.error('Failed to save notification to database', {
+        userId: notification.userId,
+        type: notification.type,
+        error: String(error)
+      });
+      throw error;
+    }
   }
 
   private async getNotificationsFromDatabase(
     userId: string,
-    options: any
+    options: {
+      limit?: number;
+      offset?: number;
+      unreadOnly?: boolean;
+      category?: NotificationCategory;
+    }
   ): Promise<Notification[]> {
-    // Implementation would query your database
-    return [];
+    try {
+      const notifications = await databaseService.getUserNotifications(userId, options);
+      return notifications;
+    } catch (error) {
+      notificationLogger.error('Failed to get notifications from database', {
+        userId,
+        error: String(error)
+      });
+      return [];
+    }
   }
 
   private async getNotificationsCount(userId: string, options: any): Promise<number> {
-    // Implementation would count notifications in database
-    return 0;
+    try {
+      const count = await databaseService.getNotificationsCount(userId, options);
+      return count;
+    } catch (error) {
+      notificationLogger.error('Failed to get notifications count from database', {
+        userId,
+        error: String(error)
+      });
+      return 0;
+    }
   }
 
   private async getUnreadNotificationsCount(userId: string): Promise<number> {
-    // Implementation would count unread notifications
-    return 0;
+    try {
+      const count = await databaseService.getUnreadNotificationsCount(userId);
+      return count;
+    } catch (error) {
+      notificationLogger.error('Failed to get unread notifications count from database', {
+        userId,
+        error: String(error)
+      });
+      return 0;
+    }
   }
 
   private async updateNotification(notificationId: string, updates: Partial<Notification>): Promise<void> {
-    // Implementation would update notification in database
+    try {
+      await databaseService.updateNotification(notificationId, updates);
+    } catch (error) {
+      notificationLogger.error('Failed to update notification in database', {
+        notificationId,
+        error: String(error)
+      });
+      throw error;
+    }
   }
 
   private async updateUserNotifications(userId: string, updates: Partial<Notification>): Promise<void> {
-    // Implementation would update all user notifications in database
+    try {
+      await databaseService.updateUserNotifications(userId, updates);
+    } catch (error) {
+      notificationLogger.error('Failed to update user notifications in database', {
+        userId,
+        error: String(error)
+      });
+      throw error;
+    }
   }
 
   private async removeNotification(notificationId: string): Promise<void> {
-    // Implementation would delete notification from database
+    try {
+      await databaseService.deleteNotification(notificationId);
+    } catch (error) {
+      notificationLogger.error('Failed to delete notification from database', {
+        notificationId,
+        error: String(error)
+      });
+      throw error;
+    }
   }
 
   private async getPreferencesFromDatabase(userId: string): Promise<NotificationPreferences | null> {
-    // Implementation would get preferences from database
-    return null;
+    try {
+      const preferences = await databaseService.getNotificationPreferences(userId);
+      return preferences;
+    } catch (error) {
+      notificationLogger.error('Failed to get notification preferences from database', {
+        userId,
+        error: String(error)
+      });
+      return null;
+    }
   }
 
   private async savePreferencesToDatabase(preferences: NotificationPreferences): Promise<void> {
-    // Implementation would save preferences to database
+    try {
+      await databaseService.updateNotificationPreferences(preferences.userId, preferences);
+    } catch (error) {
+      notificationLogger.error('Failed to save notification preferences to database', {
+        userId: preferences.userId,
+        error: String(error)
+      });
+      throw error;
+    }
   }
 
   private async sendRealTimeUpdate(userId: string, notification: any): Promise<void> {

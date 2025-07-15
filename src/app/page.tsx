@@ -31,7 +31,8 @@ import {
   Crown,
   Infinity,
   Mail,
-  Phone
+  Phone,
+  Play
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';

@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { 
   Building, 
   Users, 
-  Briefcase, 
   MapPin, 
   Globe, 
   CalendarDays, 

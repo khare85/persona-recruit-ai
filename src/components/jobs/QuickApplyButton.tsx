@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +52,7 @@ interface QuickApplyData {
   willingToRelocate?: boolean;
 }
 
-export function QuickApplyButton({ jobId, jobTitle, companyName, className }: QuickApplyButtonProps) {
+export const QuickApplyButton = React.memo(function QuickApplyButton({ jobId, jobTitle, companyName, className }: QuickApplyButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -380,4 +380,4 @@ export function QuickApplyButton({ jobId, jobTitle, companyName, className }: Qu
       </Dialog>
     </>
   );
-}
+});

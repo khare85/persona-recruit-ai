@@ -14,7 +14,7 @@ import { FairnessMetrics } from '@/components/ai-analytics/FairnessMetrics'; // 
 import { AlertsPanel } from '@/components/ai-analytics/AlertsPanel'; // Corrected import path
 import { ExportControls } from '@/components/ai-analytics/ExportControls'; // Corrected import path
 import { TimeRangeSelector } from '@/components/ai-analytics/TimeRangeSelector';
-import { AlertTriangle, Activity, Shield, TrendingUp, Download, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Activity, Shield, TrendingUp, RefreshCw } from 'lucide-react';
 
 export default function AIAnalyticsPage() {
   const [dashboardData, setDashboardData] = useState<AIPerformanceDashboard | null>(null);
@@ -89,7 +89,7 @@ export default function AIAnalyticsPage() {
   };
 
   // Handle filter changes
-  const handleFilterChange = (key: keyof AnalyticsFilters, value: any) => {
+  const handleFilterChange = (key: keyof AnalyticsFilters, value: unknown) => {
     setFilters(prev => ({
       ...prev,
       [key]: value

@@ -7,6 +7,6 @@ export const ai = genkit({
 });
 
 export function configureGenkit() {
-  console.log('Genkit AI configured with Google AI plugin');
+  // Genkit AI configured with Google AI plugin
   return ai;
 }

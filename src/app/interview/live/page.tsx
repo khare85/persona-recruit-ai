@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   ElevenLabsConversationService, 
-  DemoConversationService,
+  FallbackConversationService,
   ConversationMessage, 
   ConversationState,
   getDefaultElevenLabsConfig 
@@ -55,7 +55,7 @@ function LiveInterviewContent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const elevenLabsServiceRef = useRef<ElevenLabsConversationService | DemoConversationService | null>(null);
+  const elevenLabsServiceRef = useRef<ElevenLabsConversationService | FallbackConversationService | null>(null);
 
   // Interview details from URL
   const interviewId = searchParams.get('id') || 'demo-interview-001';
@@ -130,7 +130,7 @@ function LiveInterviewContent() {
         elevenLabsServiceRef.current = new ElevenLabsConversationService(config);
       } else {
         console.log('Using demo conversation service - ElevenLabs not configured');
-        elevenLabsServiceRef.current = new DemoConversationService();
+        elevenLabsServiceRef.current = new FallbackConversationService();
       }
       
       // Set up event handlers

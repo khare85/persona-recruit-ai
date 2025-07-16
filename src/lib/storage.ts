@@ -43,51 +43,74 @@ export class FirebaseStorageProvider implements StorageProvider {
       return;
     }
     
-    // This would be initialized with Firebase Storage bucket in production
-    // For now, using placeholder with proper bucket name
+    // Import the storage bucket from the Firebase service
+    this.initializeBucket();
+  }
+
+  private async initializeBucket() {
+    try {
+      const { storageBucket } = await import('@/services/firestoreService');
+      this.bucket = storageBucket;
+    } catch (error) {
+      console.error('Failed to initialize Firebase Storage bucket:', error);
+    }
   }
 
   async upload(file: File, path: string): Promise<string> {
     try {
-      // Use streaming upload to avoid loading entire file into memory
-      const stream = file.stream();
-      const chunks: Uint8Array[] = [];
-      let totalSize = 0;
-      
-      // Stream file in chunks to control memory usage
-      const reader = stream.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          chunks.push(value);
-          totalSize += value.length;
-          
-          // Prevent excessive memory usage
-          if (totalSize > 50 * 1024 * 1024) { // 50MB limit
-            throw new Error('File too large for memory processing');
-          }
-        }
-      } finally {
-        reader.releaseLock();
+      // Ensure bucket is initialized
+      if (!this.bucket) {
+        await this.initializeBucket();
       }
-      
-      // Combine chunks efficiently
-      const buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
-      
-      // Clear chunks array immediately to free memory
-      chunks.length = 0;
+
+      if (!this.bucket) {
+        throw new Error('Firebase Storage bucket not available');
+      }
+
+      // Convert File to Buffer
+      const buffer = Buffer.from(await file.arrayBuffer());
       
       // Upload to Firebase Storage
-      // const fileRef = this.bucket.file(path);
-      // await fileRef.save(buffer, { metadata: { contentType: file.type } });
-      
-      // Clear buffer after upload
-      buffer.fill(0);
-      
-      // Return public URL
-      return `https://storage.googleapis.com/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/${path}`;
+      const fileRef = this.bucket.file(path);
+      const stream = fileRef.createWriteStream({
+        metadata: {
+          contentType: file.type,
+          metadata: {
+            originalName: file.name,
+            uploadedAt: new Date().toISOString()
+          }
+        }
+      });
+
+      return new Promise((resolve, reject) => {
+        stream.on('error', (error) => {
+          fileLogger.error('Firebase storage upload failed', { path, error: String(error) });
+          reject(new Error('Failed to upload file to Firebase Storage'));
+        });
+
+        stream.on('finish', async () => {
+          try {
+            // Make file publicly accessible
+            await fileRef.makePublic();
+            
+            // Get public URL
+            const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${path}`;
+            
+            fileLogger.info('File uploaded successfully to Firebase Storage', { 
+              path, 
+              url: publicUrl,
+              size: buffer.length
+            });
+            
+            resolve(publicUrl);
+          } catch (error) {
+            fileLogger.error('Post-upload processing failed', { path, error: String(error) });
+            reject(error);
+          }
+        });
+
+        stream.end(buffer);
+      });
     } catch (error) {
       fileLogger.error('Firebase storage upload failed', { path, error: String(error) });
       throw new Error('Failed to upload file to Firebase Storage');
@@ -96,8 +119,17 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async delete(path: string): Promise<boolean> {
     try {
+      // Ensure bucket is initialized
+      if (!this.bucket) {
+        await this.initializeBucket();
+      }
+
+      if (!this.bucket) {
+        throw new Error('Firebase Storage bucket not available');
+      }
+
       // Delete from Firebase Storage
-      // await this.bucket.file(path).delete();
+      await this.bucket.file(path).delete();
       return true;
     } catch (error) {
       fileLogger.error('Firebase storage delete failed', { path, error: String(error) });
@@ -107,12 +139,21 @@ export class FirebaseStorageProvider implements StorageProvider {
 
   async getSignedUrl(path: string, expiresIn: number = 3600): Promise<string> {
     try {
+      // Ensure bucket is initialized
+      if (!this.bucket) {
+        await this.initializeBucket();
+      }
+
+      if (!this.bucket) {
+        throw new Error('Firebase Storage bucket not available');
+      }
+
       // Generate signed URL for private files
-      // const [signedUrl] = await this.bucket.file(path).getSignedUrl({
-      //   action: 'read',
-      //   expires: Date.now() + expiresIn * 1000
-      // });
-      return `https://storage.googleapis.com/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/${path}?expires=${Date.now() + expiresIn * 1000}`;
+      const [signedUrl] = await this.bucket.file(path).getSignedUrl({
+        action: 'read',
+        expires: Date.now() + expiresIn * 1000
+      });
+      return signedUrl;
     } catch (error) {
       fileLogger.error('Failed to generate signed URL', { path, error: String(error) });
       throw new Error('Failed to generate signed URL');
@@ -409,7 +450,10 @@ export function createStorageProvider(): StorageProvider {
   const environment = process.env.NODE_ENV;
   const cdnUrl = process.env.CDN_BASE_URL;
 
-  if (environment === 'production') {
+  // Always use Firebase Storage if properly configured
+  const hasFirebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  
+  if (hasFirebaseConfig) {
     const firebaseProvider = new FirebaseStorageProvider();
     
     if (cdnUrl) {
@@ -418,7 +462,7 @@ export function createStorageProvider(): StorageProvider {
     
     return firebaseProvider;
   } else {
-    // Use local storage for development
+    // Use local storage as fallback
     return new LocalStorageProvider();
   }
 }

@@ -102,6 +102,8 @@ export default function OnboardingModal() {
       setIsUploading(true);
       setUploadProgress(10);
       
+      console.log('OnboardingModal: Starting resume upload for file:', selectedFile.name);
+      
       const formData = new FormData();
       formData.append('resume', selectedFile);
 
@@ -109,6 +111,8 @@ export default function OnboardingModal() {
 
       const token = await user?.getIdToken();
       if (!token) throw new Error("Authentication failed");
+
+      console.log('OnboardingModal: Got auth token, making API call');
 
       const response = await fetch('/api/candidates/resume-process', {
         method: 'POST',
@@ -120,7 +124,9 @@ export default function OnboardingModal() {
 
       setUploadProgress(70);
 
+      console.log('OnboardingModal: API response status:', response.status);
       const result = await response.json();
+      console.log('OnboardingModal: API response:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Upload failed');
@@ -141,6 +147,7 @@ export default function OnboardingModal() {
       }, 1000);
 
     } catch (error) {
+      console.error('OnboardingModal: Resume upload error:', error);
       toast({
         title: "Upload Failed",
         description: error instanceof Error ? error.message : "Please try again.",

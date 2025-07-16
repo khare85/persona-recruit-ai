@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { roleNavigation } from '@/utils/roleRedirection';
 
@@ -18,7 +19,8 @@ export default function ProtectedRoute({
   requiredRole, 
   redirectTo = '/auth' 
 }: ProtectedRouteProps) {
-  const { user, loading, checkOnboardingComplete, getOnboardingRedirectPath } = useAuth();
+  const { user, loading } = useAuth();
+  const { isOnboardingComplete, getOnboardingRedirectPath } = useOnboarding();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -41,7 +43,7 @@ export default function ProtectedRoute({
     }
     
     // Check onboarding for candidates
-    if (user.role === 'candidate' && !checkOnboardingComplete()) {
+    if (user.role === 'candidate' && !isOnboardingComplete) {
       const onboardingPath = getOnboardingRedirectPath();
       if (onboardingPath && pathname !== onboardingPath) {
         router.replace(onboardingPath);
@@ -49,7 +51,7 @@ export default function ProtectedRoute({
       }
     }
 
-  }, [user, loading, requiredRole, redirectTo, router, pathname, checkOnboardingComplete, getOnboardingRedirectPath]);
+  }, [user, loading, requiredRole, redirectTo, router, pathname, isOnboardingComplete, getOnboardingRedirectPath]);
 
   if (loading) {
     return (
@@ -70,7 +72,7 @@ export default function ProtectedRoute({
         const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
         if (user.role && allowedRoles.includes(user.role)) {
             // For candidates, also ensure onboarding is complete if they are trying to access a protected page
-            if (user.role === 'candidate' && !checkOnboardingComplete()) {
+            if (user.role === 'candidate' && !isOnboardingComplete) {
                 const onboardingPath = getOnboardingRedirectPath();
                 if (onboardingPath && pathname !== onboardingPath) {
                     return null; // Don't render content while redirecting

@@ -322,6 +322,7 @@ class ResumeProcessingService {
   private async updateCandidateProfile(userId: string, resumeUrl: string, profileData: Record<string, any>, aiSummary?: string): Promise<void> {
     const updates: Record<string, any> = {
       resumeUrl: resumeUrl,
+      resumeUploaded: true,
       profileComplete: true,
       updatedAt: new Date().toISOString()
     };

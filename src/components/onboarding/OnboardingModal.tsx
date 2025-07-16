@@ -25,17 +25,14 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-type OnboardingStep = 'resume' | 'video-consent' | 'video-record' | 'complete';
+type OnboardingStep = 'video-consent' | 'video-record' | 'complete';
 
 const VIDEO_DURATION_LIMIT = 10; // seconds
 const VIDEO_COUNTDOWN = 3; // countdown before recording starts
 
 export default function OnboardingModal() {
   const { showOnboardingModal, setShowOnboardingModal } = useOnboarding();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('resume');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('video-consent');
   const [isRecording, setIsRecording] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -43,6 +40,7 @@ export default function OnboardingModal() {
   const [countdown, setCountdown] = useState(0);
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   const [hasConsented, setHasConsented] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const { toast } = useToast();
   const { user, getToken } = useAuth();
@@ -55,108 +53,13 @@ export default function OnboardingModal() {
 
   const getStepProgress = () => {
     switch (currentStep) {
-      case 'resume': return 25;
-      case 'video-consent': return 50;
-      case 'video-record': return 75;
+      case 'video-consent': return 33;
+      case 'video-record': return 66;
       case 'complete': return 100;
       default: return 0;
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Invalid File Type",
-        description: "Please upload a PDF, DOC, or DOCX file.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: "File Too Large",
-        description: "Please upload a file smaller than 5MB.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setSelectedFile(file);
-  };
-
-  const uploadResume = async () => {
-    if (!selectedFile) return;
-
-    try {
-      setIsUploading(true);
-      setUploadProgress(10);
-      
-      console.log('OnboardingModal: Starting resume upload for file:', selectedFile.name);
-      
-      const formData = new FormData();
-      formData.append('resume', selectedFile);
-
-      setUploadProgress(30);
-
-      const token = await getToken();
-      if (!token) throw new Error("Authentication failed");
-
-      console.log('OnboardingModal: Got auth token, making API call');
-
-      const response = await fetch('/api/candidates/resume-process', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      setUploadProgress(70);
-
-      console.log('OnboardingModal: API response status:', response.status);
-      const result = await response.json();
-      console.log('OnboardingModal: API response:', result);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      setUploadProgress(100);
-
-      toast({
-        title: "✅ Resume Uploaded!",
-        description: "Your resume has been uploaded successfully."
-      });
-
-      // Move to video consent step
-      setTimeout(() => {
-        setCurrentStep('video-consent');
-        setIsUploading(false);
-        setUploadProgress(0);
-      }, 1000);
-
-    } catch (error) {
-      console.error('OnboardingModal: Resume upload error:', error);
-      toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-        variant: "destructive"
-      });
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
-  };
 
   const requestCameraPermission = useCallback(async () => {
     try {
@@ -345,101 +248,6 @@ export default function OnboardingModal() {
     };
   }, []);
 
-  const renderResumeStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <FileText className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Upload Your Resume</h3>
-        <p className="text-muted-foreground">
-          Help us understand your background and experience
-        </p>
-      </div>
-
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Our AI will automatically:</strong>
-          <ul className="list-disc ml-5 mt-2 space-y-1 text-sm">
-            <li>Extract and analyze your experience</li>
-            <li>Generate a professional summary</li>
-            <li>Identify your key skills</li>
-          </ul>
-        </AlertDescription>
-      </Alert>
-
-      {!selectedFile ? (
-        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-          <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h4 className="text-lg font-medium mb-2">Choose Your Resume</h4>
-          <p className="text-muted-foreground mb-4">
-            Upload a PDF, DOC, or DOCX file (max 5MB)
-          </p>
-          <input
-            type="file"
-            id="resume-upload"
-            className="hidden"
-            accept=".pdf,.doc,.docx"
-            onChange={handleFileSelect}
-          />
-          <label htmlFor="resume-upload" className="cursor-pointer">
-            <Button asChild>
-              <span>Choose File</span>
-            </Button>
-          </label>
-        </div>
-      ) : (
-        <div className="border rounded-lg p-4">
-          <div className="flex items-center gap-4">
-            <FileText className="h-8 w-8 text-primary" />
-            <div className="flex-1">
-              <h4 className="font-medium">{selectedFile.name}</h4>
-              <p className="text-sm text-muted-foreground">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
-            <CheckCircle className="h-6 w-6 text-green-500" />
-          </div>
-        </div>
-      )}
-
-      {isUploading && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Uploading Resume...</span>
-            <span>{uploadProgress}%</span>
-          </div>
-          <Progress value={uploadProgress} />
-        </div>
-      )}
-
-      <div className="flex justify-between">
-        <Button 
-          variant="outline"
-          onClick={() => setCurrentStep('video-consent')}
-          disabled={isUploading}
-        >
-          Skip for now
-        </Button>
-        <Button 
-          onClick={uploadResume} 
-          disabled={!selectedFile || isUploading}
-          size="lg"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              Upload Resume
-              <CheckCircle className="h-4 w-4 ml-2" />
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
-  );
 
   const renderVideoConsentStep = () => (
     <div className="space-y-6">
@@ -639,14 +447,13 @@ export default function OnboardingModal() {
         <DialogHeader>
           <DialogTitle className="text-center">Complete Your Profile</DialogTitle>
           <DialogDescription className="text-center">
-            Step {currentStep === 'resume' ? '1' : currentStep === 'video-consent' ? '2' : currentStep === 'video-record' ? '3' : '4'} of 4
+            Step {currentStep === 'video-consent' ? '1' : currentStep === 'video-record' ? '2' : '3'} of 3
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
           <Progress value={getStepProgress()} className="w-full" />
           
-          {currentStep === 'resume' && renderResumeStep()}
           {currentStep === 'video-consent' && renderVideoConsentStep()}
           {currentStep === 'video-record' && renderVideoRecordStep()}
           {currentStep === 'complete' && renderCompleteStep()}

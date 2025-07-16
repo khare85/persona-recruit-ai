@@ -26,6 +26,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
+import AIProfileGenerationPrompt from '@/components/profile/AIProfileGenerationPrompt';
 
 function CandidateDashboardContent() {
   const { user, loading: authLoading } = useAuth();
@@ -114,6 +115,9 @@ function CandidateDashboardContent() {
             : "Welcome! Let's complete your profile to get started."}
         </p>
       </div>
+
+      {/* AI Profile Generation Prompt */}
+      <AIProfileGenerationPrompt />
 
       {/* Onboarding Progress */}
       {!isOnboardingComplete && (

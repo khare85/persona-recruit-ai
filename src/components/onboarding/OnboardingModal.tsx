@@ -45,7 +45,7 @@ export default function OnboardingModal() {
   const [hasConsented, setHasConsented] = useState(false);
   
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const router = useRouter();
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -109,7 +109,7 @@ export default function OnboardingModal() {
 
       setUploadProgress(30);
 
-      const token = await user?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("Authentication failed");
 
       console.log('OnboardingModal: Got auth token, making API call');
@@ -266,7 +266,7 @@ export default function OnboardingModal() {
       const buffer = Buffer.from(arrayBuffer);
       const base64Content = buffer.toString('base64');
       
-      const token = await user?.getIdToken();
+      const token = await getToken();
       if (!token) throw new Error("Authentication failed");
       
       const response = await fetch('/api/upload/video-intro', {

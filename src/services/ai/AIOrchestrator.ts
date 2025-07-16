@@ -286,6 +286,66 @@ export class AIOrchestrator extends EventEmitter {
   }
 
   /**
+   * Generate job skills using AI flow
+   */
+  async generateJobSkills(jobData: any): Promise<string[]> {
+    const cacheKey = `job:skills:${this.hashContent(jobData)}`;
+    const cached = await this.aiCache.get(cacheKey);
+    if (cached) return cached;
+
+    return this.rateLimiter.callAIService(
+      'job-skills',
+      async () => {
+        // Import the AI flow
+        const { generateJobSkills } = await import('@/ai/flows/job-skill-generator-flow');
+        
+        const result = await generateJobSkills({
+          jobTitle: jobData.title || jobData.jobTitle,
+          experienceLevel: jobData.experience || jobData.experienceLevel || 'mid',
+          industry: jobData.industry
+        });
+        
+        await this.aiCache.set(cacheKey, result.skills, 86400); // 24 hours
+        return result.skills;
+      },
+      'medium'
+    );
+  }
+
+  /**
+   * Generate job requirements using AI flow
+   */
+  async generateJobRequirements(jobData: any): Promise<string[]> {
+    const cacheKey = `job:requirements:${this.hashContent(jobData)}`;
+    const cached = await this.aiCache.get(cacheKey);
+    if (cached) return cached;
+
+    return this.rateLimiter.callAIService(
+      'job-requirements',
+      async () => {
+        // Import the AI flow
+        const { generateJobDescription } = await import('@/ai/flows/job-description-generator');
+        
+        const result = await generateJobDescription({
+          jobTitle: jobData.title || jobData.jobTitle,
+          yearsOfExperience: jobData.experience || jobData.yearsOfExperience || '3-5',
+          company: jobData.company || 'Tech Company',
+          department: jobData.department,
+          location: jobData.location,
+          jobType: jobData.jobType || 'full_time'
+        });
+        
+        // Extract requirements from the generated description
+        const requirements = result.requirements || [];
+        
+        await this.aiCache.set(cacheKey, requirements, 86400); // 24 hours
+        return requirements;
+      },
+      'medium'
+    );
+  }
+
+  /**
    * Get AI processing statistics
    */
   getProcessingStats(): any {

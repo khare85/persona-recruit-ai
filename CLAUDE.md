@@ -218,6 +218,115 @@ firebase deploy --only firestore:rules,firestore:indexes,storage:rules --project
 firebase apphosting:backends:list --project=ai-talent-stream
 ```
 
+## AI Flows and Services Architecture
+
+### Core AI Configuration
+- **Genkit Setup**: `/src/ai/genkit.ts` - Central AI configuration using Google Genkit with Gemini 2.0 Flash
+- **Model**: `googleai/gemini-2.0-flash` for text generation
+- **Embedding Model**: `textembedding-gecko-multilingual` for vector embeddings
+
+### Available AI Flows (`/src/ai/flows/`)
+
+#### 1. **Resume Processing Flows**
+- **`generate-resume-summary-flow.ts`**: Creates professional 3-5 sentence summaries from resume text
+- **`resume-skill-extractor.ts`**: Extracts technical and soft skills from resume content
+- **`process-resume-document-ai-flow.ts`**: Parses resume files using Google Cloud Document AI
+- **Input**: Resume text or base64 file content
+- **Output**: Structured data (summary, skills array, extracted text)
+- **Integration**: Used by resume processing service
+
+#### 2. **Candidate Matching Flows**
+- **`advanced-candidate-job-matching-flow.ts`**: Two-stage semantic search + LLM analysis
+- **`candidate-job-matcher.ts`**: Detailed candidate-job compatibility analysis
+- **`candidate-screener-flow.ts`**: Logic-based skill matching and screening
+- **`ai-talent-semantic-search-flow.ts`**: Vector-based candidate search using Firestore embeddings
+- **Input**: Job requirements, candidate profiles, search queries
+- **Output**: Match scores, compatibility analysis, ranked candidates
+- **Integration**: API endpoints `/api/ai/advanced-match`, candidate search
+
+#### 3. **Job Management Flows**
+- **`job-description-generator.ts`**: AI-powered job description creation
+- **`job-skill-generator-flow.ts`**: Generates relevant skills for job postings
+- **`job-recommendation-semantic-flow.ts`**: Vector-based job recommendations
+- **`job-recommendation-engine.ts`**: Basic job recommendations with market data
+- **Input**: Job title, experience level, industry, candidate profile
+- **Output**: Complete job descriptions, skills arrays, job recommendations
+- **Integration**: Job generation service, candidate recommendations API
+
+#### 4. **Interview Flows**
+- **`live-interview-flow.ts`**: AI-powered conversational interviewer
+- **`video-interview-analysis.ts`**: Comprehensive video interview analysis with behavioral assessment
+- **Input**: Job description, candidate info, conversation history, video data
+- **Output**: AI responses, behavioral analysis, competency scores
+- **Integration**: Interview start API, video analysis services
+
+#### 5. **Core AI Utilities**
+- **`generate-text-embedding-flow.ts`**: Creates vector embeddings for semantic search
+- **`ai-talent-search-flow.ts`**: Wrapper around semantic search with filtering
+- **Input**: Text content, search queries
+- **Output**: Numerical embedding vectors, filtered search results
+- **Integration**: All semantic search functionality
+
+### AI Services (`/src/services/`)
+
+#### 1. **AI Orchestrator** (`ai/AIOrchestrator.ts`)
+- **Purpose**: Central AI operations management with performance optimization
+- **Features**: Complete candidate processing pipeline, batch processing, rate limiting
+- **Integration**: Singleton service available system-wide
+
+#### 2. **Gemini Service** (`ai/GeminiService.ts`)
+- **Purpose**: Enhanced Gemini API wrapper with caching and retry logic
+- **Features**: Resume analysis, skill extraction, job generation, video analysis, bias detection
+- **Integration**: Used by AI Orchestrator
+
+#### 3. **Candidate Scoring Service** (`candidateScoringService.ts`)
+- **Purpose**: Comprehensive candidate evaluation against job requirements
+- **Features**: Detailed scoring, batch processing, skills proficiency assessment
+- **Integration**: Available as singleton service
+
+#### 4. **Job Generation Service** (`jobGenerationService.ts`)
+- **Purpose**: AI-powered job description creation
+- **Features**: Complete job descriptions, skills generation, structured output
+- **Integration**: Available as singleton service
+
+### Integration Guidelines
+
+#### ✅ **ALWAYS USE EXISTING AI FLOWS**
+When implementing AI functionality, use these existing flows:
+1. **Resume Processing**: Use `generate-resume-summary-flow.ts` + `resume-skill-extractor.ts`
+2. **Candidate Matching**: Use `advanced-candidate-job-matching-flow.ts`
+3. **Job Creation**: Use `job-description-generator.ts` + `job-skill-generator-flow.ts`
+4. **Embeddings**: Use `generate-text-embedding-flow.ts`
+5. **Search**: Use `ai-talent-semantic-search-flow.ts`
+
+#### ❌ **DO NOT CREATE NEW AI FLOWS**
+- All major AI functionality already exists
+- Use existing flows and services instead of creating new ones
+- Extend existing flows if additional functionality is needed
+
+#### 🔧 **Current Integration Status**
+- **✅ Fully Integrated**: Resume processing, candidate search, job recommendations, video interview analysis, bias detection
+- **⚠️ Partially Integrated**: Live interviews, candidate screening
+- **❌ Not Integrated**: Job description generation UI
+
+### AI API Endpoints
+- **`/api/ai/advanced-match`**: Advanced candidate matching
+- **`/api/candidates/job-recommendations`**: Personalized job recommendations
+- **`/api/interview/start`**: AI-powered interview initialization
+- **`/api/candidates/resume-process`**: Resume parsing and profile extraction
+- **`/api/interviews/[id]/analyze`**: Video interview analysis using AI
+- **`/api/ai/bias-detection`**: General bias detection analysis
+- **`/api/applications/[id]/bias-check`**: Application decision bias checking
+- **`/api/jobs/[id]/bias-check`**: Job description bias checking
+
+### Important Notes
+- All AI flows use Google Genkit framework
+- Text generation uses Gemini 2.0 Flash model
+- Embeddings use `textembedding-gecko-multilingual`
+- Comprehensive error handling and fallbacks implemented
+- Rate limiting and caching built into services
+- Vector search uses Firestore with embedding indexes
+
 ## Security Considerations
 - Firestore rules enforce user-based access control
 - Storage rules restrict file access by user type

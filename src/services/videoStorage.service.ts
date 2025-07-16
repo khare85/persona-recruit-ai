@@ -289,6 +289,54 @@ class VideoStorageService {
     }
   }
 
+  async getVideoAsDataUri(url: string): Promise<string> {
+    try {
+      this.ensureBucket();
+
+      const bucketName = this.bucket!.name;
+      const urlPrefix = `https://storage.googleapis.com/${bucketName}/`;
+      
+      if (!url.startsWith(urlPrefix)) {
+        throw new Error('Invalid video URL format');
+      }
+
+      const filePath = url.replace(urlPrefix, '');
+      const fileRef = this.bucket!.file(filePath);
+
+      // Check if file exists
+      const [exists] = await fileRef.exists();
+      if (!exists) {
+        throw new Error('Video file not found');
+      }
+
+      // Get file metadata to determine content type
+      const [metadata] = await fileRef.getMetadata();
+      const contentType = metadata.contentType || 'video/webm';
+
+      // Download file content
+      const [fileBuffer] = await fileRef.download();
+      
+      // Convert to base64 data URI
+      const base64Data = fileBuffer.toString('base64');
+      const dataUri = `data:${contentType};base64,${base64Data}`;
+
+      storageLogger.info('Video converted to data URI', {
+        url,
+        filePath,
+        contentType,
+        size: fileBuffer.length
+      });
+
+      return dataUri;
+    } catch (error) {
+      storageLogger.error('Failed to get video as data URI', {
+        error: String(error),
+        url
+      });
+      throw error;
+    }
+  }
+
   async listUserVideos(userId: string, type?: string): Promise<VideoMetadata[]> {
     try {
       this.ensureBucket();

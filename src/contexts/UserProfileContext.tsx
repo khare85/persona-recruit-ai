@@ -68,7 +68,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // Only fetch profile for candidates or if profile is not cached
       if (user?.role === 'candidate') {
         console.log('UserProfileContext: Fetching candidate profile from Firestore');
-        const candidateDoc = await getDoc(doc(db, 'candidates', userId));
+        const candidateDoc = await getDoc(doc(db, 'candidateProfiles', userId));
         
         if (candidateDoc.exists()) {
           const candidateData = candidateDoc.data();
@@ -125,11 +125,35 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     } catch (fetchError) {
       const errorMessage = fetchError instanceof Error ? fetchError.message : 'Failed to load profile';
-      setError(errorMessage);
-      apiLogger.error('Failed to fetch user profile', { 
-        userId, 
-        error: errorMessage 
-      });
+      
+      // Only set error for non-permission errors
+      if (!errorMessage.includes('permission') && !errorMessage.includes('Missing or insufficient permissions')) {
+        setError(errorMessage);
+        apiLogger.error('Failed to fetch user profile', { 
+          userId, 
+          error: errorMessage 
+        });
+      } else {
+        // For permission errors, create a default profile
+        if (user?.role === 'candidate') {
+          const defaultProfile: UserProfile = {
+            profileComplete: false,
+            onboardingStep: 'resume',
+            resumeUploaded: false,
+            videoIntroRecorded: false,
+            currentTitle: '',
+            location: '',
+            skills: [],
+            summary: '',
+            phone: '',
+            availability: 'immediate',
+            portfolioUrl: '',
+            linkedinUrl: ''
+          };
+          setProfile(defaultProfile);
+          apiLogger.info('Created default profile due to permission error', { userId });
+        }
+      }
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);

@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
 
 function CandidateDashboardContent() {
   const { user, loading: authLoading } = useAuth();
@@ -319,6 +320,9 @@ function CandidateDashboardContent() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Onboarding Modal */}
+      <OnboardingModal />
     </Container>
   );
 }

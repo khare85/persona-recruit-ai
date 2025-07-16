@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,18 +25,13 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-interface OnboardingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onComplete: () => void;
-}
-
 type OnboardingStep = 'resume' | 'video-consent' | 'video-record' | 'complete';
 
 const VIDEO_DURATION_LIMIT = 10; // seconds
 const VIDEO_COUNTDOWN = 3; // countdown before recording starts
 
-export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
+export default function OnboardingModal() {
+  const { showOnboardingModal, setShowOnboardingModal } = useOnboarding();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('resume');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -291,7 +287,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
       // Complete onboarding after showing success
       setTimeout(() => {
-        onComplete();
+        setShowOnboardingModal(false);
         router.push('/candidates/profile');
       }, 2000);
 
@@ -606,7 +602,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
           variant="link" 
           onClick={() => {
             setCurrentStep('complete');
-            onComplete();
+            setShowOnboardingModal(false);
             router.push('/candidates/profile');
           }}
           className="text-muted-foreground"
@@ -631,7 +627,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={showOnboardingModal} onOpenChange={setShowOnboardingModal}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">Complete Your Profile</DialogTitle>

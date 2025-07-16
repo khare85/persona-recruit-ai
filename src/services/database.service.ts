@@ -142,72 +142,10 @@ class DatabaseService {
     return { items, total, hasMore };
   }
 
-  // User Management
+  // User Management - Simplified for Firebase Auth integration
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'fullName'>): Promise<string> {
-    try {
-      const db = await this.getDb();
-      const plainPassword = userData.passwordHash;
-      
-      let authUser;
-      try {
-        authUser = await admin.auth().getUserByEmail(userData.email);
-        dbLogger.warn('User already exists in Firebase Auth, updating.', { uid: authUser.uid });
-      } catch (authError: any) {
-        if (authError.code === 'auth/user-not-found') {
-          authUser = await admin.auth().createUser({
-            email: userData.email,
-            password: plainPassword,
-            displayName: `${userData.firstName} ${userData.lastName}`,
-            emailVerified: userData.emailVerified || true,
-          });
-          dbLogger.info('User created in Firebase Auth', { uid: authUser.uid, email: userData.email });
-        } else {
-          throw authError;
-        }
-      }
-
-      const customClaims: { role: string; companyId?: string } = { role: userData.role };
-      if (userData.companyId) {
-        customClaims.companyId = userData.companyId;
-      }
-      await admin.auth().setCustomUserClaims(authUser.uid, customClaims);
-      dbLogger.info('Custom claims set for user', { uid: authUser.uid, claims: customClaims });
-
-      const passwordHash = await bcrypt.hash(plainPassword, 12);
-      
-      const userFirestoreData: Partial<User> = {
-        ...userData,
-        passwordHash,
-        emailVerified: authUser.emailVerified,
-        status: 'active',
-        deletedAt: null
-      };
-      
-      const userId = authUser.uid;
-      const userDocRef = db.collection(COLLECTIONS.USERS).doc(userId);
-      const userDoc = await userDocRef.get();
-      
-      if (!userDoc.exists) {
-        await userDocRef.set({
-          ...userFirestoreData,
-          id: userId,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      } else {
-        const { createdAt, ...updateData } = userFirestoreData;
-        await userDocRef.update({
-          ...updateData,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      }
-      
-      dbLogger.info('User document created/updated in Firestore', { userId, email: userData.email, role: userData.role });
-      return userId;
-    } catch (error) {
-      dbLogger.error('Error in createUser database service', { error: String(error), email: userData.email });
-      throw error;
-    }
+    dbLogger.error('createUser method is deprecated. Use createUserDocument instead.', { email: userData.email });
+    throw new Error('createUser method is deprecated. Firebase Auth handles user creation on client side.');
   }
 
   async getUserById(id: string): Promise<User | null> {
@@ -257,10 +195,12 @@ class DatabaseService {
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<void> {
-    if (data.passwordHash) {
-      data.passwordHash = await bcrypt.hash(data.passwordHash, 12);
+    // Remove password hashing since Firebase Auth handles passwords
+    const { passwordHash, ...updateData } = data;
+    if (passwordHash) {
+      dbLogger.warn('Password updates should be handled through Firebase Auth', { userId: id });
     }
-    return this.update(COLLECTIONS.USERS, id, data);
+    return this.update(COLLECTIONS.USERS, id, updateData);
   }
 
   async deleteUser(id: string): Promise<void> {
@@ -740,11 +680,13 @@ class DatabaseService {
   }
 
   async verifyPassword(hashedPassword: string, plainPassword: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, hashedPassword);
+    dbLogger.warn('Password verification should be handled through Firebase Auth');
+    throw new Error('Password verification should be handled through Firebase Auth');
   }
 
   async generatePasswordHash(password: string): Promise<string> {
-    return bcrypt.hash(password, 12);
+    dbLogger.warn('Password hashing should be handled through Firebase Auth');
+    throw new Error('Password hashing should be handled through Firebase Auth');
   }
 
   async createInterview(interviewData: any): Promise<any> {

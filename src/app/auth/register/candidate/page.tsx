@@ -63,28 +63,8 @@ export default function CandidateRegistrationPage() {
     try {
       setIsRegistering(true);
       
-      const firebaseUser = await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, 'candidate');
-      
-      // Manually trigger profile creation API
-      const token = await firebaseUser.getIdToken();
-      const profileResponse = await fetch('/api/candidates/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          location: '' // To be collected during onboarding
-        })
-      });
-
-      const result = await profileResponse.json();
-
-      if (!profileResponse.ok) {
-        throw new Error(result.error || 'Failed to create candidate profile.');
-      }
+      // Create Firebase Auth user and complete registration through our API
+      const firebaseUser = await signUp(data.email, data.password, data.firstName, data.lastName, 'candidate');
       
       // Update user in context with onboarding info
       setCurrentUser(prev => prev ? ({
@@ -93,14 +73,13 @@ export default function CandidateRegistrationPage() {
         onboardingStep: 'resume',
       }) : null);
 
-
       toast({
         title: "🎉 Account Created!",
         description: "Welcome! Let's complete your profile to get started.",
       });
       
-      setShowOnboardingModal(true); // Trigger the modal from the context
-      router.push('/candidates/dashboard'); // Redirect to dashboard where modal will show
+      setShowOnboardingModal(true);
+      router.push('/candidates/dashboard');
 
     } catch (error) {
       console.error('Registration error:', error);

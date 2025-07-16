@@ -4,19 +4,18 @@
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/config/firebase';
+import { auth } from '@/config/firebase';
 import type { User as FirebaseUser, AuthError } from 'firebase/auth';
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut as firebaseSignOut,
-  updateProfile,
-  sendEmailVerification
+  updateProfile
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { apiLogger } from '@/lib/logger';
 
 export type UserRole = 'super_admin' | 'company_admin' | 'recruiter' | 'interviewer' | 'candidate';
 
@@ -24,19 +23,16 @@ export interface User extends FirebaseUser {
   role: UserRole;
   fullName?: string;
   companyId?: string;
-  profileComplete?: boolean;
-  onboardingStep?: 'resume' | 'video' | 'complete';
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, pass: string) => Promise<FirebaseUser>;
-  signUp: (email: string, pass: string, fullName?: string, role?: UserRole) => Promise<FirebaseUser>;
+  signUp: (email: string, pass: string, firstName: string, lastName: string, role?: UserRole) => Promise<FirebaseUser>;
   signOut: () => Promise<void>;
   getToken: (forceRefresh?: boolean) => Promise<string | null>;
-  checkOnboardingComplete: () => boolean;
-  getOnboardingRedirectPath: () => string | null;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,160 +43,282 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { toast } = useToast();
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
+  // Process Firebase user and extract claims
+  const processFirebaseUser = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
+    try {
+      // Get token with custom claims (with retries for new users)
+      let idTokenResult;
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while (retries < maxRetries) {
         try {
-          // Force a token refresh to get the latest custom claims, especially after signup.
-          const idTokenResult = await firebaseUser.getIdTokenResult(true); 
-          const role = (idTokenResult.claims.role as UserRole) || 'candidate'; // Default to candidate if no role claim
-          const companyId = (idTokenResult.claims.companyId as string) || undefined;
+          idTokenResult = await firebaseUser.getIdTokenResult(retries > 0);
           
-          let fullName = firebaseUser.displayName || '';
-          let profileComplete = false;
-          let onboardingStep: 'resume' | 'video' | 'complete' = 'resume';
-          
-          // Fallback to Firestore if claims are not immediately available or name is missing
-          if (!fullName || role === 'candidate') {
-              try {
-                  const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-                  if (userDoc.exists()) {
-                      const userData = userDoc.data();
-                      if (!fullName) {
-                        fullName = userData.fullName || `${userData.firstName} ${userData.lastName}`.trim() || '';
-                      }
-                      
-                      // Check onboarding completion for candidates
-                      if (role === 'candidate') {
-                        profileComplete = userData.profileComplete || false;
-                        
-                        // Determine onboarding step
-                        if (userData.resumeUploaded && userData.videoIntroRecorded) {
-                          onboardingStep = 'complete';
-                        } else if (userData.resumeUploaded) {
-                          onboardingStep = 'video';
-                        } else {
-                          onboardingStep = 'resume';
-                        }
-                      }
-                  }
-              } catch (firestoreError) {
-                  console.warn("Could not read user document from Firestore:", firestoreError);
-              }
+          // Check if we have the required claims
+          if (idTokenResult.claims.role) {
+            break;
           }
           
-          setUser({
-            ...firebaseUser,
-            role,
-            fullName,
-            companyId,
-            profileComplete,
-            onboardingStep
-          } as User);
-        } catch (error) {
-          console.error("Error fetching user data/claims:", error);
-          await firebaseSignOut(auth);
+          // If no claims yet, wait and retry (for new users)
+          if (retries < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            retries++;
+          } else {
+            // Fallback for users without claims
+            break;
+          }
+        } catch (tokenError) {
+          if (retries === maxRetries - 1) throw tokenError;
+          retries++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      if (!idTokenResult) {
+        throw new Error('Failed to get ID token');
+      }
+      
+      const role = (idTokenResult.claims.role as UserRole) || 'candidate';
+      const companyId = idTokenResult.claims.companyId as string | undefined;
+      const fullName = firebaseUser.displayName || '';
+      
+      const enhancedUser: User = {
+        ...firebaseUser,
+        role,
+        fullName,
+        companyId
+      };
+      
+      apiLogger.info('User authenticated successfully', {
+        userId: firebaseUser.uid,
+        role,
+        hasCompanyId: !!companyId,
+        emailVerified: firebaseUser.emailVerified
+      });
+      
+      return enhancedUser;
+    } catch (error) {
+      apiLogger.error('Failed to process Firebase user', {
+        userId: firebaseUser.uid,
+        error: String(error)
+      });
+      throw error;
+    }
+  }, []);
+
+  // Auth state change handler
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      
+      try {
+        if (firebaseUser) {
+          const enhancedUser = await processFirebaseUser(firebaseUser);
+          setUser(enhancedUser);
+        } else {
           setUser(null);
         }
-      } else {
+      } catch (error) {
+        apiLogger.error('Auth state change error', { error: String(error) });
+        // Force sign out on error
+        await firebaseSignOut(auth);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [processFirebaseUser]);
 
+  // Token management
   const getToken = useCallback(async (forceRefresh = false): Promise<string | null> => {
     try {
-      if (auth && auth.currentUser) {
-        return auth.currentUser.getIdToken(forceRefresh);
+      if (auth.currentUser) {
+        return await auth.currentUser.getIdToken(forceRefresh);
       }
       return null;
     } catch (error) {
-      console.error('getToken error:', error);
+      apiLogger.error('Failed to get auth token', { error: String(error) });
       return null;
     }
   }, []);
 
+  // Refresh user data (useful after role changes)
+  const refreshUser = useCallback(async () => {
+    if (auth.currentUser) {
+      try {
+        const refreshedUser = await processFirebaseUser(auth.currentUser);
+        setUser(refreshedUser);
+      } catch (error) {
+        apiLogger.error('Failed to refresh user', { error: String(error) });
+      }
+    }
+  }, [processFirebaseUser]);
+
+  // Sign in
   const signIn = async (email: string, pass: string): Promise<FirebaseUser> => {
     setLoading(true);
     try {
+      apiLogger.info('Sign in attempt', { email });
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      // User state will be updated by onAuthStateChanged after token refresh
+      
+      toast({ 
+        title: "Welcome back!", 
+        description: "You have been signed in successfully." 
+      });
+      
       return userCredential.user;
     } catch (error) {
       const authError = error as AuthError;
-      toast({ variant: "destructive", title: "Login Failed", description: authError.message });
+      
+      apiLogger.warn('Sign in failed', { 
+        email, 
+        errorCode: authError.code,
+        errorMessage: authError.message 
+      });
+      
+      // User-friendly error messages
+      let errorMessage = authError.message;
+      if (authError.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (authError.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please try again.';
+      } else if (authError.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (authError.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      }
+      
+      toast({ 
+        variant: "destructive", 
+        title: "Sign In Failed", 
+        description: errorMessage 
+      });
+      
       setLoading(false);
       throw authError;
     }
   };
 
-  const signUp = async (email: string, pass: string, fullName?: string, role: UserRole = 'candidate'): Promise<FirebaseUser> => {
+  // Sign up
+  const signUp = async (email: string, pass: string, firstName: string, lastName: string, role: UserRole = 'candidate'): Promise<FirebaseUser> => {
     setLoading(true);
     try {
+      apiLogger.info('Sign up attempt', { email, role });
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       const firebaseUser = userCredential.user;
 
-      if (fullName) {
-        await updateProfile(firebaseUser, { displayName: fullName });
+      const fullName = `${firstName} ${lastName}`;
+      await updateProfile(firebaseUser, { displayName: fullName });
+
+      // Call registration API to create user document and set claims
+      const token = await firebaseUser.getIdToken();
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email,
+          firstName,
+          lastName,
+          role
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to complete registration');
       }
 
-      // NOTE: In a production Firebase environment, you should use a Cloud Function
-      // triggered by `functions.auth.user().onCreate()` to create the user document
-      // in Firestore and set their custom claims for their role.
-      // This is more secure than relying on a client-side call after signup.
-      // For this project, we're assuming this trigger exists to set the role.
+      apiLogger.info('User registered successfully', { 
+        userId: firebaseUser.uid, 
+        email, 
+        role 
+      });
 
-      // Send verification email - can be re-enabled later
-      // await sendEmailVerification(firebaseUser);
-      toast({ title: "Account Created", description: "Your account has been created successfully!" });
-
+      toast({ 
+        title: "Account Created!", 
+        description: "Your account has been created successfully!" 
+      });
+      
       return firebaseUser;
     } catch (error) {
       const authError = error as AuthError;
-      toast({ variant: "destructive", title: "Sign Up Failed", description: authError.message });
+      
+      apiLogger.error('Sign up failed', { 
+        email, 
+        role,
+        errorCode: authError.code,
+        errorMessage: authError.message 
+      });
+      
+      // User-friendly error messages
+      let errorMessage = authError.message;
+      if (authError.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists.';
+      } else if (authError.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters long.';
+      } else if (authError.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      }
+      
+      toast({ 
+        variant: "destructive", 
+        title: "Registration Failed", 
+        description: errorMessage 
+      });
+      
       setLoading(false);
       throw authError;
     }
   };
 
+  // Sign out
   const signOut = async () => {
     setLoading(true);
     try {
       await firebaseSignOut(auth);
-      // User state will be cleared by onAuthStateChanged
+      
+      apiLogger.info('User signed out', { userId: user?.uid });
+      
       router.push('/auth');
-      toast({ title: "Signed Out", description: "You have been successfully signed out." });
+      toast({ 
+        title: "Signed Out", 
+        description: "You have been successfully signed out." 
+      });
     } catch (error) {
       const authError = error as AuthError;
-      toast({ variant: "destructive", title: "Sign Out Failed", description: authError.message });
+      
+      apiLogger.error('Sign out failed', { 
+        userId: user?.uid,
+        error: String(authError) 
+      });
+      
+      toast({ 
+        variant: "destructive", 
+        title: "Sign Out Failed", 
+        description: "There was an error signing you out. Please try again." 
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const checkOnboardingComplete = useCallback((): boolean => {
-    if (!user || user.role !== 'candidate') return true;
-    return user.profileComplete || false;
-  }, [user]);
-
-  const getOnboardingRedirectPath = useCallback((): string | null => {
-    if (!user || user.role !== 'candidate' || checkOnboardingComplete()) return null;
-    
-    switch (user.onboardingStep) {
-      case 'resume':
-        return '/candidates/onboarding/resume';
-      case 'video':
-        return '/candidates/onboarding/video-intro';
-      default:
-        return '/candidates/onboarding/resume';
-    }
-  }, [user, checkOnboardingComplete]);
-
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, getToken, checkOnboardingComplete, getOnboardingRedirectPath }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      getToken,
+      refreshUser
+    }}>
       {children}
     </AuthContext.Provider>
   );

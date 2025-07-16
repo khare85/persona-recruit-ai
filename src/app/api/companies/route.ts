@@ -1,262 +1,252 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { 
+  withProtection, 
+  withQueryValidation, 
+  withValidation,
+  CommonSchemas,
+  type AuthenticatedRequest 
+} from '@/middleware/api';
+import { ApiResponse, APIError } from '@/lib/api-response';
+import { databaseService } from '@/services/database.service';
+import { sanitizeString } from '@/lib/validation';
+import { apiLogger } from '@/lib/logger';
 
-// Mock company data - in production this would come from a database
-const companies = [
-  {
-    id: '1',
-    name: 'TechCorp Inc.',
-    slug: 'techcorp',
-    industry: 'Technology',
-    size: '500-1000',
-    website: 'https://techcorp.com',
-    description: 'Leading technology company specializing in innovative software solutions.',
-    headquarters: 'San Francisco, CA',
-    founded: '2015',
-    logo: '/logos/techcorp.png',
-    status: 'active',
-    subscription: {
-      plan: 'enterprise',
-      status: 'active',
-      billingCycle: 'monthly',
-      amount: 999,
-      nextBilling: '2024-07-01'
-    },
-    settings: {
-      publicProfile: true,
-      autoScreening: true,
-      screeningThreshold: 70,
-      emailNotifications: true,
-      maxDailyInterviews: 4
-    },
-    stats: {
-      totalEmployees: 750,
-      activeJobs: 12,
-      totalCandidates: 245,
-      thisMonthHires: 8
-    },
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-06-20T14:30:00Z'
-  },
-  {
-    id: '2',
-    name: 'CloudScale Solutions',
-    slug: 'cloudscale',
-    industry: 'Cloud Computing',
-    size: '100-500',
-    website: 'https://cloudscale.io',
-    description: 'Cloud infrastructure and DevOps solutions provider.',
-    headquarters: 'Austin, TX',
-    founded: '2018',
-    logo: '/logos/cloudscale.png',
-    status: 'active',
-    subscription: {
-      plan: 'professional',
-      status: 'active',
-      billingCycle: 'annual',
-      amount: 4999,
-      nextBilling: '2024-12-15'
-    },
-    settings: {
-      publicProfile: true,
-      autoScreening: false,
-      screeningThreshold: 60,
-      emailNotifications: true,
-      maxDailyInterviews: 3
-    },
-    stats: {
-      totalEmployees: 280,
-      activeJobs: 8,
-      totalCandidates: 156,
-      thisMonthHires: 5
-    },
-    createdAt: '2024-02-20T09:00:00Z',
-    updatedAt: '2024-06-18T11:15:00Z'
-  },
-  {
-    id: '3',
-    name: 'DesignFirst Studio',
-    slug: 'designfirst',
-    industry: 'Design & Creative',
-    size: '50-100',
-    website: 'https://designfirst.studio',
-    description: 'Creative design studio specializing in user experience and branding.',
-    headquarters: 'New York, NY',
-    founded: '2019',
-    logo: '/logos/designfirst.png',
-    status: 'active',
-    subscription: {
-      plan: 'startup',
-      status: 'active',
-      billingCycle: 'monthly',
-      amount: 299,
-      nextBilling: '2024-07-05'
-    },
-    settings: {
-      publicProfile: false,
-      autoScreening: true,
-      screeningThreshold: 75,
-      emailNotifications: false,
-      maxDailyInterviews: 2
-    },
-    stats: {
-      totalEmployees: 85,
-      activeJobs: 4,
-      totalCandidates: 92,
-      thisMonthHires: 3
-    },
-    createdAt: '2024-03-10T14:00:00Z',
-    updatedAt: '2024-06-19T16:45:00Z'
-  }
-];
+// Query validation schema for GET /api/companies
+const companyQuerySchema = CommonSchemas.pagination.merge(
+  CommonSchemas.search.merge(
+    z.object({
+      industry: z.string().optional(),
+      size: z.string().optional(),
+      status: z.enum(['active', 'inactive', 'pending']).optional()
+    })
+  )
+);
 
-// GET /api/companies
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/companies - List companies with filtering and pagination
+ * Requires: super_admin role
+ */
+const getCompaniesHandler = async (req: AuthenticatedRequest, query: z.infer<typeof companyQuerySchema>) => {
+  const response = ApiResponse.create().startTiming();
+  
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
-    const industry = searchParams.get('industry') || '';
-    const size = searchParams.get('size') || '';
-    const status = searchParams.get('status') || '';
-    const sortBy = searchParams.get('sortBy') || 'name';
-    const sortOrder = searchParams.get('sortOrder') || 'asc';
-
-    // Filter companies based on query parameters
-    let filteredCompanies = companies.filter(company => {
-      const matchesSearch = !search || 
-        company.name.toLowerCase().includes(search.toLowerCase()) ||
-        company.description.toLowerCase().includes(search.toLowerCase());
-      
-      const matchesIndustry = !industry || company.industry === industry;
-      const matchesSize = !size || company.size === size;
-      const matchesStatus = !status || company.status === status;
-
-      return matchesSearch && matchesIndustry && matchesSize && matchesStatus;
+    apiLogger.info('Fetching companies list', {
+      userId: req.user?.uid,
+      query,
+      requestId: req.requestId
     });
 
-    // Sort companies
-    filteredCompanies.sort((a, b) => {
-      let aValue: any = a[sortBy as keyof typeof a];
-      let bValue: any = b[sortBy as keyof typeof b];
-
-      // Handle nested properties
-      if (sortBy === 'employees') {
-        aValue = a.stats.totalEmployees;
-        bValue = b.stats.totalEmployees;
-      } else if (sortBy === 'jobs') {
-        aValue = a.stats.activeJobs;
-        bValue = b.stats.activeJobs;
-      } else if (sortBy === 'subscription') {
-        aValue = a.subscription.plan;
-        bValue = b.subscription.plan;
-      }
-
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortOrder === 'desc') {
-        return aValue < bValue ? 1 : -1;
-      }
-      return aValue > bValue ? 1 : -1;
-    });
-
-    // Paginate results
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedCompanies = filteredCompanies.slice(startIndex, endIndex);
-
-    const response = {
-      data: paginatedCompanies,
-      pagination: {
-        page,
-        limit,
-        total: filteredCompanies.length,
-        totalPages: Math.ceil(filteredCompanies.length / limit),
-        hasNext: endIndex < filteredCompanies.length,
-        hasPrev: page > 1
-      },
-      filters: {
-        industries: [...new Set(companies.map(c => c.industry))],
-        sizes: [...new Set(companies.map(c => c.size))],
-        statuses: [...new Set(companies.map(c => c.status))]
-      }
-    };
-
-    return NextResponse.json(response);
-  } catch (error) {
-    console.error('Error fetching companies:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch companies' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/companies
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
+    // Build filters for database query
+    const filters: any = {};
     
-    // Validate required fields
-    const requiredFields = ['name', 'industry', 'size', 'website', 'headquarters'];
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { error: `Missing required field: ${field}` },
-          { status: 400 }
-        );
-      }
+    if (query.status) {
+      filters.status = query.status;
+    }
+    
+    if (query.industry) {
+      filters.industry = query.industry;
+    }
+    
+    if (query.size) {
+      filters.size = query.size;
     }
 
-    // Create new company
-    const newCompany = {
-      id: (companies.length + 1).toString(),
-      slug: body.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'),
-      name: body.name,
-      industry: body.industry,
-      size: body.size,
-      website: body.website,
-      description: body.description || '',
-      headquarters: body.headquarters,
-      founded: body.founded || new Date().getFullYear().toString(),
-      logo: body.logo || '/logos/default.png',
-      status: 'active',
-      subscription: {
-        plan: body.plan || 'startup',
-        status: 'active',
-        billingCycle: body.billingCycle || 'monthly',
-        amount: body.amount || 299,
-        nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      settings: {
-        publicProfile: body.publicProfile ?? true,
-        autoScreening: body.autoScreening ?? false,
-        screeningThreshold: body.screeningThreshold || 70,
-        emailNotifications: body.emailNotifications ?? true,
-        maxDailyInterviews: body.maxDailyInterviews || 4
-      },
-      stats: {
-        totalEmployees: 0,
-        activeJobs: 0,
-        totalCandidates: 0,
-        thisMonthHires: 0
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    // Fetch companies from database
+    const { items: companies, total, hasMore } = await databaseService.listCompanies({
+      limit: query.limit,
+      offset: (query.page - 1) * query.limit,
+      status: query.status,
+      search: query.q
+    });
+
+    // Calculate pagination metadata
+    const pagination = {
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+      hasNext: hasMore,
+      hasPrev: query.page > 1
     };
 
-    // In production, save to database
-    companies.push(newCompany);
+    // Get filter options for frontend (cache this in production)
+    const industries = ['Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing'];
+    const sizes = ['1-10', '11-50', '51-200', '201-500', '500-1000', '1000+'];
+    const statuses = ['active', 'inactive', 'pending'];
 
-    return NextResponse.json(newCompany, { status: 201 });
-  } catch (error) {
-    console.error('Error creating company:', error);
-    return NextResponse.json(
-      { error: 'Failed to create company' },
-      { status: 500 }
+    apiLogger.info('Companies fetched successfully', {
+      userId: req.user?.uid,
+      count: companies.length,
+      total,
+      requestId: req.requestId
+    });
+
+    return response.endTiming().success(
+      { companies, pagination },
+      `Found ${total} companies`,
+      {
+        pagination,
+        filters: { industries, sizes, statuses },
+        cached: false
+      }
     );
+  } catch (error) {
+    apiLogger.error('Failed to fetch companies', {
+      userId: req.user?.uid,
+      error: String(error),
+      requestId: req.requestId
+    });
+    
+    throw APIError.internal('Failed to fetch companies');
   }
-}
+};
+
+export const GET = withProtection(['super_admin', 'admin'], 'admin')(
+  withQueryValidation(companyQuerySchema)(getCompaniesHandler)
+);
+
+// Validation schema for POST /api/companies
+const createCompanySchema = z.object({
+  name: z.string().min(2, 'Company name must be at least 2 characters').max(100).transform(sanitizeString),
+  industry: z.string().min(2, 'Industry is required').max(50).transform(sanitizeString),
+  size: z.enum(['1-10', '11-50', '51-200', '201-500', '500-1000', '1000+']),
+  website: z.string().url('Please provide a valid website URL'),
+  headquarters: z.string().min(2, 'Headquarters location is required').max(100).transform(sanitizeString),
+  description: z.string().max(1000).optional().transform(val => val ? sanitizeString(val) : ''),
+  founded: z.string().optional(),
+  logo: z.string().url().optional(),
+  // Subscription settings
+  plan: z.enum(['startup', 'professional', 'enterprise']).default('startup'),
+  billingCycle: z.enum(['monthly', 'annual']).default('monthly'),
+  // Company settings
+  publicProfile: z.boolean().default(true),
+  autoScreening: z.boolean().default(false),
+  screeningThreshold: z.number().min(0).max(100).default(70),
+  emailNotifications: z.boolean().default(true),
+  maxDailyInterviews: z.number().min(1).max(20).default(4)
+});
+
+/**
+ * POST /api/companies - Create a new company
+ * Requires: super_admin role
+ */
+const createCompanyHandler = async (req: AuthenticatedRequest, data: z.infer<typeof createCompanySchema>) => {
+  const response = ApiResponse.create().startTiming();
+  
+  try {
+    apiLogger.info('Creating new company', {
+      userId: req.user?.uid,
+      companyName: data.name,
+      industry: data.industry,
+      requestId: req.requestId
+    });
+
+    // Check if company with this name already exists
+    const existingCompanies = await databaseService.listCompanies({
+      search: data.name,
+      limit: 1
+    });
+    
+    if (existingCompanies.items.some(c => 
+      c.name.toLowerCase() === data.name.toLowerCase()
+    )) {
+      throw APIError.conflict('A company with this name already exists');
+    }
+
+    // Generate company slug
+    const slug = data.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    // Calculate subscription amount based on plan
+    const planPricing = {
+      startup: { monthly: 299, annual: 2990 },
+      professional: { monthly: 699, annual: 6990 },
+      enterprise: { monthly: 999, annual: 9990 }
+    };
+    
+    const amount = planPricing[data.plan][data.billingCycle];
+    const nextBilling = new Date();
+    if (data.billingCycle === 'monthly') {
+      nextBilling.setMonth(nextBilling.getMonth() + 1);
+    } else {
+      nextBilling.setFullYear(nextBilling.getFullYear() + 1);
+    }
+
+    // Prepare company data for database
+    const companyData = {
+      name: data.name,
+      slug,
+      industry: data.industry,
+      size: data.size,
+      website: data.website,
+      description: data.description || '',
+      headquarters: data.headquarters,
+      founded: data.founded || new Date().getFullYear().toString(),
+      logo: data.logo || `/logos/default.png`,
+      status: 'active' as const,
+      subscription: {
+        plan: data.plan,
+        status: 'active' as const,
+        billingCycle: data.billingCycle,
+        amount,
+        nextBilling: nextBilling.toISOString().split('T')[0],
+        trialEndsAt: null,
+        cancelledAt: null
+      },
+      settings: {
+        publicProfile: data.publicProfile,
+        autoScreening: data.autoScreening,
+        screeningThreshold: data.screeningThreshold,
+        emailNotifications: data.emailNotifications,
+        maxDailyInterviews: data.maxDailyInterviews,
+        allowCandidateApplications: true,
+        requireVideoIntroduction: false
+      },
+      domain: null, // Will be set when domain is verified
+      contactEmail: null,
+      supportEmail: null
+    };
+
+    // Create company in database
+    const companyId = await databaseService.createCompany(companyData);
+    
+    // Fetch the created company to return complete data
+    const createdCompany = await databaseService.getCompanyById(companyId);
+    
+    if (!createdCompany) {
+      throw APIError.internal('Company was created but could not be retrieved');
+    }
+
+    apiLogger.info('Company created successfully', {
+      userId: req.user?.uid,
+      companyId,
+      companyName: data.name,
+      requestId: req.requestId
+    });
+
+    return response.endTiming().success(
+      createdCompany,
+      `Company '${data.name}' created successfully`,
+      {
+        companyId,
+        slug
+      }
+    );
+  } catch (error) {
+    apiLogger.error('Failed to create company', {
+      userId: req.user?.uid,
+      companyName: data.name,
+      error: String(error),
+      requestId: req.requestId
+    });
+    
+    throw error;
+  }
+};
+
+export const POST = withProtection(['super_admin'], 'admin')(
+  withValidation(createCompanySchema)(createCompanyHandler)
+);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import { useAuth } from './AuthContext';
@@ -41,16 +41,33 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    if (loading) return; // Prevent concurrent fetches
+    // Check if we're already loading to prevent concurrent fetches
+    if (loadingRef.current) {
+      console.log('UserProfileContext: Already loading, skipping fetch');
+      return;
+    }
     
+    loadingRef.current = true;
+    
+    console.log('UserProfileContext: Starting profile fetch for user:', userId);
     setLoading(true);
     setError(null);
+    
+    // Add a timeout to prevent getting stuck
+    const timeoutId = setTimeout(() => {
+      console.log('UserProfileContext: Fetch timeout, setting default profile');
+      setLoading(false);
+      loadingRef.current = false;
+      setError('Profile fetch timed out');
+    }, 10000); // 10 second timeout
     
     try {
       // Only fetch profile for candidates or if profile is not cached
       if (user?.role === 'candidate') {
+        console.log('UserProfileContext: Fetching candidate profile from Firestore');
         const candidateDoc = await getDoc(doc(db, 'candidates', userId));
         
         if (candidateDoc.exists()) {
@@ -114,15 +131,17 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         error: errorMessage 
       });
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      loadingRef.current = false;
     }
-  }, [user?.role, loading]);
+  }, [user?.role]);
 
   const refreshProfile = useCallback(async () => {
     if (user?.uid) {
       await fetchProfile(user.uid);
     }
-  }, [user?.uid, fetchProfile]);
+  }, [user?.uid]);
 
   const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile(prev => prev ? { ...prev, ...updates } : null);
@@ -130,13 +149,16 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Load profile when user changes
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && user?.role) {
+      console.log('UserProfileContext: Loading profile for user:', user.uid, 'role:', user.role);
       fetchProfile(user.uid);
     } else {
+      console.log('UserProfileContext: No user or role, clearing profile');
       setProfile(null);
       setError(null);
+      setLoading(false);
     }
-  }, [user?.uid, fetchProfile]);
+  }, [user?.uid, user?.role]); // Remove fetchProfile from dependencies
 
   return (
     <UserProfileContext.Provider value={{ 

@@ -53,6 +53,31 @@ class DatabaseService {
     });
   }
 
+  private async upsert<T>(collection: string, id: string, data: Partial<T>): Promise<void> {
+    const db = await this.getDb();
+    const docRef = db.collection(collection).doc(id);
+    
+    // Check if document exists
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      // Document doesn't exist, create it with default values
+      const timestamp = admin.firestore.FieldValue.serverTimestamp();
+      await docRef.set({
+        ...data,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        deletedAt: null
+      });
+    } else {
+      // Document exists, update it
+      await docRef.set({
+        ...data,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+  }
+
   private async get<T>(collection: string, id: string): Promise<T | null> {
     const db = await this.getDb();
     const doc = await db.collection(collection).doc(id).get();
@@ -262,7 +287,46 @@ class DatabaseService {
   }
 
   async updateCandidateProfile(userId: string, data: Partial<CandidateProfile>): Promise<void> {
-    return this.update(COLLECTIONS.CANDIDATE_PROFILES, userId, data);
+    // Use upsert (set with merge) to create the document if it doesn't exist
+    const db = await this.getDb();
+    const docRef = db.collection(COLLECTIONS.CANDIDATE_PROFILES).doc(userId);
+    
+    // Check if document exists
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      // Document doesn't exist, create it with default candidate profile values
+      const timestamp = admin.firestore.FieldValue.serverTimestamp();
+      const defaultCandidateProfile = {
+        userId,
+        phone: '',
+        location: '',
+        currentTitle: '',
+        experience: 'Entry Level',
+        summary: '',
+        skills: [],
+        profileComplete: false,
+        availableForWork: true,
+        availability: 'immediate',
+        resumeUploaded: false,
+        videoIntroRecorded: false,
+        onboardingComplete: false,
+        ...data, // Override with provided data
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        deletedAt: null
+      };
+      
+      await docRef.set(defaultCandidateProfile);
+      dbLogger.info('Candidate profile created via upsert', { userId });
+    } else {
+      // Document exists, update it
+      await docRef.set({
+        ...data,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      dbLogger.info('Candidate profile updated', { userId });
+    }
   }
 
   async createInterviewerProfile(profile: Omit<InterviewerProfile, 'createdAt' | 'updatedAt'>): Promise<void> {

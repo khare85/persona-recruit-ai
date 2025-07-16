@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/auth';
 import { firebaseConfigService } from '@/services/firebaseConfig.service';
+import { UserType } from '@/models/user.model';
 
 // Create user with role
 export const POST = withAuth(async (request: NextRequest) => {
@@ -23,6 +24,7 @@ export const POST = withAuth(async (request: NextRequest) => {
       firstName, 
       lastName, 
       role, 
+      userType,
       companyId, 
       department, 
       permissions,
@@ -70,6 +72,7 @@ export const POST = withAuth(async (request: NextRequest) => {
       firstName,
       lastName,
       role,
+      userType: userType as UserType || (companyId ? 'corporate' : 'individual'),
       companyId,
       department,
       permissions

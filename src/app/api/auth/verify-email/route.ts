@@ -3,120 +3,183 @@ import { z } from 'zod';
 import { withRateLimit } from '@/middleware/security';
 import { handleApiError } from '@/lib/errors';
 import { apiLogger } from '@/lib/logger';
-import admin from 'firebase-admin';
+import { auth as adminAuth } from '@/lib/firebase/server';
+import { databaseService } from '@/services/database.service';
+import { emailService } from '@/services/email.service';
 
-const resendEmailSchema = z.object({
-  email: z.string().email('Invalid email address')
+const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+});
+
+const resendVerificationSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
 });
 
 /**
- * POST /api/auth/verify-email - Resend verification email using Firebase Auth
+ * POST /api/auth/verify-email - Verify email address
  */
 export const POST = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
   try {
     const body = await req.json();
-    const validation = resendEmailSchema.safeParse(body);
+    const validation = verifyEmailSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
-        {
-          error: 'Invalid request data',
-          details: validation.error.errors
-        },
+        { error: 'Invalid request data', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { token } = validation.data;
+
+    // Get user by token (assuming token is the user ID for now)
+    const user = await databaseService.getUser(token);
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid verification token' },
+        { status: 400 }
+      );
+    }
+
+    if (user.emailVerified) {
+      return NextResponse.json(
+        { error: 'Email is already verified' },
+        { status: 400 }
+      );
+    }
+
+    // Update user's email verification status
+    await databaseService.updateUser(token, { emailVerified: true });
+
+    // Update Firebase Auth user
+    await adminAuth.updateUser(token, { emailVerified: true });
+
+    apiLogger.info('Email verification successful', { userId: token, email: user.email });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Email verified successfully',
+      data: { userId: token }
+    });
+
+  } catch (error) {
+    apiLogger.error('Email verification failed', { error: String(error) });
+    return handleApiError(error);
+  }
+});
+
+/**
+ * PUT /api/auth/verify-email - Resend verification email
+ */
+export const PUT = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
+  try {
+    const body = await req.json();
+    const validation = resendVerificationSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: validation.error.errors },
         { status: 400 }
       );
     }
 
     const { email } = validation.data;
 
-    apiLogger.info('Resend verification email requested', {
-      email,
-      userAgent: req.headers.get('user-agent'),
-      ip: req.ip
-    });
-
+    // Get user by email
     try {
-      // Get user from Firebase Auth
-      const userRecord = await admin.auth().getUserByEmail(email);
-      
-      if (userRecord.emailVerified) {
+      const userRecord = await adminAuth.getUserByEmail(email);
+      const user = await databaseService.getUser(userRecord.uid);
+
+      if (!user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+
+      if (user.emailVerified) {
         return NextResponse.json(
           { error: 'Email is already verified' },
           { status: 400 }
         );
       }
 
-      // Generate email verification link using Firebase Auth
-      const verificationLink = await admin.auth().generateEmailVerificationLink(email);
-      
-      // Send verification email using email service
-      try {
-        const { emailService } = await import('@/services/email.service');
-        await emailService.sendVerificationEmail(
-          email,
-          userRecord.displayName || 'User',
-          verificationLink
-        );
-        
-        apiLogger.info('Verification email resent successfully', {
-          userId: userRecord.uid,
-          email: email
-        });
-      } catch (emailError) {
-        apiLogger.error('Failed to send verification email', {
-          userId: userRecord.uid,
-          email: email,
-          error: String(emailError)
-        });
-        
-        return NextResponse.json(
-          { error: 'Failed to send verification email' },
-          { status: 500 }
-        );
-      }
+      // Send verification email
+      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${userRecord.uid}`;
+      await emailService.sendVerificationEmail(email, user.firstName, verificationUrl);
+
+      apiLogger.info('Verification email resent', { userId: userRecord.uid, email });
 
       return NextResponse.json({
         success: true,
-        message: 'Verification email sent successfully! Please check your inbox.',
-        data: {
-          email: email
-        }
+        message: 'Verification email sent',
+        data: { email }
       });
 
-    } catch (firebaseError: any) {
-      if (firebaseError.code === 'auth/user-not-found') {
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
         return NextResponse.json(
-          { error: 'User not found' },
+          { error: 'No user found with this email' },
           { status: 404 }
         );
       }
-      
-      apiLogger.error('Firebase Auth error in email verification', {
-        email,
-        error: String(firebaseError)
-      });
-      
-      return NextResponse.json(
-        { error: 'Failed to process verification request' },
-        { status: 500 }
-      );
+      throw error;
     }
 
   } catch (error) {
-    apiLogger.error('Email verification API error', {
-      error: String(error)
-    });
+    apiLogger.error('Failed to resend verification email', { error: String(error) });
     return handleApiError(error);
   }
 });
 
 /**
- * GET /api/auth/verify-email - Legacy endpoint for backward compatibility
- * Note: Firebase Auth handles email verification automatically through the client SDK
+ * GET /api/auth/verify-email - Check verification status
  */
-export const GET = withRateLimit('auth', async (req: NextRequest): Promise<NextResponse> => {
-  return NextResponse.json({
-    error: 'This endpoint is deprecated. Email verification is now handled by Firebase Auth client SDK.',
-    message: 'Please use the POST method to resend verification emails.'
-  }, { status: 410 });
+export const GET = withRateLimit('standard', async (req: NextRequest): Promise<NextResponse> => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const email = searchParams.get('email');
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const userRecord = await adminAuth.getUserByEmail(email);
+      const user = await databaseService.getUser(userRecord.uid);
+
+      if (!user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          email,
+          emailVerified: user.emailVerified,
+          userId: userRecord.uid
+        }
+      });
+
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        return NextResponse.json(
+          { error: 'No user found with this email' },
+          { status: 404 }
+        );
+      }
+      throw error;
+    }
+
+  } catch (error) {
+    apiLogger.error('Failed to check verification status', { error: String(error) });
+    return handleApiError(error);
+  }
 });

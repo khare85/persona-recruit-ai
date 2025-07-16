@@ -6,12 +6,16 @@ import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
 import { auth as adminAuth } from '@/lib/firebase/server';
 import { databaseService } from '@/services/database.service';
+import { emailService } from '@/services/email.service';
+import { generateUUID } from '@/utils/uuid';
+import { UserType } from '@/models/user.model';
 
 const registrationSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   firstName: z.string().min(2, 'First name must be at least 2 characters').transform(sanitizeString),
   lastName: z.string().min(2, 'Last name must be at least 2 characters').transform(sanitizeString),
   role: z.enum(['candidate', 'recruiter', 'interviewer', 'company_admin']).default('candidate'),
+  userType: z.enum(['individual', 'corporate', 'agency']).default('individual'),
   companyId: z.string().optional(),
   location: z.string().optional().transform(val => val ? sanitizeString(val) : '')
 });
@@ -46,7 +50,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       );
     }
 
-    const { firstName, lastName, role, companyId, location } = validation.data;
+    const { firstName, lastName, role, userType, companyId, location } = validation.data;
     
     apiLogger.info('User registration started', { userId, email: userEmail, role });
 
@@ -58,13 +62,16 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     await adminAuth.setCustomUserClaims(userId, customClaims);
 
     // Create user document in Firestore
+    const userUUID = generateUUID();
     const userDoc = {
       id: userId,
+      uuid: userUUID,
       email: userEmail,
       firstName,
       lastName,
       displayName: `${firstName} ${lastName}`,
       role,
+      userType: userType as UserType,
       status: 'active' as const,
       emailVerified: decodedToken.email_verified || false,
       companyId: companyId || null,
@@ -77,7 +84,10 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
 
     // Create role-specific profile if candidate
     if (role === 'candidate') {
+      const profileUUID = generateUUID();
       const candidateProfile = {
+        id: `candidate_${userId}`,
+        uuid: profileUUID,
         userId,
         phone: '',
         location: location || '',
@@ -96,6 +106,22 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       };
       
       await databaseService.createCandidateProfile(candidateProfile);
+    }
+
+    // Send verification email if email is not verified
+    if (!decodedToken.email_verified) {
+      try {
+        const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${decodedToken.uid}`;
+        await emailService.sendVerificationEmail(userEmail, firstName, verificationUrl);
+        apiLogger.info('Verification email sent', { userId, email: userEmail });
+      } catch (emailError) {
+        apiLogger.error('Failed to send verification email', { 
+          userId, 
+          email: userEmail, 
+          error: String(emailError) 
+        });
+        // Don't fail registration if email fails
+      }
     }
 
     apiLogger.info('User registration completed successfully', { userId, role });

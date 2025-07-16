@@ -1,10 +1,27 @@
+export type UserRole = 'candidate' | 'recruiter' | 'interviewer' | 'company_admin' | 'super_admin';
+
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
+
+export type UserType = 'individual' | 'corporate' | 'agency';
+
+export interface Role {
+  id: string;
+  name: UserRole;
+  permissions: string[];
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface BaseUser {
   id: string;
+  uuid: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'candidate' | 'recruiter' | 'interviewer' | 'company_admin' | 'super_admin';
-  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  role: UserRole;
+  userType: UserType;
+  status: UserStatus;
   emailVerified: boolean;
   emailVerificationToken?: string;
   passwordHash: string;
@@ -17,6 +34,8 @@ export interface BaseUser {
 }
 
 export interface CandidateProfile {
+  id: string;
+  uuid: string;
   userId: string;
   currentTitle: string;
   experience: 'Entry Level' | '1-2 years' | '3-5 years' | '5-10 years' | '10+ years';
@@ -44,6 +63,8 @@ export interface CandidateProfile {
 }
 
 export interface RecruiterProfile {
+  id: string;
+  uuid: string;
   userId: string;
   companyId: string;
   department?: string;
@@ -55,6 +76,8 @@ export interface RecruiterProfile {
 }
 
 export interface InterviewerProfile {
+  id: string;
+  uuid: string;
   userId: string;
   companyId: string;
   department?: string;
@@ -71,6 +94,8 @@ export interface InterviewerProfile {
 }
 
 export interface CompanyAdmin {
+  id: string;
+  uuid: string;
   userId: string;
   companyId: string;
   permissions: string[];

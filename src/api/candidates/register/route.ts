@@ -7,6 +7,7 @@ import { apiLogger } from '@/lib/logger';
 import { sanitizeString } from '@/lib/validation';
 import { databaseService } from '@/services/database.service';
 import { auth as adminAuth } from '@/lib/firebase/server';
+import { generateUUID } from '@/utils/uuid';
 
 
 const candidateOnboardingSchema = z.object({
@@ -52,13 +53,16 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     await adminAuth.setCustomUserClaims(userId, { role: 'candidate' });
 
     // Create user document in Firestore
+    const userUUID = generateUUID();
     const userDoc = {
       id: userId,
+      uuid: userUUID,
       email: userEmail,
       firstName: data.firstName,
       lastName: data.lastName,
       displayName: `${data.firstName} ${data.lastName}`,
       role: 'candidate' as const,
+      userType: 'individual' as const,
       status: 'active' as const,
       emailVerified: decodedToken.email_verified || false,
       passwordHash: '', // Firebase Auth handles password, this is just for model compatibility
@@ -68,7 +72,10 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     await databaseService.createUserDocument(userId, userDoc);
 
     // Create candidate profile document
+    const profileUUID = generateUUID();
     const profileDoc = {
+      id: `candidate_${userId}`,
+      uuid: profileUUID,
       userId,
       phone: data.phone,
       location: data.location || '',
@@ -78,6 +85,7 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
       skills: [],
       profileComplete: false,
       availableForWork: true,
+      willingToRelocate: false,
       availability: 'immediate' as const,
       resumeUploaded: false,
       videoIntroRecorded: false,

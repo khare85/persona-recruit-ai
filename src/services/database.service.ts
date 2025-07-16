@@ -17,6 +17,7 @@ export const COLLECTIONS = {
   JOBS: 'jobs',
   JOB_APPLICATIONS: 'jobApplications',
   INTERVIEWS: 'interviews',
+  SUBSCRIPTIONS: 'subscriptions',
   AUDIT_LOGS: 'auditLogs'
 } as const;
 

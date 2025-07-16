@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { apiLogger } from './logger';
+import { captureException } from './sentry';
 
 /**
  * Custom error classes for different types of application errors
@@ -122,6 +123,9 @@ export function handleApiError(error: unknown, requestId?: string): NextResponse
       logMetadata,
       error
     );
+
+    // Capture exception in Sentry for unexpected errors
+    captureException(error, { requestId, context: 'api_error' });
 
     // Don't expose internal error details in production
     const message = process.env.NODE_ENV === 'production' 

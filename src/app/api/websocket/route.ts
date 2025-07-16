@@ -1,78 +1,135 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { webSocketService } from '@/services/websocket.service';
+import { handleApiError } from '@/lib/errors';
+import { apiLogger } from '@/lib/logger';
 
-// WebSocket endpoint for real-time features
-// Note: In production, use a proper WebSocket server like Socket.io
-export async function GET(request: NextRequest) {
+/**
+ * WebSocket endpoint for real-time notifications
+ * This endpoint provides information about WebSocket connections
+ */
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type'); // 'interview', 'chat', 'notifications'
-    const roomId = searchParams.get('roomId');
+    const connectedUsers = webSocketService.getConnectedUsersCount();
     
-    if (!type || !roomId) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        connectedUsers,
+        status: 'WebSocket service is running',
+        timestamp: Date.now()
+      }
+    });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+/**
+ * Send notification to specific user or company
+ */
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await req.json();
+    const { type, target, event, data } = body;
+
+    if (!type || !target || !event || !data) {
       return NextResponse.json(
-        { error: 'Type and roomId are required' },
+        { error: 'Missing required fields: type, target, event, data' },
         { status: 400 }
       );
     }
 
-    // For now, return connection info
-    // TODO: Implement proper WebSocket upgrade
-    const connectionInfo = {
-      endpoint: `ws://localhost:3001/ws/${type}/${roomId}`,
-      protocols: ['v1.websocket'],
-      features: {
-        interview: ['transcription', 'recording', 'ai-analysis'],
-        chat: ['messaging', 'typing-indicators', 'presence'],
-        notifications: ['real-time-updates', 'status-changes']
-      }[type] || []
-    };
+    let result = false;
+
+    switch (type) {
+      case 'user':
+        result = webSocketService.sendToUser(target, event, data);
+        break;
+      case 'company':
+        webSocketService.sendToCompany(target, event, data);
+        result = true;
+        break;
+      case 'role':
+        webSocketService.sendToRole(target, event, data);
+        result = true;
+        break;
+      case 'broadcast':
+        webSocketService.broadcast(event, data);
+        result = true;
+        break;
+      default:
+        return NextResponse.json(
+          { error: 'Invalid notification type' },
+          { status: 400 }
+        );
+    }
+
+    apiLogger.info('WebSocket notification sent', {
+      type,
+      target,
+      event,
+      result
+    });
 
     return NextResponse.json({
       success: true,
-      data: connectionInfo
+      data: {
+        sent: result,
+        type,
+        target,
+        event,
+        timestamp: Date.now()
+      }
     });
 
   } catch (error) {
-    console.error('WebSocket endpoint error:', error);
-    return NextResponse.json(
-      { error: 'Failed to establish WebSocket connection' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
-// Handle WebSocket upgrade (simplified for Next.js)
-export async function POST(request: NextRequest) {
+/**
+ * Get WebSocket connection status for specific user or company
+ */
+export async function PUT(req: NextRequest): Promise<NextResponse> {
   try {
-    const body = await request.json();
-    const { type, roomId, userId, message } = body;
+    const body = await req.json();
+    const { userId, companyId } = body;
 
-    // Simulate real-time message broadcasting
-    const response = {
-      timestamp: new Date().toISOString(),
-      roomId,
-      userId,
-      type,
-      message,
-      status: 'delivered'
-    };
+    if (userId) {
+      const isOnline = webSocketService.isUserOnline(userId);
+      const connectionInfo = webSocketService.getUserConnectionInfo(userId);
 
-    // In production:
-    // - Use Redis pub/sub for scaling
-    // - Implement proper WebSocket server
-    // - Handle connection management
-    console.log('WebSocket message:', response);
+      return NextResponse.json({
+        success: true,
+        data: {
+          userId,
+          isOnline,
+          connectionInfo,
+          timestamp: Date.now()
+        }
+      });
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: response
-    });
+    if (companyId) {
+      const connectedUsers = webSocketService.getCompanyConnectedUsers(companyId);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          companyId,
+          connectedUsers,
+          count: connectedUsers.length,
+          timestamp: Date.now()
+        }
+      });
+    }
+
+    return NextResponse.json(
+      { error: 'Either userId or companyId is required' },
+      { status: 400 }
+    );
 
   } catch (error) {
-    console.error('WebSocket message error:', error);
-    return NextResponse.json(
-      { error: 'Failed to send message' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -7,6 +7,8 @@
 
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import admin from 'firebase-admin';
+import { generateUUID } from '@/utils/uuid';
+import { UserType } from '@/models/user.model';
 
 const secretClient = new SecretManagerServiceClient();
 
@@ -283,6 +285,7 @@ export class FirebaseConfigService {
     firstName: string;
     lastName: string;
     role: string;
+    userType?: UserType;
     companyId?: string;
     department?: string;
     permissions?: string[];
@@ -320,18 +323,24 @@ export class FirebaseConfigService {
     await admin.auth().setCustomUserClaims(userRecord.uid, customClaims);
     
     // Create user document in Firestore
+    const userUUID = generateUUID();
     await admin.firestore().collection('users').doc(userRecord.uid).set({
       id: userRecord.uid,
+      uuid: userUUID,
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
       role: userData.role,
+      userType: userData.userType || (userData.companyId ? 'corporate' : 'individual'),
       companyId: userData.companyId,
       department: userData.department,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       profileComplete: false,
-      isActive: true
+      isActive: true,
+      status: 'active',
+      emailVerified: !config.auth.emailVerification,
+      deletedAt: null
     });
     
     return userRecord;

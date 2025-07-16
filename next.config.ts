@@ -1,4 +1,5 @@
 import type {NextConfig} from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -130,4 +131,50 @@ const nextConfig: NextConfig = {
   // Instrumentation is enabled by default in Next.js 15
 };
 
-export default nextConfig;
+// Sentry configuration options
+const sentryWebpackPluginOptions = {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+
+  // Suppresses source map uploading logs during build
+  silent: true,
+  
+  // Organization and project from your Sentry project settings
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  
+  // Auth token from your Sentry account
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  
+  // Only upload source maps in production
+  dryRun: process.env.NODE_ENV !== 'production',
+  
+  // Disable source maps upload in development
+  disableServerWebpackPlugin: process.env.NODE_ENV === 'development',
+  disableClientWebpackPlugin: process.env.NODE_ENV === 'development',
+  
+  // Hide source maps from generated client bundles
+  hideSourceMaps: true,
+  
+  // Configure the server-side release directory
+  include: '.next',
+  
+  // Ignore specific files/directories
+  ignore: ['node_modules', '.next/cache'],
+  
+  // URL prefix for source maps
+  urlPrefix: '~/_next/',
+  
+  // Additional webpack configuration
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    // Don't upload source maps in development
+    if (process.env.NODE_ENV === 'development') {
+      return config;
+    }
+    
+    return config;
+  },
+};
+
+// Export the config with Sentry integration
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);

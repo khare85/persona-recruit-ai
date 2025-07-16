@@ -4,6 +4,7 @@
  */
 
 import { emailLogger } from '@/lib/logger';
+import { EMAIL_TEMPLATES, EmailTemplateId } from './email.templates';
 
 export interface EmailProvider {
   sendEmail(options: EmailOptions): Promise<EmailResult>;
@@ -506,9 +507,13 @@ class EmailService {
   }
 
   private async getTemplateHtml(templateId: string, data: Record<string, any>): Promise<string> {
-    // In a real implementation, you would load HTML templates from files
-    // For now, return basic HTML templates
+    // Check if template exists in new template system
+    if (EMAIL_TEMPLATES[templateId as EmailTemplateId]) {
+      const template = EMAIL_TEMPLATES[templateId as EmailTemplateId];
+      return template.getHtml(data);
+    }
     
+    // Fallback to legacy templates
     switch (templateId) {
       case 'email-verification':
         return this.getEmailVerificationTemplate(data);
@@ -704,6 +709,148 @@ class EmailService {
       interviewDate,
       interviewTime,
       meetingLink
+    });
+  }
+
+  // New billing-related email methods
+  async sendSubscriptionWelcome(
+    email: string,
+    firstName: string,
+    planName: string,
+    price: number,
+    nextBillingDate: string,
+    features: string[],
+    dashboardUrl: string,
+    billingUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('subscription-welcome', email, {
+      firstName,
+      planName,
+      price,
+      nextBillingDate,
+      features,
+      dashboardUrl,
+      billingUrl
+    });
+  }
+
+  async sendSubscriptionCanceled(
+    email: string,
+    firstName: string,
+    planName: string,
+    accessUntil: string,
+    canceledDate: string,
+    resubscribeUrl: string,
+    feedbackUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('subscription-canceled', email, {
+      firstName,
+      planName,
+      accessUntil,
+      canceledDate,
+      resubscribeUrl,
+      feedbackUrl
+    });
+  }
+
+  async sendPaymentFailed(
+    email: string,
+    firstName: string,
+    planName: string,
+    amount: number,
+    paymentMethod: string,
+    failedDate: string,
+    updatePaymentUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('payment-failed', email, {
+      firstName,
+      planName,
+      amount,
+      paymentMethod,
+      failedDate,
+      updatePaymentUrl
+    });
+  }
+
+  async sendPasswordReset(
+    email: string,
+    firstName: string,
+    resetUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('password-reset', email, {
+      firstName,
+      resetUrl
+    });
+  }
+
+  async sendCompanyInvitation(
+    email: string,
+    firstName: string,
+    companyName: string,
+    role: string,
+    inviterName: string,
+    department: string,
+    invitationUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('company-invitation', email, {
+      firstName,
+      companyName,
+      role,
+      inviterName,
+      department,
+      invitationUrl
+    });
+  }
+
+  async sendApplicationReceived(
+    candidateEmail: string,
+    candidateName: string,
+    jobTitle: string,
+    companyName: string,
+    jobLocation: string,
+    applicationDate: string,
+    applicationId: string,
+    applicationUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('candidate-application-received', candidateEmail, {
+      candidateName,
+      jobTitle,
+      companyName,
+      jobLocation,
+      applicationDate,
+      applicationId,
+      applicationUrl
+    });
+  }
+
+  async sendNewApplicationToRecruiter(
+    recruiterEmail: string,
+    recruiterName: string,
+    candidateName: string,
+    candidateEmail: string,
+    candidateLocation: string,
+    candidateExperience: string,
+    candidateTitle: string,
+    matchScore: number,
+    jobTitle: string,
+    jobDepartment: string,
+    applicationDate: string,
+    applicationId: string,
+    applicationUrl: string
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail('recruiter-new-application', recruiterEmail, {
+      recruiterName,
+      candidateName,
+      candidateEmail,
+      candidateLocation,
+      candidateExperience,
+      candidateTitle,
+      matchScore,
+      jobTitle,
+      jobDepartment,
+      applicationDate,
+      applicationId,
+      applicationUrl
     });
   }
 }

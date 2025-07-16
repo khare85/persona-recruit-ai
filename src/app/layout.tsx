@@ -4,6 +4,8 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { UserProfileProvider } from '@/contexts/UserProfileContext';
+import { OnboardingProvider } from '@/contexts/OnboardingContext';
 import ClientLayoutWrapper from '@/components/layout/ClientLayoutWrapper';
 
 export const metadata: Metadata = {
@@ -25,14 +27,18 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         <AuthProvider>
-          <ClientLayoutWrapper>
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-            <Toaster />
-          </ClientLayoutWrapper>
+          <UserProfileProvider>
+            <OnboardingProvider>
+              <ClientLayoutWrapper>
+                <Navbar />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+                <Toaster />
+              </ClientLayoutWrapper>
+            </OnboardingProvider>
+          </UserProfileProvider>
         </AuthProvider>
       </body>
     </html>

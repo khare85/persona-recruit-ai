@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,10 +17,11 @@ import {
   User, 
   Mail, 
   Lock, 
-  ArrowRight
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
-import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
-import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const candidateRegistrationSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -40,12 +40,11 @@ const candidateRegistrationSchema = z.object({
 type CandidateRegistrationData = z.infer<typeof candidateRegistrationSchema>;
 
 export default function CandidateRegistrationPage() {
-  const { signUp, setShowOnboardingModal, setCurrentUser } = useAuth();
+  const { signUp, loading: authLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect');
   const { toast } = useToast();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
 
   const form = useForm<CandidateRegistrationData>({
     resolver: zodResolver(candidateRegistrationSchema),
@@ -62,36 +61,75 @@ export default function CandidateRegistrationPage() {
   const handleRegistration = async (data: CandidateRegistrationData) => {
     try {
       setIsRegistering(true);
+      setRegistrationError(null);
       
-      // Create Firebase Auth user and complete registration through our API
+      // Step 1: Create Firebase Auth user
       const firebaseUser = await signUp(data.email, data.password, data.firstName, data.lastName, 'candidate');
       
-      // Update user in context with onboarding info
-      setCurrentUser(prev => prev ? ({
-        ...prev,
-        profileComplete: false,
-        onboardingStep: 'resume',
-      }) : null);
-
-      toast({
-        title: "🎉 Account Created!",
-        description: "Welcome! Let's complete your profile to get started.",
-      });
+      // Step 2: Wait for token to be ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setShowOnboardingModal(true);
+      // Step 3: Get token and create profile
+      const token = await firebaseUser.getIdToken();
+      
+      // Step 4: Create candidate profile
+      const profileResponse = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role: 'candidate'
+        })
+      });
+
+      if (!profileResponse.ok) {
+        const errorData = await profileResponse.json();
+        throw new Error(errorData.error || 'Failed to create candidate profile');
+      }
+
+      const result = await profileResponse.json();
+      
+      // Step 5: Show success message
+      toast({
+        title: "🎉 Registration Successful!",
+        description: "Your account has been created. Welcome to the platform!",
+      });
+
+      // Step 6: Redirect to candidate dashboard
       router.push('/candidates/dashboard');
 
     } catch (error) {
       console.error('Registration error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      setRegistrationError(errorMessage);
+      
       toast({
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
       setIsRegistering(false);
     }
   };
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -100,13 +138,22 @@ export default function CandidateRegistrationPage() {
           <div className="flex justify-center mb-4">
             <User className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Create Your Account</CardTitle>
+          <CardTitle className="text-2xl">Create Your Candidate Account</CardTitle>
           <CardDescription>
-            Join our talent network to find your next opportunity.
+            Join our talent network to find your next opportunity
           </CardDescription>
         </CardHeader>
         
         <CardContent>
+          {registrationError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {registrationError}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleRegistration)} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -202,8 +249,15 @@ export default function CandidateRegistrationPage() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        I agree to the Terms of Service and Privacy Policy
+                      <FormLabel className="text-sm">
+                        I agree to the{' '}
+                        <Link href="/terms" className="text-primary hover:underline">
+                          Terms of Service
+                        </Link>
+                        {' '}and{' '}
+                        <Link href="/privacy" className="text-primary hover:underline">
+                          Privacy Policy
+                        </Link>
                       </FormLabel>
                       <FormMessage />
                     </div>
@@ -211,8 +265,19 @@ export default function CandidateRegistrationPage() {
                 )}
               />
 
-              <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isRegistering}>
+              <div className="flex justify-between items-center pt-4">
+                <Link 
+                  href="/auth" 
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
+                  Already have an account? Sign in
+                </Link>
+                
+                <Button 
+                  type="submit" 
+                  disabled={isRegistering}
+                  className="min-w-[200px]"
+                >
                   {isRegistering ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -220,7 +285,7 @@ export default function CandidateRegistrationPage() {
                     </>
                   ) : (
                     <>
-                      Create Account & Continue
+                      Create Account
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </>
                   )}

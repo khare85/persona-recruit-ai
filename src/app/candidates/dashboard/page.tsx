@@ -1,215 +1,309 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/shared/Container';
-import { Award, Briefcase, CalendarCheck2, Gift, LayoutDashboardIcon, Settings, Zap, FolderOpen, CalendarClock, Loader2, AlertCircle } from 'lucide-react';
+import { 
+  Award, 
+  Briefcase, 
+  CalendarCheck2, 
+  User, 
+  FileText, 
+  Video, 
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  ArrowRight
+} from 'lucide-react';
 import Link from 'next/link';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useRouter } from 'next/navigation';
-import { useAuthenticatedFetch } from '@/hooks/useAuthenticatedFetch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
-
-interface CandidateDashboardData {
-  applicationsApplied: number;
-  upcomingInterviews: number;
-  offersReceived: number;
-  aiRecommendedJobs: number;
-  recentJobs: Array<{
-    id: string;
-    title: string;
-    company: string;
-    jobIdForLink: string;
-  }>;
-}
 
 function CandidateDashboardContent() {
-  const { user, loading: authLoading, showOnboardingModal, setShowOnboardingModal, refreshUser } = useAuth();
-  const [dashboardData, setDashboardData] = useState<CandidateDashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
+  const { 
+    isOnboardingComplete, 
+    getOnboardingProgress, 
+    showOnboardingModal, 
+    setShowOnboardingModal 
+  } = useOnboarding();
+  
   const router = useRouter();
-  const authenticatedFetch = useAuthenticatedFetch();
-
-  const fetchData = useCallback(async () => {
-    if (authLoading || !user) return;
-    
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await authenticatedFetch('/api/candidates/dashboard');
-      setDashboardData(result.data);
-    } catch (err) {
-      console.error('Dashboard API error:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authLoading, user, authenticatedFetch]);
+  const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchData();
-    }
-  }, [authLoading, user, fetchData]);
-  
-  const handleOnboardingComplete = async () => {
-    setShowOnboardingModal(false);
-    await refreshUser(); // Refresh user data to get profileComplete status
-    toast({
-      title: "Profile Complete!",
-      description: "You can now apply for jobs.",
-    });
-  };
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 17) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+  }, []);
 
-  if (isLoading || authLoading) {
+  // Show loading state
+  if (authLoading || profileLoading) {
     return (
-      <DashboardLayout>
-        <Container className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </Container>
-      </DashboardLayout>
-    );
-  }
-
-  if (error || !dashboardData) {
-    return (
-      <DashboardLayout>
-        <Container className="flex items-center justify-center h-full">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <CardTitle>Error Loading Dashboard</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground">{error || "Could not load your dashboard data."}</p>
-              <Button className="w-full mt-4" onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
-        </Container>
-      </DashboardLayout>
-    );
-  }
-
-  return (
-    <DashboardLayout>
-       <OnboardingModal
-        isOpen={showOnboardingModal}
-        onClose={() => setShowOnboardingModal(false)}
-        onComplete={handleOnboardingComplete}
-      />
-      <Container>
-        <div className="mb-8">
-          <h1 className="text-3xl font-headline font-semibold text-foreground flex items-center">
-            <LayoutDashboardIcon className="mr-3 h-8 w-8 text-primary" />
-            Welcome!
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            This is your personal dashboard. Manage your job search, profile, and interviews.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Applications Sent</CardTitle>
-              <Briefcase className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.applicationsApplied}</div>
-              <Link href="/jobs" className="text-xs text-primary hover:underline">Browse more jobs</Link>
-            </CardContent>
-          </Card>
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Interviews</CardTitle>
-              <CalendarCheck2 className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.upcomingInterviews}</div>
-              <Link href="/candidates/my-interviews" className="text-xs text-primary hover:underline">View schedule</Link>
-            </CardContent>
-          </Card>
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Offers Received</CardTitle>
-              <Award className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.offersReceived}</div>
-               <span className="text-xs text-muted-foreground">Details in 'My Interviews'</span>
-            </CardContent>
-          </Card>
-           <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">AI Recommended Jobs</CardTitle>
-              <Zap className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.aiRecommendedJobs}</div>
-              <Link href="/jobs" className="text-xs text-primary hover:underline">See recommendations</Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-             <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> AI Recommended Jobs For You</CardTitle>
-                <CardDescription>Based on your profile and skills, here are some roles you might be interested in.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                  {dashboardData.recentJobs.map(job => (
-                      <div key={job.id} className="p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                          <div className="flex justify-between items-start">
-                              <h4 className="font-semibold text-md">{job.title}</h4>
-                              <Link href={`/jobs/${job.jobIdForLink || job.id}`} passHref>
-                                  <Button variant="link" size="sm" className="p-0 h-auto text-xs">View Job</Button>
-                              </Link>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{job.company}</p>
-                      </div>
-                  ))}
-              </CardContent>
-              <CardFooter>
-                  <Link href="/jobs" passHref>
-                      <Button variant="outline">Explore All Jobs</Button>
-                  </Link>
-              </CardFooter>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card className="shadow-md">
-              <CardHeader><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                  <Link href="/candidates/my-interviews" passHref><Button variant="ghost" className="w-full justify-start"><CalendarClock className="mr-2 h-4 w-4 text-primary" />My Interviews</Button></Link>
-                  <Link href="/candidates/my-applications" passHref><Button variant="ghost" className="w-full justify-start"><Briefcase className="mr-2 h-4 w-4 text-primary" />My Applications</Button></Link>
-                  <Link href="/candidates/my-documents" passHref><Button variant="ghost" className="w-full justify-start"><FolderOpen className="mr-2 h-4 w-4 text-primary" />My Documents</Button></Link>
-                  <Link href="/referrals" passHref><Button variant="ghost" className="w-full justify-start"><Gift className="mr-2 h-4 w-4 text-primary" />My Referrals</Button></Link>
-                  <Link href="/candidates/settings" passHref><Button variant="ghost" className="w-full justify-start"><Settings className="mr-2 h-4 w-4 text-primary" />Profile Settings</Button></Link>
-                  <Link href="/jobs" passHref><Button variant="default" className="w-full mt-2"><Briefcase className="mr-2 h-4 w-4" />Search for Jobs</Button></Link>
-              </CardContent>
-            </Card>
+      <Container className="py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading your dashboard...</p>
           </div>
         </div>
       </Container>
-    </DashboardLayout>
+    );
+  }
+
+  // Show error if user not found
+  if (!user) {
+    return (
+      <Container className="py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Unable to load your profile. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </Container>
+    );
+  }
+
+  const onboardingProgress = getOnboardingProgress();
+  const userName = user.fullName || `${user.displayName}` || 'there';
+
+  return (
+    <Container className="py-8">
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">
+          {greeting}, {userName}! 👋
+        </h1>
+        <p className="text-muted-foreground">
+          {isOnboardingComplete 
+            ? "Welcome to your candidate dashboard. Find your next opportunity here." 
+            : "Welcome! Let's complete your profile to get started."}
+        </p>
+      </div>
+
+      {/* Onboarding Progress */}
+      {!isOnboardingComplete && (
+        <Card className="mb-8 border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Complete Your Profile
+            </CardTitle>
+            <CardDescription>
+              Finish setting up your profile to access all features
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Profile Progress</span>
+                <span className="text-sm text-muted-foreground">{onboardingProgress}%</span>
+              </div>
+              
+              <Progress value={onboardingProgress} className="w-full" />
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  {profile?.resumeUploaded ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm">Resume Upload</span>
+                  {profile?.resumeUploaded && (
+                    <Badge variant="secondary" className="text-xs">Complete</Badge>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2 flex-1">
+                  {profile?.videoIntroRecorded ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Video className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="text-sm">Video Introduction</span>
+                  {profile?.videoIntroRecorded && (
+                    <Badge variant="secondary" className="text-xs">Complete</Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                {!profile?.resumeUploaded && (
+                  <Button 
+                    onClick={() => router.push('/candidates/onboarding/resume')}
+                    size="sm"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Upload Resume
+                  </Button>
+                )}
+                
+                {profile?.resumeUploaded && !profile?.videoIntroRecorded && (
+                  <Button 
+                    onClick={() => router.push('/candidates/onboarding/video-intro')}
+                    size="sm"
+                  >
+                    <Video className="h-4 w-4 mr-2" />
+                    Record Video
+                  </Button>
+                )}
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowOnboardingModal(true)}
+                >
+                  View Guide
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Applications</p>
+                <p className="text-2xl font-bold">0</p>
+              </div>
+              <Briefcase className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Interviews</p>
+                <p className="text-2xl font-bold">0</p>
+              </div>
+              <CalendarCheck2 className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Profile Views</p>
+                <p className="text-2xl font-bold">0</p>
+              </div>
+              <User className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Action Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Job Search */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Find Jobs
+            </CardTitle>
+            <CardDescription>
+              Discover opportunities that match your skills
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Browse through thousands of job opportunities and apply with AI-powered matching.
+              </p>
+              <div className="flex gap-2">
+                <Button asChild>
+                  <Link href="/jobs">
+                    Browse Jobs
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/candidates/job-recommendations">
+                    AI Recommendations
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Profile Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Profile Settings
+            </CardTitle>
+            <CardDescription>
+              Manage your profile and preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Keep your profile updated to attract the right opportunities.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                  <Link href="/candidates/profile">
+                    Edit Profile
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/candidates/settings">
+                    Settings
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Your latest actions and updates
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No recent activity yet.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Start by completing your profile and applying to jobs.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </Container>
   );
 }
 
-export default function CandidateDashboardPage() {
-    return (
-        <ProtectedRoute requiredRole="candidate" redirectTo="/auth">
-            <CandidateDashboardContent />
-        </ProtectedRoute>
-    )
+export default function CandidateDashboard() {
+  return (
+    <ProtectedRoute allowedRoles={['candidate']}>
+      <CandidateDashboardContent />
+    </ProtectedRoute>
+  );
 }

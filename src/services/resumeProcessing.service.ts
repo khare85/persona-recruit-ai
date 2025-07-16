@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { fileUploadService } from '@/lib/storage';
 import { processResumeWithDocAI } from '@/ai/flows/process-resume-document-ai-flow';
 import { generateResumeSummary } from '@/ai/flows/generate-resume-summary-flow';
+import { extractProfileFromResume } from '@/ai/flows/extract-profile-from-resume';
 import { textEmbeddingService } from './textEmbedding.service';
 import { embeddingDatabaseService } from './embeddingDatabase.service';
 import { databaseService } from './database.service';
@@ -105,26 +106,46 @@ class ResumeProcessingService {
         warnings.push('Text extraction failed - resume uploaded but AI features may be limited');
       }
 
-      // Step 3: Generate AI summary
+      // Step 3: Extract comprehensive profile information
+      let profileData: Record<string, any> = {};
       let aiGeneratedSummary: string | undefined;
       try {
         if (!skipEmbeddings && extractedText && extractedText.length > 100) {
-          const summaryResult = await generateResumeSummary({
+          // Extract full profile information
+          const profileResult = await extractProfileFromResume({
             resumeText: extractedText
           });
-          aiGeneratedSummary = summaryResult.summary;
           
-          apiLogger.info('AI summary generated successfully', {
+          profileData = profileResult;
+          aiGeneratedSummary = profileResult.professionalSummary;
+          
+          apiLogger.info('Profile extraction completed successfully', {
             userId,
-            summaryLength: aiGeneratedSummary.length
+            extractedFields: Object.keys(profileResult).filter(key => profileResult[key as keyof typeof profileResult] !== undefined)
           });
         }
       } catch (error) {
-        apiLogger.warn('Summary generation failed, continuing without AI summary', {
+        apiLogger.warn('Profile extraction failed, falling back to summary generation', {
           userId,
           error: String(error)
         });
-        warnings.push('AI summary generation failed - profile summary may need manual update');
+        
+        // Fallback to just summary generation
+        try {
+          if (!skipEmbeddings && extractedText && extractedText.length > 100) {
+            const summaryResult = await generateResumeSummary({
+              resumeText: extractedText
+            });
+            aiGeneratedSummary = summaryResult.summary;
+          }
+        } catch (summaryError) {
+          apiLogger.warn('Summary generation also failed', {
+            userId,
+            error: String(summaryError)
+          });
+        }
+        
+        warnings.push('Full profile extraction failed - some fields may need manual update');
       }
 
       // Step 4: Generate embeddings
@@ -147,8 +168,8 @@ class ResumeProcessingService {
         warnings.push('Embedding generation failed - vector search features may be limited');
       }
 
-      // Step 5: Update candidate profile
-      await this.updateCandidateProfile(userId, uploadResult.url, aiGeneratedSummary);
+      // Step 5: Update candidate profile with all extracted data
+      await this.updateCandidateProfile(userId, uploadResult.url, profileData, aiGeneratedSummary);
       processingSteps.databaseSave = true;
 
       // Step 6: Save to vector database (if we have embeddings)
@@ -296,19 +317,83 @@ class ResumeProcessingService {
   }
 
   /**
-   * Update candidate profile with resume URL and AI summary
+   * Update candidate profile with resume URL and extracted profile data
    */
-  private async updateCandidateProfile(userId: string, resumeUrl: string, aiSummary?: string): Promise<void> {
-    const updates: any = {
+  private async updateCandidateProfile(userId: string, resumeUrl: string, profileData: Record<string, any>, aiSummary?: string): Promise<void> {
+    const updates: Record<string, any> = {
       resumeUrl: resumeUrl,
       profileComplete: true,
       updatedAt: new Date().toISOString()
     };
 
+    // Add AI-generated summary
     if (aiSummary) {
       updates.summary = aiSummary;
       updates.aiGeneratedSummary = aiSummary;
     }
+
+    // Add extracted profile fields
+    if (profileData.currentTitle) {
+      updates.currentTitle = profileData.currentTitle;
+    }
+
+    if (profileData.experience) {
+      // Map AI experience levels to database format
+      const experienceMap: { [key: string]: string } = {
+        'entry_level': 'Entry Level',
+        'mid_level': '3-5 years',
+        'senior': '5-10 years',
+        'executive': '10+ years'
+      };
+      updates.experience = experienceMap[profileData.experience] || '3-5 years';
+    }
+
+    if (profileData.location) {
+      updates.location = profileData.location;
+    }
+
+    if (profileData.skills && profileData.skills.length > 0) {
+      updates.skills = profileData.skills;
+    }
+
+    if (profileData.phone) {
+      updates.phone = profileData.phone;
+    }
+
+    if (profileData.linkedinUrl) {
+      updates.linkedinUrl = profileData.linkedinUrl;
+    }
+
+    if (profileData.expectedSalary) {
+      // Parse salary string to extract min/max values
+      // Handle formats like "$80,000 - $100,000" or "80k-100k" or "$90,000"
+      const salaryStr = profileData.expectedSalary;
+      const numbers = salaryStr.match(/\d+/g);
+      
+      if (numbers && numbers.length > 0) {
+        const min = parseInt(numbers[0]) * (salaryStr.toLowerCase().includes('k') ? 1000 : 1);
+        const max = numbers.length > 1 ? parseInt(numbers[1]) * (salaryStr.toLowerCase().includes('k') ? 1000 : 1) : min;
+        
+        updates.expectedSalary = {
+          min: min,
+          max: max,
+          currency: 'USD' // Default to USD, could be enhanced to detect currency
+        };
+      }
+    }
+
+    if (profileData.preferredLocations && profileData.preferredLocations.length > 0) {
+      updates.preferredLocations = profileData.preferredLocations;
+      // If candidate has multiple preferred locations, they're likely willing to relocate
+      updates.willingToRelocate = profileData.preferredLocations.length > 1;
+    }
+
+    if (profileData.preferredJobTypes && profileData.preferredJobTypes.length > 0) {
+      updates.preferredJobTypes = profileData.preferredJobTypes;
+    }
+
+    // Set availableForWork to true if profile is being updated with resume
+    updates.availableForWork = true;
 
     await databaseService.updateCandidateProfile(userId, updates);
   }
@@ -376,7 +461,7 @@ class ResumeProcessingService {
       try {
         const candidateWithEmbedding = await embeddingDatabaseService.getCandidateWithEmbedding(userId);
         hasEmbeddings = !!candidateWithEmbedding?.resumeEmbedding;
-      } catch (error) {
+      } catch {
         hasEmbeddings = false;
       }
 

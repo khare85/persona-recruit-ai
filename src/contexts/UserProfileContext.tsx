@@ -84,9 +84,18 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
             profileComplete: false,
             onboardingStep: 'resume',
             resumeUploaded: false,
-            videoIntroRecorded: false
+            videoIntroRecorded: false,
+            currentTitle: '',
+            location: '',
+            skills: [],
+            summary: '',
+            phone: '',
+            availability: 'immediate',
+            portfolioUrl: '',
+            linkedinUrl: ''
           };
           setProfile(defaultProfile);
+          apiLogger.info('Created default profile for new candidate', { userId });
         }
       } else {
         // For non-candidates, set a minimal profile

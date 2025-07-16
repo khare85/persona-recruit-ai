@@ -28,7 +28,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function CandidateDashboardContent() {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useUserProfile();
+  const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { 
     isOnboardingComplete, 
     getOnboardingProgress, 
@@ -74,11 +74,34 @@ function CandidateDashboardContent() {
     );
   }
 
+  // Show profile error if exists (but still allow dashboard access)
+  if (profileError) {
+    console.warn('Profile loading error:', profileError);
+  }
+
   const onboardingProgress = getOnboardingProgress();
   const userName = user.fullName || `${user.displayName}` || 'there';
+  
+  // Use fallback profile if needed
+  const safeProfile = profile || {
+    profileComplete: false,
+    onboardingStep: 'resume' as const,
+    resumeUploaded: false,
+    videoIntroRecorded: false
+  };
 
   return (
     <Container className="py-8">
+      {/* Profile Error Warning */}
+      {profileError && (
+        <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            There was an issue loading your profile data. Some features may not work as expected.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">
@@ -114,48 +137,48 @@ function CandidateDashboardContent() {
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 flex-1">
-                  {profile?.resumeUploaded ? (
+                  {safeProfile.resumeUploaded ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className="text-sm">Resume Upload</span>
-                  {profile?.resumeUploaded && (
+                  {safeProfile.resumeUploaded && (
                     <Badge variant="secondary" className="text-xs">Complete</Badge>
                   )}
                 </div>
                 
                 <div className="flex items-center gap-2 flex-1">
-                  {profile?.videoIntroRecorded ? (
+                  {safeProfile.videoIntroRecorded ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
                     <Video className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className="text-sm">Video Introduction</span>
-                  {profile?.videoIntroRecorded && (
+                  {safeProfile.videoIntroRecorded && (
                     <Badge variant="secondary" className="text-xs">Complete</Badge>
                   )}
                 </div>
               </div>
 
               <div className="flex gap-3">
-                {!profile?.resumeUploaded && (
+                {!safeProfile.resumeUploaded && (
                   <Button 
-                    onClick={() => router.push('/candidates/onboarding/resume')}
+                    onClick={() => router.push('/candidates/profile')}
                     size="sm"
                   >
                     <FileText className="h-4 w-4 mr-2" />
-                    Upload Resume
+                    Complete Profile
                   </Button>
                 )}
                 
-                {profile?.resumeUploaded && !profile?.videoIntroRecorded && (
+                {safeProfile.resumeUploaded && !safeProfile.videoIntroRecorded && (
                   <Button 
-                    onClick={() => router.push('/candidates/onboarding/video-intro')}
+                    onClick={() => router.push('/candidates/profile')}
                     size="sm"
                   >
                     <Video className="h-4 w-4 mr-2" />
-                    Record Video
+                    Add Video Introduction
                   </Button>
                 )}
                 

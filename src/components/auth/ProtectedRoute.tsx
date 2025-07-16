@@ -42,10 +42,11 @@ export default function ProtectedRoute({
       }
     }
     
-    // Check onboarding for candidates
+    // Check onboarding for candidates - only redirect if we're not already on dashboard
     if (user.role === 'candidate' && !isOnboardingComplete) {
       const onboardingPath = getOnboardingRedirectPath();
-      if (onboardingPath && pathname !== onboardingPath) {
+      // Allow access to dashboard even if onboarding is incomplete
+      if (onboardingPath && pathname !== onboardingPath && !pathname.includes('/dashboard')) {
         router.replace(onboardingPath);
         return;
       }
@@ -71,10 +72,11 @@ export default function ProtectedRoute({
      if (requiredRole) {
         const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
         if (user.role && allowedRoles.includes(user.role)) {
-            // For candidates, also ensure onboarding is complete if they are trying to access a protected page
+            // For candidates, allow dashboard access even if onboarding is incomplete
             if (user.role === 'candidate' && !isOnboardingComplete) {
                 const onboardingPath = getOnboardingRedirectPath();
-                if (onboardingPath && pathname !== onboardingPath) {
+                // Only prevent access to non-dashboard pages
+                if (onboardingPath && pathname !== onboardingPath && !pathname.includes('/dashboard')) {
                     return null; // Don't render content while redirecting
                 }
             }

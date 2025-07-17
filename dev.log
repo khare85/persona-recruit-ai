@@ -9862,3 +9862,6 @@ Sentry Logger [log]: before send for type `error` returned `null`, will not send
 Sentry Logger [log]: Flushing client reports based on interval.
 Sentry Logger [log]: Flushing outcomes...
 Sentry Logger [log]: No dsn provided, will not send outcomes
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send

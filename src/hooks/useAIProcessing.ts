@@ -28,7 +28,7 @@ export interface AIProcessingHookResult {
 }
 
 export const useAIProcessing = (): AIProcessingHookResult => {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const { subscribe, unsubscribe, isConnected } = useWebSocket();
   
   const [activeProcessing, setActiveProcessing] = useState<Map<string, AIProcessingStatus>>(new Map());
@@ -50,9 +50,18 @@ export const useAIProcessing = (): AIProcessingHookResult => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      const token = await getToken();
+      
+      if (!token) {
+        throw new Error('No auth token available');
+      }
+      
       const response = await fetch('/api/ai/process-resume', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ resumeUrl, candidateId })
       });
 
@@ -95,9 +104,18 @@ export const useAIProcessing = (): AIProcessingHookResult => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      const token = await getToken();
+      
+      if (!token) {
+        throw new Error('No auth token available');
+      }
+      
       const response = await fetch('/api/ai/analyze-video', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ interviewId, videoUrl })
       });
 
@@ -140,9 +158,18 @@ export const useAIProcessing = (): AIProcessingHookResult => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      const token = await getToken();
+      
+      if (!token) {
+        throw new Error('No auth token available');
+      }
+      
       const response = await fetch('/api/ai/match-candidates', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ jobId, candidateIds })
       });
 
@@ -182,9 +209,20 @@ export const useAIProcessing = (): AIProcessingHookResult => {
 
   // Cancel processing
   const cancelProcessing = useCallback(async (processingId: string) => {
+    if (!user) throw new Error('User not authenticated');
+    
     try {
+      const token = await getToken();
+      
+      if (!token) {
+        throw new Error('No auth token available');
+      }
+      
       const response = await fetch(`/api/ai/processing/${processingId}/cancel`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) throw new Error('Failed to cancel processing');
@@ -230,13 +268,36 @@ export const useAIProcessing = (): AIProcessingHookResult => {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/ai/processing/history');
-      if (!response.ok) throw new Error('Failed to load processing history');
+      // Get auth token
+      const token = await getToken();
+      
+      if (!token) {
+        console.warn('No auth token available for processing history');
+        setProcessingHistory([]);
+        return;
+      }
+      
+      const response = await fetch('/api/ai/processing/history', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        // If unauthorized, just set empty history instead of throwing
+        if (response.status === 401) {
+          setProcessingHistory([]);
+          return;
+        }
+        throw new Error('Failed to load processing history');
+      }
 
       const result = await response.json();
       setProcessingHistory(result.data || []);
     } catch (error) {
       console.error('Error loading processing history:', error);
+      // Set empty history on error to avoid breaking the UI
+      setProcessingHistory([]);
     } finally {
       setIsLoading(false);
     }
@@ -309,10 +370,12 @@ export const useAIProcessing = (): AIProcessingHookResult => {
     };
   }, [isConnected, subscribe, unsubscribe]);
 
-  // Load processing history on mount
+  // Load processing history on mount only if user is authenticated
   useEffect(() => {
-    loadProcessingHistory();
-  }, [loadProcessingHistory]);
+    if (user) {
+      loadProcessingHistory();
+    }
+  }, [user, loadProcessingHistory]);
 
   return {
     // State

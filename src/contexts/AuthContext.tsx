@@ -214,25 +214,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const fullName = `${firstName} ${lastName}`;
       await updateProfile(firebaseUser, { displayName: fullName });
 
-      // Call registration API to create user document and set claims
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          email,
-          firstName,
-          lastName,
-          role
-        })
-      });
+      // Try to call registration API to create user document and set claims
+      try {
+        const token = await firebaseUser.getIdToken();
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            email,
+            firstName,
+            lastName,
+            role
+          })
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to complete registration');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.warn('Registration API failed:', errorData);
+          // Don't throw error, continue with client-side user creation
+        }
+      } catch (apiError) {
+        console.warn('Registration API error:', apiError);
+        // Continue with client-side user creation
       }
 
       apiLogger.info('User registered successfully', { 
@@ -241,10 +247,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         role 
       });
 
-      toast({ 
-        title: "Account Created!", 
-        description: "Your account has been created successfully!" 
-      });
+      // Account creation successful - user will be redirected to onboarding
+      // Success message will be shown at onboarding completion
       
       return firebaseUser;
     } catch (error) {

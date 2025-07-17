@@ -17,7 +17,7 @@ const registrationSchema = z.object({
   role: z.enum(['candidate', 'recruiter', 'interviewer', 'company_admin']).default('candidate'),
   userType: z.enum(['individual', 'corporate', 'agency']).default('individual'),
   companyId: z.string().optional(),
-  location: z.string().optional().transform(val => val ? sanitizeString(val) : '')
+  location: z.string().optional().transform(val => val ? sanitizeString(val) : '').default('')
 });
 
 /**
@@ -32,18 +32,33 @@ export const POST = withRateLimit('auth', async (req: NextRequest): Promise<Next
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     
     if (!token) {
+      apiLogger.error('Registration request without auth token');
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    const userId = decodedToken.uid;
-    const userEmail = decodedToken.email!;
+    let decodedToken;
+    let userId;
+    let userEmail;
+    
+    try {
+      decodedToken = await adminAuth.verifyIdToken(token);
+      userId = decodedToken.uid;
+      userEmail = decodedToken.email!;
+    } catch (tokenError) {
+      apiLogger.error('Token verification failed', { error: String(tokenError) });
+      return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
+    }
     
     // Validate request body
     const body = await req.json();
     const validation = registrationSchema.safeParse(body);
 
     if (!validation.success) {
+      apiLogger.error('Invalid registration data', { 
+        errors: validation.error.errors, 
+        userId, 
+        email: userEmail 
+      });
       return NextResponse.json(
         { error: 'Invalid registration data', details: validation.error.errors },
         { status: 400 }

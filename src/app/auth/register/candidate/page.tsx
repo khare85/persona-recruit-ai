@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, 
@@ -18,26 +19,62 @@ import {
   Mail, 
   Lock, 
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  Phone,
+  MapPin,
+  Briefcase,
+  Target,
+  DollarSign
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 
 const candidateRegistrationSchema = z.object({
+  // Basic Information
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(8, 'Please confirm your password'),
+  phone: z.string().optional(),
+  location: z.string().optional(),
+  currentTitle: z.string().optional(),
+  
+  // Job Preferences
+  jobTypes: z.array(z.string()).min(1, 'Select at least one job type'),
+  remotePreference: z.string().min(1, 'Select your remote work preference'),
+  salaryMin: z.number().min(0, 'Minimum salary must be positive'),
+  salaryMax: z.number().min(0, 'Maximum salary must be positive'),
+  availableFrom: z.string().optional(),
+  
+  // Terms
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions"
   })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]
+}).refine((data) => data.salaryMax >= data.salaryMin, {
+  message: "Maximum salary must be greater than minimum salary",
+  path: ["salaryMax"]
 });
 
 type CandidateRegistrationData = z.infer<typeof candidateRegistrationSchema>;
+
+const jobTypes = [
+  { value: 'full-time', label: 'Full-time' },
+  { value: 'part-time', label: 'Part-time' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'freelance', label: 'Freelance' },
+  { value: 'internship', label: 'Internship' }
+];
+
+const remotePreferences = [
+  { value: 'remote', label: 'Remote Only' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'onsite', label: 'On-site Only' },
+  { value: 'flexible', label: 'Flexible' }
+];
 
 export default function CandidateRegistrationPage() {
   const { signUp, loading: authLoading } = useAuth();
@@ -54,6 +91,14 @@ export default function CandidateRegistrationPage() {
       email: '',
       password: '',
       confirmPassword: '',
+      phone: '',
+      location: '',
+      currentTitle: '',
+      jobTypes: [],
+      remotePreference: '',
+      salaryMin: 50000,
+      salaryMax: 100000,
+      availableFrom: '',
       termsAccepted: false
     }
   });
@@ -69,39 +114,72 @@ export default function CandidateRegistrationPage() {
       // Step 2: Wait for token to be ready
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Step 3: Get token and create profile
+      // Step 3: Get token and create complete profile
       const token = await firebaseUser.getIdToken();
       
-      // Step 4: Create candidate profile
-      const profileResponse = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          role: 'candidate'
-        })
-      });
-
-      if (!profileResponse.ok) {
-        const errorData = await profileResponse.json();
-        throw new Error(errorData.error || 'Failed to create candidate profile');
-      }
-
-      const result = await profileResponse.json();
+      // Step 4: Set role claim directly (Firebase client SDK)
+      await firebaseUser.getIdToken(true); // Force refresh to get latest claims
       
-      // Step 5: Show success message
-      toast({
-        title: "🎉 Registration Successful!",
-        description: "Your account has been created. Welcome to the platform!",
-      });
+      // Step 5: Create comprehensive candidate profile with all data
+      try {
+        const profileResponse = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            location: data.location || '',
+            role: 'candidate'
+          })
+        });
 
-      // Step 6: Redirect to candidate dashboard
-      router.push('/candidates/dashboard');
+        if (!profileResponse.ok) {
+          console.warn('Profile creation failed:', profileResponse.statusText);
+        }
+      } catch (profileError) {
+        console.warn('Profile creation failed:', profileError);
+      }
+      
+      // Step 6: Save complete profile data including job preferences
+      try {
+        const completeProfileResponse = await fetch('/api/candidates/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone || '',
+            location: data.location || '',
+            currentTitle: data.currentTitle || '',
+            jobTypes: data.jobTypes,
+            remotePreference: data.remotePreference,
+            salaryRange: {
+              min: data.salaryMin,
+              max: data.salaryMax,
+              currency: 'USD'
+            },
+            availableFrom: data.availableFrom || '',
+            profileCompleteness: 50 // Half complete - need resume and video
+          })
+        });
+
+        if (!completeProfileResponse.ok) {
+          console.warn('Complete profile creation failed:', completeProfileResponse.statusText);
+        }
+      } catch (completeProfileError) {
+        console.warn('Complete profile creation failed:', completeProfileError);
+      }
+      
+      // Step 7: Redirect to simplified onboarding (just resume and video)
+      router.push('/onboarding/candidate?step=resume');
 
     } catch (error) {
       console.error('Registration error:', error);
@@ -133,14 +211,14 @@ export default function CandidateRegistrationPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-4xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <User className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Create Your Candidate Account</CardTitle>
+          <CardTitle className="text-2xl">Join PersonaRecruit</CardTitle>
           <CardDescription>
-            Join our talent network to find your next opportunity
+            Create your account and set up your profile in one simple step
           </CardDescription>
         </CardHeader>
         
@@ -156,87 +234,271 @@ export default function CandidateRegistrationPage() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleRegistration)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="john.doe@example.com" className="pl-10" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input type="password" placeholder="Enter password" className="pl-10" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input type="password" placeholder="Confirm password" className="pl-10" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Basic Information Section */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Basic Information
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="john.doe@example.com" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input placeholder="+1 (555) 123-4567" className="pl-10" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input placeholder="City, State/Country" className="pl-10" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="currentTitle"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Job Title</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="e.g., Software Engineer, Product Manager" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input type="password" placeholder="Enter password" className="pl-10" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input type="password" placeholder="Confirm password" className="pl-10" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
               
+              {/* Job Preferences Section */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Job Preferences
+                </h3>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="jobTypes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Types (Select all that apply)</FormLabel>
+                        <div className="grid grid-cols-2 gap-3">
+                          {jobTypes.map(type => (
+                            <div key={type.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={type.value}
+                                checked={field.value.includes(type.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange([...field.value, type.value]);
+                                  } else {
+                                    field.onChange(field.value.filter(t => t !== type.value));
+                                  }
+                                }}
+                              />
+                              <FormLabel htmlFor={type.value} className="text-sm">{type.label}</FormLabel>
+                            </div>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="remotePreference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Remote Work Preference</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your preference" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {remotePreferences.map(pref => (
+                              <SelectItem key={pref.value} value={pref.value}>
+                                {pref.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="salaryMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum Salary (USD)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input 
+                                type="number" 
+                                placeholder="50000" 
+                                className="pl-10" 
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="salaryMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum Salary (USD)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input 
+                                type="number" 
+                                placeholder="100000" 
+                                className="pl-10" 
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="availableFrom"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Available From (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              
+              {/* Terms Section */}
               <FormField
                 control={form.control}
                 name="termsAccepted"
@@ -276,7 +538,7 @@ export default function CandidateRegistrationPage() {
                 <Button 
                   type="submit" 
                   disabled={isRegistering}
-                  className="min-w-[200px]"
+                  className="min-w-[200px] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 >
                   {isRegistering ? (
                     <>
@@ -285,7 +547,7 @@ export default function CandidateRegistrationPage() {
                     </>
                   ) : (
                     <>
-                      Create Account
+                      Create Account & Continue
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </>
                   )}

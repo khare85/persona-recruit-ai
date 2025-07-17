@@ -20,19 +20,39 @@ const initializeFirebaseAdmin = async (): Promise<admin.app.App> => {
         throw new Error("Firebase Project ID is not configured in environment variables (FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_PROJECT_ID).");
     }
 
-    // 1. Check for service account JSON in environment
-    const serviceAccountJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    // 1. Check for service account JSON in environment (direct JSON string)
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (serviceAccountJson) {
+      console.log('[FirebaseAdmin] Using service account from FIREBASE_SERVICE_ACCOUNT_KEY');
+      try {
+        const serviceAccount = JSON.parse(serviceAccountJson);
+        return admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId,
+          storageBucket
+        });
+      } catch (parseError) {
+        console.warn('[FirebaseAdmin] Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', parseError);
+      }
+    }
+
+    // 2. Check for service account JSON in environment (legacy format)
+    const serviceAccountJsonLegacy = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (serviceAccountJsonLegacy) {
       console.log('[FirebaseAdmin] Using service account from GOOGLE_APPLICATION_CREDENTIALS_JSON');
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      return admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId,
-        storageBucket
-      });
+      try {
+        const serviceAccount = JSON.parse(serviceAccountJsonLegacy);
+        return admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId,
+          storageBucket
+        });
+      } catch (parseError) {
+        console.warn('[FirebaseAdmin] Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON:', parseError);
+      }
     }
     
-    // 2. Try to get service account from Secret Manager
+    // 3. Try to get service account from Secret Manager
     try {
       const secretClient = new SecretManagerServiceClient();
       const secretName = process.env.FIREBASE_SERVICE_ACCOUNT_SECRET || 'firebase-service-account';
@@ -64,7 +84,7 @@ const initializeFirebaseAdmin = async (): Promise<admin.app.App> => {
         }
     }
     
-    // 3. Try Application Default Credentials (for Cloud Run, etc.)
+    // 4. Try Application Default Credentials (for Cloud Run, etc.)
     console.log('[FirebaseAdmin] Attempting to initialize with Application Default Credentials.');
     return admin.initializeApp({
       projectId,
@@ -74,6 +94,7 @@ const initializeFirebaseAdmin = async (): Promise<admin.app.App> => {
   } catch (error) {
     console.error('[FirebaseAdmin] CRITICAL: Firebase Admin initialization failed.', {
       errorMessage: error instanceof Error ? error.message : String(error),
+      hasServiceAccountKey: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
       hasServiceAccountJson: !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON,
       secretName: process.env.FIREBASE_SERVICE_ACCOUNT_SECRET || 'firebase-service-account',
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID

@@ -801,7 +801,7 @@ class DatabaseService {
 
   async getInterviewerSchedule(interviewerId: string, startTime: Date, endTime: Date, excludeInterviewId?: string): Promise<any[]> {
     const db = await this.getDb();
-    let query = db.collection(COLLECTIONS.INTERVIEWS)
+    const query = db.collection(COLLECTIONS.INTERVIEWS)
       .where('interviewerId', '==', interviewerId)
       .where('scheduledFor', '>=', startTime.toISOString())
       .where('scheduledFor', '<=', endTime.toISOString())

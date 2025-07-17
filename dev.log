@@ -10568,3 +10568,865 @@ Sentry Logger [log]: No outcomes to send
 Sentry Logger [log]: Flushing client reports based on interval.
 Sentry Logger [log]: Flushing outcomes...
 Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth?_rsc=1djd1
+  ID: 734b7ed5a8699b83
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.9sile68layt'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.9sile68layt'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "RSC GET /auth?_rsc=1djd1" with ID 734b7ed5a8699b83
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth?_rsc=1djd1
+  ID: 073a588822d0dc68
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.pu3a18iy6h'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.pu3a18iy6h'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "RSC GET /auth?_rsc=1djd1" with ID 073a588822d0dc68
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.kup6pov4b9k'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.kup6pov4b9k'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 5fb08efec27289d4
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.2hz3y94lj0m'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.2hz3y94lj0m'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 5fb08efec27289d4
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: bc11e7de95a24a9c
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.39p8bt41yi8'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.39p8bt41yi8'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID bc11e7de95a24a9c
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.who08ri7a4l'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.who08ri7a4l'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: 7a2a65e5119f7e4a
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID 7a2a65e5119f7e4a
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 2eb0cd8627aaea07
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.sgyhlxu0rdn'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.sgyhlxu0rdn'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 2eb0cd8627aaea07
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 0c0f0e9e9720c4f9
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.zfeina1ftrg'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.zfeina1ftrg'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 0c0f0e9e9720c4f9
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ajf1i3elyj'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ajf1i3elyj'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: c9a15e7253a6821d
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID c9a15e7253a6821d
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 5a06db82a5cfe81b
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.wl3uve2w56e'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.wl3uve2w56e'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 5a06db82a5cfe81b
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 167d357a43bc2422
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.nz9cxlpkmno'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.nz9cxlpkmno'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 167d357a43bc2422
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.8bg1gtc8dja'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.8bg1gtc8dja'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: c4b6b6cd857da07b
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID c4b6b6cd857da07b
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 14af5458de164fb5
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ffltlx8hom'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ffltlx8hom'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 14af5458de164fb5
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 14b932f21b9e8d0b
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.0dti7rzgzv36'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.0dti7rzgzv36'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 14b932f21b9e8d0b
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.qrz3nlpfpem'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.qrz3nlpfpem'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: f4adcb737c7206a0
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID f4adcb737c7206a0
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 071d373d567687d3
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ii9j1jsq0i'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ii9j1jsq0i'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 071d373d567687d3
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: cfebeefb6cca0e68
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.dnq0cscvhl4'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.dnq0cscvhl4'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID cfebeefb6cca0e68
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.zrznqru3zp'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.zrznqru3zp'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: f1de57169b2ab8ec
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID f1de57169b2ab8ec
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: e84b365ffb3562d4
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.159ucvlrfqh'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.159ucvlrfqh'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID e84b365ffb3562d4
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: 9964be65eda1979d
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.039e4kcu9jej'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.039e4kcu9jej'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID 9964be65eda1979d
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.xws13ykgdvb'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.xws13ykgdvb'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: 6c2fb43cc3c4d23f
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID 6c2fb43cc3c4d23f
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No dsn provided, will not send outcomes
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: b7387098b89759c8
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.pmfkq71zw7'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.pmfkq71zw7'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID b7387098b89759c8
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: 7e4fd9d5d7e0dacb
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.wxy4b4jx0g'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.wxy4b4jx0g'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID 7e4fd9d5d7e0dacb
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.y7c2vm7zdk'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.y7c2vm7zdk'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: fe1d750e0662e2a2
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID fe1d750e0662e2a2
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: b66b0465d4ad36ef
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.93sczfqzm6m'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.93sczfqzm6m'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID b66b0465d4ad36ef
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: 8357de297073d9d9
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.1zpjjhdsk24'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.1zpjjhdsk24'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID 8357de297073d9d9
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.wnolohr494k'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.wnolohr494k'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: 1a89a1e1e3270d3f
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID 1a89a1e1e3270d3f
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: 4c2e2a193b605826
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.zy3m40mei3r'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.zy3m40mei3r'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID 4c2e2a193b605826
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /
+  ID: 6e8f7a74dff342e2
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.jre7t2g2fx8'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.jre7t2g2fx8'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /" with ID 6e8f7a74dff342e2
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.7ka0ccztzpy'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.7ka0ccztzpy'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: c91cbffee0d920af
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID c91cbffee0d920af
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: cef631254cf5caf8
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.1ajk6wax4j2'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.1ajk6wax4j2'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID cef631254cf5caf8
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: b9e6d2d31fba0c53
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.00qj39z0qr7n'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.00qj39z0qr7n'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID b9e6d2d31fba0c53
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.lr0x12zatj'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.lr0x12zatj'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: 36533c2ecbd4459b
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID 36533c2ecbd4459b
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: bfede94efe3e93b5
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.r4b425ag3ch'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.r4b425ag3ch'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID bfede94efe3e93b5
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth
+  ID: 3251209de11947be
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.nwx7b8n3gde'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.nwx7b8n3gde'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth" with ID 3251209de11947be
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.29ha4xigwvv'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.29ha4xigwvv'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: 4f5b3bb63e784405
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID 4f5b3bb63e784405
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth/register/candidate
+  ID: 5d61b3e7a833aaba
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/register/candidate/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/register/candidate/page/app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.5f7lkloiqt5'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.5f7lkloiqt5'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth/register/candidate" with ID 5d61b3e7a833aaba
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/register/candidate/page/app-build-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/auth/register/candidate/page/app-build-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /auth/register/candidate
+  ID: b9fee5b813237d08
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.04203ji3xghq'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.04203ji3xghq'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /auth/register/candidate" with ID b9fee5b813237d08
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ij9o7xaqw8'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.ij9o7xaqw8'
+}
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: [Tracing] Starting sampled root span
+  op: < unknown op >
+  name: GET /favicon.ico
+  ID: 19225da0d236a2ac
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/server/app/favicon.ico/[__metadata_id__]/route/app-paths-manifest.json'
+}
+Sentry Logger [log]: [Tracing] Finishing "< unknown op >" root span "GET /favicon.ico" with ID 19225da0d236a2ac
+Sentry Logger [log]: SpanExporter exported 1 spans, 0 spans are waiting for their parent spans to finish
+Sentry Logger [log]: Recording outcome: "before_send:transaction"
+Sentry Logger [log]: Recording outcome: "before_send:span"
+Sentry Logger [log]: before send for type `transaction` returned `null`, will not send event.
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No dsn provided, will not send outcomes
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+Sentry Logger [log]: Flushing client reports based on interval.
+Sentry Logger [log]: Flushing outcomes...
+Sentry Logger [log]: No outcomes to send
+ ○ Compiling instrumentation Node.js ...
+ ✓ Compiled instrumentation Node.js in 637ms
+ ✓ Compiled instrumentation Edge in 3ms
+[Error: ENOENT: no such file or directory, open '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.s8jqpugyyj'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/wolf/AI Projects 2025/Persona Demo/persona-recruit-ai-github/.next/static/development/_buildManifest.js.tmp.s8jqpugyyj'
+}
+[?25h

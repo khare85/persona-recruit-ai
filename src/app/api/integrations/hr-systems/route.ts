@@ -29,7 +29,7 @@ export const GET = withRateLimit('standard',
           req.nextUrl.searchParams.get('companyId') : 
           req.user?.companyId;
 
-        let configuredIntegrations: any[] = [];
+        const configuredIntegrations: any[] = [];
         if (companyId) {
           // TODO: Get configured integrations from database
           // configuredIntegrations = await databaseService.getHRIntegrations(companyId);

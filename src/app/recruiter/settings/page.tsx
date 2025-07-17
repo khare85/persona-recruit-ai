@@ -148,7 +148,7 @@ export default function RecruiterSettingsPage() {
 
   const saveProfile = async () => {
     setIsLoading(true);
-    let updatedProfileData = { ...profile };
+    const updatedProfileData = { ...profile };
 
     try {
       // Step 1: Upload profile picture if a new one is selected

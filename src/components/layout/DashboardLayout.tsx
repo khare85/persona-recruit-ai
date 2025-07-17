@@ -28,7 +28,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   // Determine the correct dashboard for sidebar logic
-  let sidebarComponent = null;
+  const sidebarComponent = null;
 
   if (pathname.startsWith('/admin')) {
     // Admin specific sidebar or layout adjustments can go here

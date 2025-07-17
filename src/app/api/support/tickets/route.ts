@@ -81,7 +81,7 @@ export const GET = withAuth(async (request: NextRequest) => {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
 
-    let query: any = {};
+    const query: any = {};
     
     if (status) query.status = status;
     if (category) query.category = category;

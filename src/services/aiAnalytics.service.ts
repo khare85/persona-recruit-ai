@@ -493,7 +493,7 @@ class AIAnalyticsService {
       const { timeRange, operationTypes, companyIds, models } = filters;
       
       // Build base query
-      let baseQuery = this.db!.collection(AI_ANALYTICS_COLLECTIONS.AI_OPERATION_METRICS)
+      const baseQuery = this.db!.collection(AI_ANALYTICS_COLLECTIONS.AI_OPERATION_METRICS)
         .where('timestamp', '>=', timeRange.start)
         .where('timestamp', '<=', timeRange.end);
 

@@ -178,6 +178,12 @@ export default function CandidateRegistrationPage() {
         console.warn('Complete profile creation failed:', completeProfileError);
       }
       
+      toast({
+        title: '🎉 Account Created Successfully!',
+        description: 'Welcome to PersonaRecruit! Complete your profile to get started.',
+        duration: 4000
+      });
+      
       // Step 7: Redirect to simplified onboarding (just resume and video)
       router.push('/onboarding/candidate?step=resume');
 

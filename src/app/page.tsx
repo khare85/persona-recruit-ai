@@ -37,7 +37,7 @@ export default function LandingPage() {
           router.push('/auth/login');
       }
     } else {
-      router.push('/auth?tab=signup');
+      router.push('/auth/register/candidate');
     }
   };
 
